@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sales Dashboard — Nov/Dec 2022</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,sans-serif;background:#f4f4f6;color:#1a1a1a;padding:20px}
+  h1{font-size:16px;font-weight:600;color:#1a1a1a}
+  .topbar{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  select{font-size:12px;padding:4px 8px;border:1px solid #ccc;border-radius:6px;background:#fff;cursor:pointer}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+  .kpi{background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;border-left:4px solid #185FA5}
+  .kpi.green{border-left-color:#3B6D11}.kpi.amber{border-left-color:#854F0B}.kpi.purple{border-left-color:#534AB7}
+  .kpi-label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+  .kpi-val{font-size:22px;font-weight:600;color:#1a1a1a}
+  .kpi-sub{font-size:11px;color:#999;margin-top:2px}
+  .grid-main{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+  .card{background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px}
+  .card-title{font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
+  .rank-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f0f0f0}
+  .rank-row:last-child{border-bottom:none}
+  .rank-name{font-size:12px;color:#1a1a1a;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rank-bar-wrap{flex:2;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden}
+  .rank-bar{height:100%;border-radius:3px}
+  .rank-val{font-size:11px;color:#666;min-width:65px;text-align:right}
+  .leg{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+  .leg span{display:flex;align-items:center;gap:4px;font-size:11px;color:#555}
+  .leg-sq{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+
+  /* ── AI Panel ── */
+  .ai-panel{background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;margin-bottom:12px}
+  .ai-panel-header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 16px;border-bottom:1px solid #f0f0f0;
+    background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);
+  }
+  .ai-panel-title{display:flex;align-items:center;gap:8px;color:#e2e8f0;font-size:13px;font-weight:600}
+  .ai-dot{width:7px;height:7px;border-radius:50%;background:#818cf8;animation:aipulse 2s ease-in-out infinite}
+  @keyframes aipulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(129,140,248,.4)}50%{opacity:.7;box-shadow:0 0 0 5px rgba(129,140,248,0)}}
+  .ai-badge{font-size:10px;font-weight:700;background:rgba(129,140,248,.25);color:#a5b4fc;padding:2px 8px;border-radius:20px;border:1px solid rgba(129,140,248,.3)}
+  .ai-btn{
+    display:flex;align-items:center;gap:6px;
+    padding:6px 14px;background:#4f46e5;color:#fff;
+    border:none;border-radius:6px;font-size:12px;font-weight:600;
+    cursor:pointer;transition:all .2s;
+  }
+  .ai-btn:hover{background:#4338ca;transform:translateY(-1px)}
+  .ai-btn:disabled{opacity:.5;cursor:default;transform:none}
+  .ai-body{padding:16px}
+
+  /* empty */
+  .ai-empty{text-align:center;padding:28px;color:#94a3b8;font-size:13px}
+  .ai-empty-icon{font-size:28px;margin-bottom:8px;opacity:.5}
+
+  /* loading */
+  .ai-loading{display:none;align-items:center;gap:10px;padding:20px;justify-content:center;color:#64748b;font-size:13px}
+  .ld{display:flex;gap:5px}
+  .ld span{width:6px;height:6px;border-radius:50%;background:#4f46e5;animation:ldbc .7s ease-in-out infinite}
+  .ld span:nth-child(2){animation-delay:.12s}.ld span:nth-child(3){animation-delay:.24s}
+  @keyframes ldbc{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+  /* narrative */
+  .ai-result{display:none}
+  .ai-lead{font-size:14px;font-weight:600;line-height:1.55;color:#1a1a1a;border-left:3px solid #4f46e5;padding-left:12px;margin-bottom:16px}
+  .ai-blocks{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:14px}
+  .ai-block{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px}
+  .ai-block-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#64748b;margin-bottom:5px}
+  .ai-block-txt{font-size:12px;line-height:1.6;color:#334155}
+  .ai-actions-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#64748b;margin-bottom:8px;padding-top:12px;border-top:1px solid #e2e8f0}
+  .ai-action{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:6px;font-size:12px;line-height:1.5;color:#334155}
+  .abadge{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;flex-shrink:0;margin-top:1px}
+  .ab-u{background:#fee2e2;color:#dc2626}.ab-m{background:#fef3c7;color:#d97706}.ab-b{background:#dcfce7;color:#16a34a}
+  .ai-conf{display:flex;align-items:center;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid #e2e8f0}
+  .ai-conf-lbl{font-size:11px;color:#94a3b8;white-space:nowrap}
+  .ai-conf-track{flex:1;height:3px;background:#e2e8f0;border-radius:2px}
+  .ai-conf-fill{height:3px;border-radius:2px;background:linear-gradient(90deg,#4f46e5,#818cf8)}
+  .ai-conf-pct{font-size:11px;font-weight:600;color:#818cf8}
+
+  @media(max-width:700px){
+    .kpis{grid-template-columns:1fr 1fr}
+    .grid-main,.grid-3,.grid-2{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>&#9642; Sales performance &mdash; Nov / Dec 2022</h1>
+  <div class="filters">
+    <select id="fCity" onchange="go()"><option value="">All cities</option></select>
+    <select id="fMgr"  onchange="go()"><option value="">All managers</option></select>
+    <select id="fProd" onchange="go()"><option value="">All products</option></select>
+    <select id="fChan" onchange="go()"><option value="">All channels</option></select>
+  </div>
+</div>
+
+<div class="kpis">
+  <div class="kpi">       <div class="kpi-label">Total revenue</div>   <div class="kpi-val" id="kRev">—</div><div class="kpi-sub" id="kOrd">—</div></div>
+  <div class="kpi green"> <div class="kpi-label">Avg per order</div>   <div class="kpi-val" id="kAvg">—</div><div class="kpi-sub">per transaction</div></div>
+  <div class="kpi amber"> <div class="kpi-label">Top product</div>     <div class="kpi-val" id="kTopP" style="font-size:15px;padding-top:3px">—</div><div class="kpi-sub" id="kTopPv">—</div></div>
+  <div class="kpi purple"><div class="kpi-label">Top city</div>        <div class="kpi-val" id="kTopC" style="font-size:15px;padding-top:3px">—</div><div class="kpi-sub" id="kTopCv">—</div></div>
+</div>
+
+<!-- ══════════ AI ANALYSIS PANEL ══════════ -->
+<div class="ai-panel">
+  <div class="ai-panel-header">
+    <div class="ai-panel-title">
+      <div class="ai-dot"></div>
+      AI Executive Analysis
+      <span class="ai-badge">Claude</span>
+    </div>
+    <button class="ai-btn" id="ai-btn" onclick="runAnalysis()">
+      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+      </svg>
+      Analyze with AI
+    </button>
+  </div>
+  <div class="ai-body">
+    <div class="ai-empty" id="ai-empty">
+      <div class="ai-empty-icon">◈</div>
+      Click <strong>Analyze with AI</strong> to generate a narrative explanation of the current data view. Filters above apply.
+    </div>
+    <div class="ai-loading" id="ai-loading">
+      <div class="ld"><span></span><span></span><span></span></div>
+      <span id="ai-loading-txt">Analyzing patterns...</span>
+    </div>
+    <div class="ai-result" id="ai-result"></div>
+  </div>
+</div>
+<!-- ══════════════════════════════════════ -->
+
+<div class="grid-main">
+  <div class="card">
+    <div class="card-title">Daily revenue trend</div>
+    <div style="position:relative;height:200px"><canvas id="cTime" role="img" aria-label="Daily revenue trend"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Channel mix</div>
+    <div id="lChan" class="leg"></div>
+    <div style="position:relative;height:160px"><canvas id="cChan" role="img" aria-label="Channel mix"></canvas></div>
+  </div>
+</div>
+
+<div class="grid-3">
+  <div class="card"><div class="card-title">Revenue by product</div><div id="rProd"></div></div>
+  <div class="card"><div class="card-title">Revenue by city</div><div id="rCity"></div></div>
+  <div class="card"><div class="card-title">Manager performance</div><div id="rMgr"></div></div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title">Payment method</div>
+    <div id="lPay" class="leg"></div>
+    <div style="position:relative;height:160px"><canvas id="cPay" role="img" aria-label="Payment method distribution"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Revenue by product (bars)</div>
+    <div style="position:relative;height:160px"><canvas id="cProd" role="img" aria-label="Revenue by product bar chart"></canvas></div>
+  </div>
+</div>
+
+<script>
+const PALETTE=['#185FA5','#3B6D11','#854F0B','#534AB7','#993556','#0F6E56'];
+
+const RAW=[
+  {date:"7/11/2022",product:"Fries",price:3.49,qty:573.07,channel:"Online",payment:"Gift Card",manager:"Tom Jackson",city:"London"},
+  {date:"7/11/2022",product:"Beverages",price:2.95,qty:745.76,channel:"Online",payment:"Gift Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"7/11/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"In-store",payment:"Gift Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"8/11/2022",product:"Burgers",price:12.99,qty:569.67,channel:"In-store",payment:"Credit Card",manager:"Walter Muller",city:"Berlin"},
+  {date:"8/11/2022",product:"Chicken Sandwiches",price:9.95,qty:201.01,channel:"In-store",payment:"Credit Card",manager:"Walter Muller",city:"Berlin"},
+  {date:"8/11/2022",product:"Fries",price:3.49,qty:573.07,channel:"In-store",payment:"Credit Card",manager:"Remy Monet",city:"Paris"},
+  {date:"8/11/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"In-store",payment:"Credit Card",manager:"Walter Muller",city:"Berlin"},
+  {date:"9/11/2022",product:"Burgers",price:12.99,qty:554.27,channel:"In-store",payment:"Credit Card",manager:"Remy Monet",city:"Paris"},
+  {date:"9/11/2022",product:"Chicken Sandwiches",price:9.95,qty:201.01,channel:"In-store",payment:"Credit Card",manager:"Remy Monet",city:"Paris"},
+  {date:"9/11/2022",product:"Fries",price:3.49,qty:573.07,channel:"In-store",payment:"Credit Card",manager:"Remy Monet",city:"Paris"},
+  {date:"9/11/2022",product:"Beverages",price:2.95,qty:677.97,channel:"In-store",payment:"Credit Card",manager:"Remy Monet",city:"Paris"},
+  {date:"9/11/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"In-store",payment:"Credit Card",manager:"Remy Monet",city:"Paris"},
+  {date:"10/11/2022",product:"Burgers",price:12.99,qty:554.27,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"10/11/2022",product:"Chicken Sandwiches",price:9.95,qty:201.01,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"10/11/2022",product:"Fries",price:3.49,qty:573.07,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"10/11/2022",product:"Beverages",price:2.95,qty:677.97,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"11/11/2022",product:"Burgers",price:12.99,qty:554.27,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"11/11/2022",product:"Chicken Sandwiches",price:9.95,qty:201.01,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"11/11/2022",product:"Fries",price:3.49,qty:630.37,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"11/11/2022",product:"Beverages",price:2.95,qty:677.97,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"11/11/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"12/11/2022",product:"Burgers",price:12.99,qty:523.48,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"12/11/2022",product:"Chicken Sandwiches",price:9.95,qty:201.01,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"12/11/2022",product:"Fries",price:3.49,qty:630.37,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"12/11/2022",product:"Beverages",price:2.95,qty:677.97,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"12/11/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"13/11/2022",product:"Burgers",price:12.99,qty:508.08,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"13/11/2022",product:"Chicken Sandwiches",price:9.95,qty:201.01,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"13/11/2022",product:"Fries",price:25.5,qty:630.37,channel:"In-store",payment:"Credit Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"13/11/2022",product:"Beverages",price:2.95,qty:677.97,channel:"In-store",payment:"Credit Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"13/11/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"In-store",payment:"Credit Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"14/11/2022",product:"Burgers",price:12.99,qty:523.48,channel:"In-store",payment:"Credit Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"14/11/2022",product:"Chicken Sandwiches",price:29.05,qty:201.01,channel:"In-store",payment:"Credit Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"14/11/2022",product:"Fries",price:3.49,qty:630.37,channel:"In-store",payment:"Credit Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"14/11/2022",product:"Beverages",price:2.95,qty:677.97,channel:"In-store",payment:"Credit Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"14/11/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"15/11/2022",product:"Burgers",price:12.99,qty:508.08,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"15/11/2022",product:"Chicken Sandwiches",price:9.95,qty:201.01,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"15/11/2022",product:"Fries",price:3.49,qty:573.07,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"15/11/2022",product:"Beverages",price:2.95,qty:677.97,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"15/11/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"16/11/2022",product:"Burgers",price:12.99,qty:508.08,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"16/11/2022",product:"Chicken Sandwiches",price:9.95,qty:201.01,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"16/11/2022",product:"Fries",price:3.49,qty:573.07,channel:"In-store",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"16/11/2022",product:"Beverages",price:2.95,qty:677.97,channel:"Drive-thru",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"16/11/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Drive-thru",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"17/11/2022",product:"Burgers",price:12.99,qty:523.48,channel:"Drive-thru",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"17/11/2022",product:"Chicken Sandwiches",price:9.95,qty:201.01,channel:"Drive-thru",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"17/11/2022",product:"Fries",price:3.49,qty:630.37,channel:"Drive-thru",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"17/11/2022",product:"Beverages",price:2.95,qty:677.97,channel:"Drive-thru",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"17/11/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Drive-thru",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"18/11/2022",product:"Burgers",price:12.99,qty:538.88,channel:"Drive-thru",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"18/11/2022",product:"Chicken Sandwiches",price:9.95,qty:201.01,channel:"Drive-thru",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"18/11/2022",product:"Fries",price:3.49,qty:687.68,channel:"Drive-thru",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"18/11/2022",product:"Beverages",price:2.95,qty:677.97,channel:"Drive-thru",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"18/11/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Drive-thru",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"19/11/2022",product:"Burgers",price:12.99,qty:508.08,channel:"Drive-thru",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"19/11/2022",product:"Chicken Sandwiches",price:9.95,qty:201.01,channel:"Drive-thru",payment:"Credit Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"19/11/2022",product:"Fries",price:3.49,qty:687.68,channel:"Drive-thru",payment:"Credit Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"19/11/2022",product:"Beverages",price:2.95,qty:677.97,channel:"Drive-thru",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"19/11/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Drive-thru",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"20/11/2022",product:"Burgers",price:12.99,qty:477.29,channel:"Drive-thru",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"20/11/2022",product:"Chicken Sandwiches",price:9.95,qty:201.01,channel:"Drive-thru",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"21/11/2022",product:"Burgers",price:12.99,qty:492.69,channel:"Drive-thru",payment:"Cash",manager:"Remy Monet",city:"Paris"},
+  {date:"21/11/2022",product:"Chicken Sandwiches",price:9.95,qty:201.01,channel:"Drive-thru",payment:"Cash",manager:"Remy Monet",city:"Paris"},
+  {date:"21/11/2022",product:"Fries",price:3.49,qty:687.68,channel:"Drive-thru",payment:"Cash",manager:"Remy Monet",city:"Paris"},
+  {date:"21/11/2022",product:"Beverages",price:2.95,qty:745.76,channel:"Drive-thru",payment:"Cash",manager:"Remy Monet",city:"Paris"},
+  {date:"21/11/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Drive-thru",payment:"Cash",manager:"Remy Monet",city:"Paris"},
+  {date:"22/11/2022",product:"Burgers",price:12.99,qty:461.89,channel:"Drive-thru",payment:"Cash",manager:"Remy Monet",city:"Paris"},
+  {date:"22/11/2022",product:"Chicken Sandwiches",price:9.95,qty:201.01,channel:"Drive-thru",payment:"Cash",manager:"Remy Monet",city:"Paris"},
+  {date:"22/11/2022",product:"Fries",price:3.49,qty:687.68,channel:"Drive-thru",payment:"Cash",manager:"Remy Monet",city:"Paris"},
+  {date:"22/11/2022",product:"Beverages",price:2.95,qty:745.76,channel:"Drive-thru",payment:"Cash",manager:"Remy Monet",city:"Paris"},
+  {date:"22/11/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Drive-thru",payment:"Cash",manager:"Remy Monet",city:"Paris"},
+  {date:"23/11/2022",product:"Burgers",price:12.99,qty:477.29,channel:"Drive-thru",payment:"Cash",manager:"Remy Monet",city:"Paris"},
+  {date:"23/11/2022",product:"Chicken Sandwiches",price:9.95,qty:201.01,channel:"Drive-thru",payment:"Cash",manager:"Remy Monet",city:"Paris"},
+  {date:"23/11/2022",product:"Fries",price:3.49,qty:687.68,channel:"Drive-thru",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"23/11/2022",product:"Beverages",price:2.95,qty:745.76,channel:"Drive-thru",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"23/11/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Drive-thru",payment:"Cash",manager:"Pablo Perez",city:"Madrid"},
+  {date:"24/11/2022",product:"Burgers",price:12.99,qty:477.29,channel:"Drive-thru",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"24/11/2022",product:"Chicken Sandwiches",price:9.95,qty:201.01,channel:"Drive-thru",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"24/11/2022",product:"Fries",price:3.49,qty:630.37,channel:"Drive-thru",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"24/11/2022",product:"Beverages",price:2.95,qty:745.76,channel:"Drive-thru",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"24/11/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Drive-thru",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"25/11/2022",product:"Burgers",price:12.99,qty:461.89,channel:"Drive-thru",payment:"Credit Card",manager:"Pablo Perez",city:"Madrid"},
+  {date:"25/11/2022",product:"Chicken Sandwiches",price:9.95,qty:201.01,channel:"Drive-thru",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"25/11/2022",product:"Fries",price:3.49,qty:630.37,channel:"Drive-thru",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"25/11/2022",product:"Beverages",price:2.95,qty:745.76,channel:"Drive-thru",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"25/11/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Drive-thru",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"26/11/2022",product:"Burgers",price:12.99,qty:446.5,channel:"Drive-thru",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"26/11/2022",product:"Chicken Sandwiches",price:9.95,qty:201.01,channel:"Drive-thru",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"26/11/2022",product:"Fries",price:3.49,qty:630.37,channel:"Drive-thru",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"26/11/2022",product:"Beverages",price:2.95,qty:745.76,channel:"Drive-thru",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"26/11/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Drive-thru",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"27/11/2022",product:"Burgers",price:12.99,qty:461.89,channel:"Drive-thru",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"27/11/2022",product:"Fries",price:3.49,qty:630.37,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"27/11/2022",product:"Beverages",price:2.95,qty:745.76,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"27/11/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"28/11/2022",product:"Burgers",price:12.99,qty:477.29,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"28/11/2022",product:"Fries",price:3.49,qty:630.37,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"28/11/2022",product:"Beverages",price:2.95,qty:677.97,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"28/11/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"29/11/2022",product:"Burgers",price:12.99,qty:477.29,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"29/11/2022",product:"Fries",price:3.49,qty:630.37,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"29/11/2022",product:"Beverages",price:2.95,qty:677.97,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"29/11/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"30/11/2022",product:"Burgers",price:12.99,qty:492.69,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"30/11/2022",product:"Fries",price:3.49,qty:630.37,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"30/11/2022",product:"Beverages",price:2.95,qty:677.97,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"30/11/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"1/12/2022",product:"Burgers",price:12.99,qty:492.69,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"1/12/2022",product:"Fries",price:3.49,qty:573.07,channel:"Online",payment:"Credit Card",manager:"Remy Monet",city:"Paris"},
+  {date:"1/12/2022",product:"Beverages",price:2.95,qty:677.97,channel:"Online",payment:"Credit Card",manager:"Remy Monet",city:"Paris"},
+  {date:"1/12/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Online",payment:"Credit Card",manager:"Remy Monet",city:"Paris"},
+  {date:"2/12/2022",product:"Burgers",price:12.99,qty:523.48,channel:"Online",payment:"Credit Card",manager:"Remy Monet",city:"Paris"},
+  {date:"2/12/2022",product:"Chicken Sandwiches",price:9.95,qty:201.01,channel:"Online",payment:"Credit Card",manager:"Remy Monet",city:"Paris"},
+  {date:"2/12/2022",product:"Fries",price:3.49,qty:630.37,channel:"Online",payment:"Credit Card",manager:"Remy Monet",city:"Paris"},
+  {date:"2/12/2022",product:"Beverages",price:2.95,qty:677.97,channel:"Online",payment:"Credit Card",manager:"Remy Monet",city:"Paris"},
+  {date:"2/12/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Online",payment:"Credit Card",manager:"Remy Monet",city:"Paris"},
+  {date:"3/12/2022",product:"Burgers",price:12.99,qty:523.48,channel:"Online",payment:"Credit Card",manager:"Remy Monet",city:"Paris"},
+  {date:"3/12/2022",product:"Fries",price:3.49,qty:630.37,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"3/12/2022",product:"Beverages",price:2.95,qty:677.97,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"3/12/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"4/12/2022",product:"Burgers",price:12.99,qty:538.88,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"4/12/2022",product:"Chicken Sandwiches",price:9.95,qty:201.01,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"5/12/2022",product:"Burgers",price:12.99,qty:554.27,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"5/12/2022",product:"Fries",price:3.49,qty:573.07,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"5/12/2022",product:"Beverages",price:2.95,qty:677.97,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"5/12/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"6/12/2022",product:"Burgers",price:12.99,qty:538.88,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"6/12/2022",product:"Fries",price:3.49,qty:573.07,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"6/12/2022",product:"Beverages",price:2.95,qty:677.97,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"7/12/2022",product:"Burgers",price:12.99,qty:523.48,channel:"Online",payment:"Credit Card",manager:"Tom Jackson",city:"London"},
+  {date:"7/12/2022",product:"Fries",price:3.49,qty:630.37,channel:"Online",payment:"Cash",manager:"Tom Jackson",city:"London"},
+  {date:"7/12/2022",product:"Beverages",price:2.95,qty:677.97,channel:"Online",payment:"Cash",manager:"Tom Jackson",city:"London"},
+  {date:"7/12/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Online",payment:"Cash",manager:"Tom Jackson",city:"London"},
+  {date:"8/12/2022",product:"Burgers",price:12.99,qty:538.88,channel:"Online",payment:"Cash",manager:"Tom Jackson",city:"London"},
+  {date:"8/12/2022",product:"Fries",price:3.49,qty:630.37,channel:"Online",payment:"Cash",manager:"Tom Jackson",city:"London"},
+  {date:"8/12/2022",product:"Beverages",price:2.95,qty:677.97,channel:"Online",payment:"Gift Card",manager:"Tom Jackson",city:"London"},
+  {date:"8/12/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Online",payment:"Gift Card",manager:"Tom Jackson",city:"London"},
+  {date:"9/12/2022",product:"Burgers",price:12.99,qty:569.67,channel:"Online",payment:"Gift Card",manager:"Tom Jackson",city:"London"},
+  {date:"9/12/2022",product:"Fries",price:3.49,qty:630.37,channel:"Online",payment:"Gift Card",manager:"Tom Jackson",city:"London"},
+  {date:"9/12/2022",product:"Beverages",price:2.95,qty:677.97,channel:"Online",payment:"Gift Card",manager:"Tom Jackson",city:"London"},
+  {date:"9/12/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Online",payment:"Gift Card",manager:"Tom Jackson",city:"London"},
+  {date:"10/12/2022",product:"Burgers",price:12.99,qty:569.67,channel:"Online",payment:"Gift Card",manager:"Tom Jackson",city:"London"},
+  {date:"10/12/2022",product:"Fries",price:3.49,qty:630.37,channel:"Online",payment:"Gift Card",manager:"Tom Jackson",city:"London"},
+  {date:"10/12/2022",product:"Beverages",price:2.95,qty:677.97,channel:"Online",payment:"Gift Card",manager:"Tom Jackson",city:"London"},
+  {date:"10/12/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Online",payment:"Gift Card",manager:"Tom Jackson",city:"London"},
+  {date:"11/12/2022",product:"Burgers",price:12.99,qty:585.07,channel:"Online",payment:"Gift Card",manager:"Tom Jackson",city:"London"},
+  {date:"11/12/2022",product:"Beverages",price:2.95,qty:745.76,channel:"Online",payment:"Gift Card",manager:"Tom Jackson",city:"London"},
+  {date:"12/12/2022",product:"Burgers",price:12.99,qty:569.67,channel:"Online",payment:"Gift Card",manager:"Tom Jackson",city:"London"},
+  {date:"12/12/2022",product:"Beverages",price:2.95,qty:677.97,channel:"Online",payment:"Gift Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"12/12/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Online",payment:"Gift Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"13/12/2022",product:"Burgers",price:12.99,qty:569.67,channel:"Online",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"13/12/2022",product:"Fries",price:3.49,qty:630.37,channel:"Online",payment:"Gift Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"13/12/2022",product:"Beverages",price:2.95,qty:677.97,channel:"Online",payment:"Gift Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"14/12/2022",product:"Burgers",price:12.99,qty:554.27,channel:"Online",payment:"Gift Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"14/12/2022",product:"Chicken Sandwiches",price:9.95,qty:221.11,channel:"Online",payment:"Gift Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"14/12/2022",product:"Fries",price:3.49,qty:630.37,channel:"Online",payment:"Gift Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"14/12/2022",product:"Beverages",price:2.95,qty:677.97,channel:"Online",payment:"Gift Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"14/12/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Online",payment:"Gift Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"15/12/2022",product:"Burgers",price:12.99,qty:538.88,channel:"Online",payment:"Gift Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"15/12/2022",product:"Fries",price:3.49,qty:630.37,channel:"Online",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"15/12/2022",product:"Beverages",price:2.95,qty:677.97,channel:"Online",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"16/12/2022",product:"Burgers",price:12.99,qty:569.67,channel:"Online",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"16/12/2022",product:"Chicken Sandwiches",price:9.95,qty:221.11,channel:"Online",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"16/12/2022",product:"Beverages",price:2.95,qty:745.76,channel:"Online",payment:"Gift Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"17/12/2022",product:"Burgers",price:12.99,qty:585.07,channel:"Online",payment:"Gift Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"17/12/2022",product:"Fries",price:3.49,qty:687.68,channel:"Online",payment:"Gift Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"17/12/2022",product:"Beverages",price:2.95,qty:745.76,channel:"Online",payment:"Gift Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"17/12/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Online",payment:"Gift Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"18/12/2022",product:"Burgers",price:12.99,qty:600.46,channel:"Online",payment:"Gift Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"18/12/2022",product:"Fries",price:3.49,qty:687.68,channel:"Online",payment:"Gift Card",manager:"Joao Silva",city:"Lisbon"},
+  {date:"18/12/2022",product:"Beverages",price:2.95,qty:745.76,channel:"Online",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"19/12/2022",product:"Burgers",price:12.99,qty:631.25,channel:"In-store",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"19/12/2022",product:"Chicken Sandwiches",price:9.95,qty:221.11,channel:"In-store",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"19/12/2022",product:"Fries",price:3.49,qty:630.37,channel:"In-store",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"19/12/2022",product:"Beverages",price:2.95,qty:745.76,channel:"In-store",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"19/12/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"In-store",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"20/12/2022",product:"Burgers",price:12.99,qty:646.65,channel:"In-store",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"20/12/2022",product:"Fries",price:3.49,qty:630.37,channel:"In-store",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"20/12/2022",product:"Beverages",price:2.95,qty:745.76,channel:"In-store",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"21/12/2022",product:"Burgers",price:12.99,qty:677.44,channel:"In-store",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"21/12/2022",product:"Fries",price:3.49,qty:630.37,channel:"In-store",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"21/12/2022",product:"Beverages",price:2.95,qty:745.76,channel:"In-store",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"22/12/2022",product:"Burgers",price:12.99,qty:677.44,channel:"In-store",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"22/12/2022",product:"Chicken Sandwiches",price:9.95,qty:241.21,channel:"In-store",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"23/12/2022",product:"Burgers",price:12.99,qty:646.65,channel:"In-store",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"24/12/2022",product:"Burgers",price:12.99,qty:677.44,channel:"In-store",payment:"Cash",manager:"Joao Silva",city:"Lisbon"},
+  {date:"24/12/2022",product:"Chicken Sandwiches",price:9.95,qty:241.21,channel:"In-store",payment:"Cash",manager:"Walter Muller",city:"Berlin"},
+  {date:"24/12/2022",product:"Fries",price:3.49,qty:630.37,channel:"In-store",payment:"Cash",manager:"Walter Muller",city:"Berlin"},
+  {date:"24/12/2022",product:"Beverages",price:2.95,qty:677.97,channel:"In-store",payment:"Cash",manager:"Walter Muller",city:"Berlin"},
+  {date:"24/12/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"In-store",payment:"Cash",manager:"Walter Muller",city:"Berlin"},
+  {date:"25/12/2022",product:"Burgers",price:12.99,qty:677.44,channel:"In-store",payment:"Cash",manager:"Walter Muller",city:"Berlin"},
+  {date:"25/12/2022",product:"Chicken Sandwiches",price:9.95,qty:261.31,channel:"In-store",payment:"Cash",manager:"Walter Muller",city:"Berlin"},
+  {date:"25/12/2022",product:"Fries",price:3.49,qty:630.37,channel:"In-store",payment:"Cash",manager:"Walter Muller",city:"Berlin"},
+  {date:"25/12/2022",product:"Beverages",price:2.95,qty:677.97,channel:"In-store",payment:"Cash",manager:"Walter Muller",city:"Berlin"},
+  {date:"25/12/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"In-store",payment:"Cash",manager:"Walter Muller",city:"Berlin"},
+  {date:"26/12/2022",product:"Burgers",price:12.99,qty:692.84,channel:"In-store",payment:"Cash",manager:"Walter Muller",city:"Berlin"},
+  {date:"26/12/2022",product:"Chicken Sandwiches",price:9.95,qty:281.41,channel:"In-store",payment:"Cash",manager:"Walter Muller",city:"Berlin"},
+  {date:"26/12/2022",product:"Fries",price:3.49,qty:630.37,channel:"In-store",payment:"Cash",manager:"Walter Muller",city:"Berlin"},
+  {date:"26/12/2022",product:"Beverages",price:2.95,qty:677.97,channel:"In-store",payment:"Cash",manager:"Walter Muller",city:"Berlin"},
+  {date:"26/12/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"In-store",payment:"Cash",manager:"Walter Muller",city:"Berlin"},
+  {date:"27/12/2022",product:"Burgers",price:12.99,qty:692.84,channel:"In-store",payment:"Cash",manager:"Walter Muller",city:"Berlin"},
+  {date:"27/12/2022",product:"Chicken Sandwiches",price:9.95,qty:281.41,channel:"In-store",payment:"Cash",manager:"Walter Muller",city:"Berlin"},
+  {date:"27/12/2022",product:"Fries",price:3.49,qty:630.37,channel:"In-store",payment:"Cash",manager:"Walter Muller",city:"Berlin"},
+  {date:"27/12/2022",product:"Beverages",price:2.95,qty:677.97,channel:"In-store",payment:"Gift Card",manager:"Walter Muller",city:"Berlin"},
+  {date:"27/12/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Drive-thru",payment:"Gift Card",manager:"Walter Muller",city:"Berlin"},
+  {date:"28/12/2022",product:"Burgers",price:12.99,qty:723.63,channel:"Drive-thru",payment:"Gift Card",manager:"Walter Muller",city:"Berlin"},
+  {date:"28/12/2022",product:"Chicken Sandwiches",price:9.95,qty:301.51,channel:"Drive-thru",payment:"Gift Card",manager:"Walter Muller",city:"Berlin"},
+  {date:"28/12/2022",product:"Fries",price:3.49,qty:630.37,channel:"Drive-thru",payment:"Gift Card",manager:"Walter Muller",city:"Berlin"},
+  {date:"28/12/2022",product:"Beverages",price:2.95,qty:677.97,channel:"Drive-thru",payment:"Gift Card",manager:"Walter Muller",city:"Berlin"},
+  {date:"28/12/2022",product:"Sides & Other",price:4.99,qty:200.4,channel:"Drive-thru",payment:"Gift Card",manager:"Walter Muller",city:"Berlin"},
+  {date:"29/12/2022",product:"Burgers",price:12.99,qty:754.43,channel:"Drive-thru",payment:"Gift Card",manager:"Walter Muller",city:"Berlin"},
+  {date:"29/12/2022",product:"Chicken Sandwiches",price:9.95,qty:281.41,channel:"Drive-thru",payment:"Gift Card",manager:"Walter Muller",city:"Berlin"},
+  {date:"29/12/2022",product:"Fries",price:3.49,qty:630.37,channel:"Drive-thru",payment:"Gift Card",manager:"Walter Muller",city:"Berlin"},
+  {date:"29/12/2022",product:"Beverages",price:2.95,qty:677.97,channel:"Drive-thru",payment:"Gift Card",manager:"Walter Muller",city:"Berlin"},
+].map(r=>({...r,rev:r.price*r.qty}));
+
+let ALL=RAW, charts={};
+// Keeps the filtered slice visible to runAnalysis()
+let CURRENT_DATA = RAW;
+
+function grp(data,key){
+  const m={};
+  data.forEach(r=>{m[r[key]]=(m[r[key]]||0)+r.rev;});
+  return Object.entries(m).sort((a,b)=>b[1]-a[1]);
+}
+
+function parseDt(s){const p=s.split('/');return new Date(+p[2],+p[1]-1,+p[0]);}
+
+function mkLeg(id,entries){
+  const tot=entries.reduce((s,e)=>s+e[1],0);
+  document.getElementById(id).innerHTML=entries.map((e,i)=>
+    `<span><span class="leg-sq" style="background:${PALETTE[i%PALETTE.length]}"></span>${e[0]} ${Math.round(e[1]/tot*100)}%</span>`
+  ).join('');
+}
+
+function mkRank(id,entries){
+  const max=entries[0]?entries[0][1]:1;
+  document.getElementById(id).innerHTML=entries.map((e,i)=>`
+    <div class="rank-row">
+      <div class="rank-name">${e[0]}</div>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(e[1]/max*100)}%;background:${PALETTE[i%PALETTE.length]}"></div></div>
+      <div class="rank-val">$${Math.round(e[1]).toLocaleString()}</div>
+    </div>`).join('');
+}
+
+function kill(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+function render(data){
+  CURRENT_DATA = data; // ← save filtered slice for AI
+  // reset AI panel when filters change
+  document.getElementById('ai-empty').style.display='block';
+  document.getElementById('ai-loading').style.display='none';
+  document.getElementById('ai-result').style.display='none';
+  document.getElementById('ai-btn').disabled=false;
+
+  const tot=data.reduce((s,r)=>s+r.rev,0);
+  const avg=data.length?tot/data.length:0;
+  const byP=grp(data,'product'),byC=grp(data,'city');
+  const tp=byP[0]||['—',0],tc=byC[0]||['—',0];
+
+  document.getElementById('kRev').textContent='$'+Math.round(tot).toLocaleString();
+  document.getElementById('kOrd').textContent=data.length+' transactions';
+  document.getElementById('kAvg').textContent='$'+avg.toFixed(0);
+  document.getElementById('kTopP').textContent=tp[0];
+  document.getElementById('kTopPv').textContent='$'+Math.round(tp[1]).toLocaleString();
+  document.getElementById('kTopC').textContent=tc[0];
+  document.getElementById('kTopCv').textContent='$'+Math.round(tc[1]).toLocaleString();
+
+  const byDay={};
+  data.forEach(r=>{byDay[r.date]=(byDay[r.date]||0)+r.rev;});
+  const days=Object.keys(byDay).sort((a,b)=>parseDt(a)-parseDt(b));
+
+  kill('cTime');
+  charts['cTime']=new Chart(document.getElementById('cTime'),{
+    type:'line',
+    data:{labels:days,datasets:[{data:days.map(d=>byDay[d]),borderColor:'#185FA5',backgroundColor:'rgba(24,95,165,0.07)',tension:0.3,fill:true,pointRadius:2,borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{font:{size:10},maxRotation:45,autoSkip:true,maxTicksLimit:14}},
+              y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1000)+'k'}}}}
+  });
+
+  const byChan=grp(data,'channel');
+  mkLeg('lChan',byChan);
+  kill('cChan');
+  charts['cChan']=new Chart(document.getElementById('cChan'),{
+    type:'doughnut',
+    data:{labels:byChan.map(e=>e[0]),datasets:[{data:byChan.map(e=>e[1]),backgroundColor:byChan.map((_,i)=>PALETTE[i%PALETTE.length]),borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false}}}
+  });
+
+  const byPay=grp(data,'payment');
+  mkLeg('lPay',byPay);
+  kill('cPay');
+  charts['cPay']=new Chart(document.getElementById('cPay'),{
+    type:'doughnut',
+    data:{labels:byPay.map(e=>e[0]),datasets:[{data:byPay.map(e=>e[1]),backgroundColor:byPay.map((_,i)=>PALETTE[i%PALETTE.length]),borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false}}}
+  });
+
+  kill('cProd');
+  charts['cProd']=new Chart(document.getElementById('cProd'),{
+    type:'bar',
+    data:{labels:byP.map(e=>e[0]),datasets:[{data:byP.map(e=>e[1]),backgroundColor:byP.map((_,i)=>PALETTE[i%PALETTE.length]),borderRadius:4,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1000)+'k'}}}}
+  });
+
+  mkRank('rProd',byP);
+  mkRank('rCity',byC);
+  mkRank('rMgr',grp(data,'manager'));
+}
+
+function pop(){
+  [['fCity','city'],['fMgr','manager'],['fProd','product'],['fChan','channel']].forEach(([id,k])=>{
+    const sel=document.getElementById(id);
+    [...new Set(ALL.map(r=>r[k]))].sort().forEach(v=>{
+      const o=document.createElement('option');o.value=v;o.textContent=v;sel.appendChild(o);
+    });
+  });
+}
+
+function go(){
+  const city=document.getElementById('fCity').value;
+  const mgr=document.getElementById('fMgr').value;
+  const prod=document.getElementById('fProd').value;
+  const chan=document.getElementById('fChan').value;
+  let d=ALL;
+  if(city)d=d.filter(r=>r.city===city);
+  if(mgr)d=d.filter(r=>r.manager===mgr);
+  if(prod)d=d.filter(r=>r.product===prod);
+  if(chan)d=d.filter(r=>r.channel===chan);
+  render(d);
+}
+
+// ═══════════════════════════════════════════
+//  AI ANALYSIS — reads CURRENT_DATA directly
+// ═══════════════════════════════════════════
+const MSGS = [
+  'Analyzing patterns...',
+  'Comparing channels and products...',
+  'Identifying key insights...',
+  'Generating recommendations...'
+];
+
+async function runAnalysis() {
+  const btn = document.getElementById('ai-btn');
+  btn.disabled = true;
+  document.getElementById('ai-empty').style.display = 'none';
+  document.getElementById('ai-result').style.display = 'none';
+  document.getElementById('ai-loading').style.display = 'flex';
+
+  let mi = 0;
+  const ticker = setInterval(() => {
+    mi = (mi+1) % MSGS.length;
+    document.getElementById('ai-loading-txt').textContent = MSGS[mi];
+  }, 1500);
+
+  // ── Build summary from the LIVE filtered data ──
+  const data = CURRENT_DATA;
+  const tot  = data.reduce((s,r)=>s+r.rev, 0);
+  const avg  = data.length ? tot/data.length : 0;
+
+  function top(key, n=3) {
+    return grp(data, key).slice(0,n)
+      .map(([k,v])=>`${k}: $${Math.round(v).toLocaleString()}`).join(', ');
+  }
+
+  // Date range
+  const dates = data.map(r=>parseDt(r.date)).sort((a,b)=>a-b);
+  const dateRange = dates.length
+    ? `${dates[0].toLocaleDateString('en-GB')} – ${dates[dates.length-1].toLocaleDateString('en-GB')}`
+    : 'unknown period';
+
+  // Active filters label
+  const city=document.getElementById('fCity').value;
+  const mgr=document.getElementById('fMgr').value;
+  const prod=document.getElementById('fProd').value;
+  const chan=document.getElementById('fChan').value;
+  const filters = [city&&`City: ${city}`, mgr&&`Manager: ${mgr}`, prod&&`Product: ${prod}`, chan&&`Channel: ${chan}`]
+    .filter(Boolean).join(', ') || 'No filters (full dataset)';
+
+  const summary = `
+Period: ${dateRange}
+Active filters: ${filters}
+Total revenue: $${Math.round(tot).toLocaleString()}
+Transactions: ${data.length}
+Avg revenue per transaction: $${avg.toFixed(0)}
+Top products: ${top('product')}
+Top cities: ${top('city')}
+Top managers: ${top('manager')}
+Channels: ${top('channel')}
+Payment methods: ${top('payment')}
+  `.trim();
+
+  const prompt = `You are a sharp, experienced business analyst. Analyze this sales data snapshot and produce an executive narrative in English.
+
+DATA SNAPSHOT:
+${summary}
+
+Reply ONLY with a valid JSON object (no markdown, no extra text):
+{
+  "headline": "One punchy sentence summarizing the most important finding with real numbers.",
+  "what_happened": "2-3 sentences describing what the data shows — which products, cities, or channels are driving or dragging performance.",
+  "why_it_matters": "2-3 sentences on the likely cause or business implication of the pattern you see.",
+  "opportunity": "1-2 sentences on the single biggest risk or opportunity revealed by this data.",
+  "actions": [
+    {"priority": "URGENT", "text": "Specific action the manager should take this week, based on the data."},
+    {"priority": "MEDIUM", "text": "Action for the next 30 days."},
+    {"priority": "LOW", "text": "Strategic action for the next quarter."}
+  ],
+  "confidence": 78
+}
+
+Speak like a direct, smart CFO — not a consulting report. Reference the actual numbers.`;
+
+  try {
+    // ← Reemplaza con la URL de tu Cloudflare Worker
+      const WORKER_URL = 'https://claude-proxy.vvisuall-aii.workers.dev';
+      const resp = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const json = await resp.json();
+    const raw = json.content.map(b=>b.text||'').join('');
+    const r = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    clearInterval(ticker);
+    showResult(r);
+  } catch(e) {
+    clearInterval(ticker);
+    document.getElementById('ai-loading').style.display='none';
+    document.getElementById('ai-empty').style.display='block';
+    document.getElementById('ai-empty').innerHTML=`<div class="ai-empty-icon">⚠</div>API error: ${e.message}`;
+    btn.disabled=false;
+  }
+}
+
+function showResult(r) {
+  document.getElementById('ai-loading').style.display='none';
+  const pc={'URGENT':'ab-u','MEDIUM':'ab-m','LOW':'ab-b'};
+  document.getElementById('ai-result').innerHTML = `
+    <div class="ai-lead">${r.headline}</div>
+    <div class="ai-blocks">
+      <div class="ai-block"><div class="ai-block-lbl">What happened</div><div class="ai-block-txt">${r.what_happened}</div></div>
+      <div class="ai-block"><div class="ai-block-lbl">Why it matters</div><div class="ai-block-txt">${r.why_it_matters}</div></div>
+      <div class="ai-block"><div class="ai-block-lbl">Opportunity / Risk</div><div class="ai-block-txt">${r.opportunity}</div></div>
+    </div>
+    <div class="ai-actions-title">Recommended actions</div>
+    ${r.actions.map(a=>`
+      <div class="ai-action">
+        <span class="abadge ${pc[a.priority]||'ab-b'}">${a.priority}</span>
+        <span>${a.text}</span>
+      </div>`).join('')}
+    <div class="ai-conf">
+      <span class="ai-conf-lbl">Analysis confidence</span>
+      <div class="ai-conf-track"><div class="ai-conf-fill" style="width:${r.confidence}%"></div></div>
+      <span class="ai-conf-pct">${r.confidence}%</span>
+    </div>`;
+  document.getElementById('ai-result').style.display='block';
+  document.getElementById('ai-btn').disabled=false;
+}
+
+pop();
+render(ALL);
+</script>
+</body>
+</html>
