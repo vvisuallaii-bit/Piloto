@@ -1,0 +1,193 @@
+[
+  {
+    "id": 1,
+    "category": "Competitor Move",
+    "company": "Starbucks",
+    "title": "Starbucks está reconstruyendo la experiencia física para aumentar frecuencia",
+    "summary": "No están intentando vender más café. Están intentando que el cliente vuelva más veces por semana. Rediseño de tiendas, IA en filas y fidelización por niveles son los tres motores.",
+    "tag": "Estrategia",
+    "tag_color": "amber",
+    "source": "Análisis interno",
+    "date": "2025-06-01",
+    "insight": "¿Tu negocio depende de vender… o de que la gente regrese?",
+    "sections": [
+      {
+        "title": "A. Rediseño de tiendas",
+        "bullets": [
+          "Más sillas y ambientes más cálidos para recuperar permanencia en el local",
+          "Nuevo modelo de cafeterías con menor costo de construcción",
+          "Meta: agregar más de 25.000 asientos en EE. UU.",
+          "Objetivo: abrir más de 2.000 tiendas netas globales hacia 2028"
+        ]
+      },
+      {
+        "title": "B. Smart Queue — IA en el flujo de pedidos",
+        "bullets": [
+          "Antes: mobile order, delivery, drive-thru y cliente presencial competían entre sí",
+          "Ahora: IA prioriza el flujo de pedidos entre canales automáticamente",
+          "Resultado: menos congestión, más pedidos por hora"
+        ]
+      },
+      {
+        "title": "C. Rediseño del programa de fidelización",
+        "bullets": [
+          "Rewards por niveles con beneficios crecientes",
+          "Mayor personalización por historial de compra",
+          "Casi el 60% del ingreso en EE. UU. ya proviene de miembros del programa"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "category": "Industry Trend",
+    "company": "Chipotle",
+    "title": "Chipotle está convirtiendo cada restaurante en una máquina repetible",
+    "summary": "Chipotle está obsesionado con una palabra: throughput — cuántos clientes pasan sin bajar calidad. Chipotlane, eficiencia operativa y menú como herramienta de frecuencia son su fórmula.",
+    "tag": "Operaciones",
+    "tag_color": "green",
+    "source": "Análisis interno",
+    "date": "2025-06-01",
+    "insight": "No están creciendo porque abren. Están creciendo porque cada local produce más.",
+    "sections": [
+      {
+        "title": "A. Nuevos locales con Chipotlane",
+        "bullets": [
+          "No es drive-thru tradicional: el cliente compra online y recoge sin bajarse",
+          "Resultado: menos filas, más capacidad por hora",
+          "Reduce fricción en el proceso de recogida"
+        ]
+      },
+      {
+        "title": "B. Paquetes operativos de alta eficiencia (HEAP)",
+        "bullets": [
+          "Equipos más rápidos y flujo de cocina optimizado",
+          "Menos movimientos del personal por pedido",
+          "Objetivo: reducir tiempo por pedido y mejorar consistencia"
+        ]
+      },
+      {
+        "title": "C. Menú como herramienta de crecimiento",
+        "bullets": [
+          "No agregan productos por emoción sino por datos",
+          "Lanzan productos temporales, nuevas salsas y pruebas pequeñas",
+          "Objetivo: subir frecuencia de visita y aumentar ticket promedio"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "category": "Competitor Move",
+    "company": "Wendy's",
+    "title": "Wendy's está operando como empresa tecnológica con restaurantes",
+    "summary": "Su estrategia tiene tres motores: rediseño del menú core, digitalización completa del recorrido del cliente y expansión con fórmula financiera definida. Meta: ~1.000 aperturas netas globales hacia 2028.",
+    "tag": "Digital",
+    "tag_color": "red",
+    "source": "Análisis interno",
+    "date": "2025-06-01",
+    "insight": "Crecer ya no es abrir tiendas. Es abrir tiendas que nacen optimizadas.",
+    "sections": [
+      {
+        "title": "A. Rediseño del menú core",
+        "bullets": [
+          "Mejora de hamburguesas principales antes de agregar variedad",
+          "Simplificación de ejecución en cocina",
+          "Objetivo: que el producto estrella gane, no que el menú crezca"
+        ]
+      },
+      {
+        "title": "B. Digitalización del recorrido completo",
+        "bullets": [
+          "Inversión en pedidos digitales y personalización",
+          "Experiencia omnicanal integrada",
+          "Objetivo: capturar comportamiento del cliente para retroalimentar operación"
+        ]
+      },
+      {
+        "title": "C. Expansión con fórmula financiera definida",
+        "bullets": [
+          "No abrir por abrir: definen retornos mínimos antes de cada apertura",
+          "Velocidad de recuperación y estructura de capital pre-definidas",
+          "Meta anunciada: ~1.000 aperturas netas globales hacia 2028"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "category": "Market Intelligence",
+    "company": "Darden Restaurants",
+    "title": "Darden está profesionalizando la ejecución cuando el mercado madura",
+    "summary": "Este grupo entendió algo clave: cuando el mercado madura, gana quien falla menos. Estandarización extrema, datos para decisiones diarias y consistencia sobre innovación son su ventaja competitiva.",
+    "tag": "Ejecución",
+    "tag_color": "amber",
+    "source": "Análisis interno",
+    "date": "2025-06-01",
+    "insight": "Muchas empresas creen que tienen problema de ventas. Y realmente tienen problema de operación.",
+    "sections": [
+      {
+        "title": "A. Menos improvisación operativa",
+        "bullets": [
+          "Estandarización extrema de procesos en todos los locales",
+          "Entrenamiento sistemático del personal",
+          "Planeación central con ejecución local"
+        ]
+      },
+      {
+        "title": "B. Datos para decisiones diarias",
+        "bullets": [
+          "Monitoreo constante de tráfico, ocupación y productividad",
+          "Margen por unidad como métrica de gestión diaria",
+          "Las decisiones operativas se toman con datos, no con intuición"
+        ]
+      },
+      {
+        "title": "C. Consistencia sobre innovación",
+        "bullets": [
+          "No necesitan sorprender: necesitan que el cliente tenga la misma experiencia siempre",
+          "Menos lanzamientos de producto, más calidad en lo que ya funciona",
+          "La experiencia predecible es la ventaja competitiva"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "category": "Industry Trend",
+    "company": "CAVA",
+    "title": "CAVA está construyendo una categoría antes de que se sature",
+    "summary": "Uno de los movimientos más inteligentes del sector: entran por clúster geográfico, mantienen percepción premium sin romper precio y construyen el sistema de escala antes de crecer.",
+    "tag": "Expansión",
+    "tag_color": "green",
+    "source": "Análisis interno",
+    "date": "2025-06-01",
+    "insight": "El objetivo es que el local #500 funcione exactamente como el #50.",
+    "sections": [
+      {
+        "title": "A. Apertura acelerada pero geográfica",
+        "bullets": [
+          "No dispersan: entran a una ciudad, la densifican y luego expanden",
+          "Estrategia de clúster para maximizar reconocimiento de marca local",
+          "Evitan el error de crecer antes de tener masa crítica en cada mercado"
+        ]
+      },
+      {
+        "title": "B. Percepción premium sin romper precio",
+        "bullets": [
+          "No compiten por barato: compiten por conveniencia, salud y diseño",
+          "El posicionamiento premium justifica el ticket sin necesidad de descuentos",
+          "La categoría mediterránea rápida aún tiene baja competencia directa"
+        ]
+      },
+      {
+        "title": "C. Sistema diseñado para escalar desde el inicio",
+        "bullets": [
+          "Procesos, entrenamiento y logística definidos antes de la expansión",
+          "La infraestructura precede al crecimiento, no al revés",
+          "Objetivo: que el local #500 funcione exactamente como el #50"
+        ]
+      }
+    ]
+  }
+]
