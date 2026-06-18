@@ -3,82 +3,551 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Sales Dashboard — Nov/Dec 2022</title>
+<title>Sales Intelligence — Nov/Dec 2022</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:system-ui,sans-serif;background:#f4f4f6;color:#1a1a1a;padding:20px}
-  h1{font-size:16px;font-weight:600;color:#1a1a1a}
-  .topbar{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;margin-bottom:14px;flex-wrap:wrap;gap:10px}
-  .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  select{font-size:12px;padding:4px 8px;border:1px solid #ccc;border-radius:6px;background:#fff;cursor:pointer}
-  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
-  .kpi{background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;border-left:4px solid #185FA5}
-  .kpi.green{border-left-color:#3B6D11}.kpi.amber{border-left-color:#854F0B}.kpi.purple{border-left-color:#534AB7}
-  .kpi-label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
-  .kpi-val{font-size:22px;font-weight:600;color:#1a1a1a}
-  .kpi-sub{font-size:11px;color:#999;margin-top:2px}
-  .grid-main{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px}
-  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
-  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
-  .card{background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px}
-  .card-title{font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
-  .rank-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f0f0f0}
-  .rank-row:last-child{border-bottom:none}
-  .rank-name{font-size:12px;color:#1a1a1a;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .rank-bar-wrap{flex:2;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden}
-  .rank-bar{height:100%;border-radius:3px}
-  .rank-val{font-size:11px;color:#666;min-width:65px;text-align:right}
-  .leg{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
-  .leg span{display:flex;align-items:center;gap:4px;font-size:11px;color:#555}
-  .leg-sq{width:9px;height:9px;border-radius:2px;flex-shrink:0}
-  /* loading screen */
-  #loading{position:fixed;inset:0;background:#f4f4f6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:100}
-  #loading p{font-size:13px;color:#666}
-  .spinner{width:28px;height:28px;border:3px solid #e0e0e0;border-top-color:#185FA5;border-radius:50%;animation:spin .7s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  /* AI Panel */
-  .ai-panel{background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;margin-bottom:12px}
-  .ai-panel-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #f0f0f0;background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%)}
-  .ai-panel-title{display:flex;align-items:center;gap:8px;color:#e2e8f0;font-size:13px;font-weight:600}
-  .ai-dot{width:7px;height:7px;border-radius:50%;background:#818cf8;animation:aipulse 2s ease-in-out infinite}
-  @keyframes aipulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(129,140,248,.4)}50%{opacity:.7;box-shadow:0 0 0 5px rgba(129,140,248,0)}}
-  .ai-badge{font-size:10px;font-weight:700;background:rgba(129,140,248,.25);color:#a5b4fc;padding:2px 8px;border-radius:20px;border:1px solid rgba(129,140,248,.3)}
-  .ai-btn{display:flex;align-items:center;gap:6px;padding:6px 14px;background:#4f46e5;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
-  .ai-btn:hover{background:#4338ca;transform:translateY(-1px)}
-  .ai-btn:disabled{opacity:.5;cursor:default;transform:none}
-  .ai-body{padding:16px}
-  .ai-empty{text-align:center;padding:28px;color:#94a3b8;font-size:13px}
-  .ai-empty-icon{font-size:28px;margin-bottom:8px;opacity:.5}
-  .ai-loading{display:none;align-items:center;gap:10px;padding:20px;justify-content:center;color:#64748b;font-size:13px}
-  .ld{display:flex;gap:5px}
-  .ld span{width:6px;height:6px;border-radius:50%;background:#4f46e5;animation:ldbc .7s ease-in-out infinite}
-  .ld span:nth-child(2){animation-delay:.12s}.ld span:nth-child(3){animation-delay:.24s}
-  @keyframes ldbc{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-  .ai-result{display:none}
-  .ai-lead{font-size:14px;font-weight:600;line-height:1.55;color:#1a1a1a;border-left:3px solid #4f46e5;padding-left:12px;margin-bottom:16px}
-  .ai-blocks{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:14px}
-  .ai-block{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px}
-  .ai-block-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#64748b;margin-bottom:5px}
-  .ai-block-txt{font-size:12px;line-height:1.6;color:#334155}
-  .ai-actions-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#64748b;margin-bottom:8px;padding-top:12px;border-top:1px solid #e2e8f0}
-  .ai-action{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:6px;font-size:12px;line-height:1.5;color:#334155}
-  .abadge{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;flex-shrink:0;margin-top:1px}
-  .ab-u{background:#fee2e2;color:#dc2626}.ab-m{background:#fef3c7;color:#d97706}.ab-b{background:#dcfce7;color:#16a34a}
-  .ai-conf{display:flex;align-items:center;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid #e2e8f0}
-  .ai-conf-lbl{font-size:11px;color:#94a3b8;white-space:nowrap}
-  .ai-conf-track{flex:1;height:3px;background:#e2e8f0;border-radius:2px}
-  .ai-conf-fill{height:3px;border-radius:2px;background:linear-gradient(90deg,#4f46e5,#818cf8)}
-  .ai-conf-pct{font-size:11px;font-weight:600;color:#818cf8}
-  @media(max-width:700px){
-    .kpis{grid-template-columns:1fr 1fr}
-    .grid-main,.grid-3,.grid-2{grid-template-columns:1fr}
-  }
+/* ── TOKENS ── */
+:root {
+  --bg:       #0D1117;
+  --surface:  #161B22;
+  --surface2: #1C2128;
+  --border:   #21262D;
+  --border2:  #30363D;
+  --text:     #E6EDF3;
+  --muted:    #7D8590;
+  --faint:    #484F58;
+  --accent:   #00D4AA;
+  --accent2:  #00B894;
+  --accent-glow: rgba(0,212,170,0.12);
+  --blue:     #388BFD;
+  --purple:   #A371F7;
+  --amber:    #E3B341;
+  --red:      #F85149;
+  --green:    #3FB950;
+  --radius:   10px;
+  --radius-sm: 6px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 20px 24px 40px;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  animation: pulse-dot 2.5s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%,100% { box-shadow: 0 0 6px var(--accent); }
+  50%      { box-shadow: 0 0 14px var(--accent), 0 0 24px rgba(0,212,170,0.3); }
+}
+
+.brand-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.brand-period {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-label {
+  font-size: 11px;
+  color: var(--faint);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-right: 2px;
+}
+
+select {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  outline: none;
+  transition: border-color .15s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237D8590' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 24px;
+}
+select:hover, select:focus { border-color: var(--accent); }
+
+/* ── KPI CARDS ── */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.kpi::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+.kpi.c-teal::before  { background: var(--accent); }
+.kpi.c-blue::before  { background: var(--blue); }
+.kpi.c-amber::before { background: var(--amber); }
+.kpi.c-purple::before{ background: var(--purple); }
+
+.kpi:hover { border-color: var(--border2); }
+
+.kpi-icon {
+  font-size: 16px;
+  margin-bottom: 10px;
+  opacity: .7;
+}
+
+.kpi-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  margin-bottom: 6px;
+}
+
+.kpi-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.kpi-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 5px;
+}
+
+/* ── CARDS ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+}
+
+.card-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  margin-bottom: 14px;
+}
+
+/* ── GRIDS ── */
+.grid-main {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* ── RANK ROWS ── */
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.rank-row:last-child { border-bottom: none; }
+
+.rank-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--faint);
+  width: 14px;
+  flex-shrink: 0;
+}
+
+.rank-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rank-bar-wrap {
+  flex: 2;
+  height: 4px;
+  background: var(--surface2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.rank-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width .4s ease;
+}
+
+.rank-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  min-width: 72px;
+  text-align: right;
+}
+
+/* ── LEGEND ── */
+.leg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.leg span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.leg-sq {
+  width: 8px; height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ── LOADING ── */
+#loading {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  z-index: 100;
+}
+
+#loading p {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.spinner {
+  width: 28px; height: 28px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── AI PANEL ── */
+.ai-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.ai-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+
+.ai-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.ai-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: aipulse 2s ease-in-out infinite;
+}
+@keyframes aipulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(0,212,170,.4); }
+  50%      { box-shadow: 0 0 0 5px rgba(0,212,170,0); }
+}
+
+.ai-badge {
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(0,212,170,.12);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 20px;
+  border: 1px solid rgba(0,212,170,.25);
+  letter-spacing: .04em;
+}
+
+.ai-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--accent);
+  color: #0D1117;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .18s;
+  letter-spacing: .01em;
+}
+.ai-btn:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,212,170,.3); }
+.ai-btn:disabled { opacity: .4; cursor: default; transform: none; box-shadow: none; }
+
+.ai-body { padding: 20px; }
+
+.ai-empty {
+  text-align: center;
+  padding: 32px;
+  color: var(--faint);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.ai-empty-icon { font-size: 26px; margin-bottom: 8px; opacity: .4; }
+
+.ai-loading {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ld { display: flex; gap: 5px; }
+.ld span {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: ldbc .7s ease-in-out infinite;
+}
+.ld span:nth-child(2) { animation-delay: .12s; }
+.ld span:nth-child(3) { animation-delay: .24s; }
+@keyframes ldbc {
+  0%,100% { transform: translateY(0); opacity: .6; }
+  50%      { transform: translateY(-6px); opacity: 1; }
+}
+
+.ai-result { display: none; }
+
+.ai-lead {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.55;
+  color: var(--text);
+  border-left: 3px solid var(--accent);
+  padding-left: 14px;
+  margin-bottom: 18px;
+}
+
+.ai-blocks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.ai-block {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 13px 15px;
+}
+
+.ai-block-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.ai-block-txt {
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--text);
+  opacity: .85;
+}
+
+.ai-actions-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  margin-bottom: 9px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.ai-action {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text);
+  opacity: .9;
+}
+
+.abadge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 1px;
+  letter-spacing: .04em;
+}
+
+.ab-u { background: rgba(248,81,73,.15); color: #F85149; border: 1px solid rgba(248,81,73,.25); }
+.ab-m { background: rgba(227,179,65,.15); color: #E3B341; border: 1px solid rgba(227,179,65,.25); }
+.ab-b { background: rgba(63,185,80,.15);  color: #3FB950; border: 1px solid rgba(63,185,80,.25); }
+
+.ai-conf {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.ai-conf-lbl { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+.ai-conf-track {
+  flex: 1;
+  height: 3px;
+  background: var(--border2);
+  border-radius: 2px;
+}
+
+.ai-conf-fill {
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent2), var(--accent));
+}
+
+.ai-conf-pct {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* ── RESPONSIVE ── */
+@media(max-width: 900px) {
+  .kpis { grid-template-columns: 1fr 1fr; }
+  .grid-main { grid-template-columns: 1fr; }
+  .grid-3 { grid-template-columns: 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
+}
+
+@media(max-width: 480px) {
+  body { padding: 12px 14px 30px; }
+  .kpis { grid-template-columns: 1fr 1fr; }
+  .kpi-val { font-size: 20px; }
+}
 </style>
 </head>
 <body>
 
-<!-- Loading screen mientras lee el CSV -->
 <div id="loading">
   <div class="spinner"></div>
   <p>Loading data...</p>
@@ -86,9 +555,17 @@
 
 <div id="app" style="display:none">
 
+<!-- TOPBAR -->
 <div class="topbar">
-  <h1>&#9642; Sales performance &mdash; Nov / Dec 2022</h1>
+  <div class="brand">
+    <div class="brand-dot"></div>
+    <div>
+      <div class="brand-title">Sales Intelligence</div>
+      <div class="brand-period">Nov / Dec 2022</div>
+    </div>
+  </div>
   <div class="filters">
+    <span class="filter-label">Filter</span>
     <select id="fCity" onchange="go()"><option value="">All cities</option></select>
     <select id="fMgr"  onchange="go()"><option value="">All managers</option></select>
     <select id="fProd" onchange="go()"><option value="">All products</option></select>
@@ -96,13 +573,35 @@
   </div>
 </div>
 
+<!-- KPIs -->
 <div class="kpis">
-  <div class="kpi">       <div class="kpi-label">Total revenue</div>   <div class="kpi-val" id="kRev">—</div><div class="kpi-sub" id="kOrd">—</div></div>
-  <div class="kpi green"> <div class="kpi-label">Avg per order</div>   <div class="kpi-val" id="kAvg">—</div><div class="kpi-sub">per transaction</div></div>
-  <div class="kpi amber"> <div class="kpi-label">Top product</div>     <div class="kpi-val" id="kTopP" style="font-size:15px;padding-top:3px">—</div><div class="kpi-sub" id="kTopPv">—</div></div>
-  <div class="kpi purple"><div class="kpi-label">Top city</div>        <div class="kpi-val" id="kTopC" style="font-size:15px;padding-top:3px">—</div><div class="kpi-sub" id="kTopCv">—</div></div>
+  <div class="kpi c-teal">
+    <div class="kpi-icon">💰</div>
+    <div class="kpi-label">Total revenue</div>
+    <div class="kpi-val" id="kRev">—</div>
+    <div class="kpi-sub" id="kOrd">—</div>
+  </div>
+  <div class="kpi c-blue">
+    <div class="kpi-icon">📊</div>
+    <div class="kpi-label">Avg per order</div>
+    <div class="kpi-val" id="kAvg">—</div>
+    <div class="kpi-sub">per transaction</div>
+  </div>
+  <div class="kpi c-amber">
+    <div class="kpi-icon">🏆</div>
+    <div class="kpi-label">Top product</div>
+    <div class="kpi-val" id="kTopP" style="font-size:17px;padding-top:2px">—</div>
+    <div class="kpi-sub" id="kTopPv">—</div>
+  </div>
+  <div class="kpi c-purple">
+    <div class="kpi-icon">📍</div>
+    <div class="kpi-label">Top city</div>
+    <div class="kpi-val" id="kTopC" style="font-size:17px;padding-top:2px">—</div>
+    <div class="kpi-sub" id="kTopCv">—</div>
+  </div>
 </div>
 
+<!-- AI PANEL -->
 <div class="ai-panel">
   <div class="ai-panel-header">
     <div class="ai-panel-title">
@@ -120,7 +619,7 @@
   <div class="ai-body">
     <div class="ai-empty" id="ai-empty">
       <div class="ai-empty-icon">◈</div>
-      Click <strong>Analyze with AI</strong> to generate a narrative explanation of the current data view. Filters above apply.
+      Click <strong style="color:var(--accent)">Analyze with AI</strong> to generate a narrative explanation of the current data view. Filters above apply.
     </div>
     <div class="ai-loading" id="ai-loading">
       <div class="ld"><span></span><span></span><span></span></div>
@@ -130,6 +629,7 @@
   </div>
 </div>
 
+<!-- CHARTS ROW 1 -->
 <div class="grid-main">
   <div class="card">
     <div class="card-title">Daily revenue trend</div>
@@ -142,12 +642,14 @@
   </div>
 </div>
 
+<!-- RANK ROW -->
 <div class="grid-3">
   <div class="card"><div class="card-title">Revenue by product</div><div id="rProd"></div></div>
   <div class="card"><div class="card-title">Revenue by city</div><div id="rCity"></div></div>
   <div class="card"><div class="card-title">Manager performance</div><div id="rMgr"></div></div>
 </div>
 
+<!-- CHARTS ROW 2 -->
 <div class="grid-2">
   <div class="card">
     <div class="card-title">Payment method</div>
@@ -163,12 +665,20 @@
 </div><!-- /app -->
 
 <script>
-const PALETTE=['#185FA5','#3B6D11','#854F0B','#534AB7','#993556','#0F6E56'];
+const PALETTE = ['#00D4AA','#388BFD','#E3B341','#A371F7','#F85149','#3FB950'];
+const CHART_DEFAULTS = {
+  color: '#7D8590',
+  borderColor: '#21262D',
+};
 const WORKER_URL = 'https://claude-proxy.vvisuall-aii.workers.dev';
 
-let ALL=[], charts={}, CURRENT_DATA=[];
+// Apply global Chart.js dark theme
+Chart.defaults.color = '#7D8590';
+Chart.defaults.borderColor = '#21262D';
+Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
 
-// ── Lee el CSV y arranca el dashboard ──
+let ALL = [], charts = {}, CURRENT_DATA = [];
+
 async function loadCSV() {
   try {
     const res = await fetch('data.csv');
@@ -177,7 +687,6 @@ async function loadCSV() {
     const headers = lines[0].split(',');
 
     ALL = lines.slice(1).map(line => {
-      // Handle commas inside quoted fields
       const cols = line.split(',');
       const r = {};
       headers.forEach((h, i) => { r[h.trim()] = cols[i] ? cols[i].trim() : ''; });
@@ -193,163 +702,204 @@ async function loadCSV() {
     render(ALL);
   } catch(e) {
     document.getElementById('loading').innerHTML =
-      '<p style="color:#dc2626">Error loading data.csv — make sure the file is in the same folder.</p>';
+      '<p style="color:#F85149">Error loading data.csv — make sure the file is in the same folder.</p>';
   }
 }
 
-function grp(data,key){
-  const m={};
-  data.forEach(r=>{m[r[key]]=(m[r[key]]||0)+r.rev;});
-  return Object.entries(m).sort((a,b)=>b[1]-a[1]);
+function grp(data, key) {
+  const m = {};
+  data.forEach(r => { m[r[key]] = (m[r[key]] || 0) + r.rev; });
+  return Object.entries(m).sort((a, b) => b[1] - a[1]);
 }
 
-function parseDt(s){
-  const p=s.split('/');
-  return p.length===3 ? new Date(+p[2],+p[1]-1,+p[0]) : new Date(s);
+function parseDt(s) {
+  const p = s.split('/');
+  return p.length === 3 ? new Date(+p[2], +p[1]-1, +p[0]) : new Date(s);
 }
 
-function mkLeg(id,entries){
-  const tot=entries.reduce((s,e)=>s+e[1],0);
-  document.getElementById(id).innerHTML=entries.map((e,i)=>
-    `<span><span class="leg-sq" style="background:${PALETTE[i%PALETTE.length]}"></span>${e[0]} ${Math.round(e[1]/tot*100)}%</span>`
+function mkLeg(id, entries) {
+  const tot = entries.reduce((s, e) => s + e[1], 0);
+  document.getElementById(id).innerHTML = entries.map((e, i) =>
+    `<span><span class="leg-sq" style="background:${PALETTE[i%PALETTE.length]}"></span>${e[0]} <strong style="color:var(--text);font-weight:500">${Math.round(e[1]/tot*100)}%</strong></span>`
   ).join('');
 }
 
-function mkRank(id,entries){
-  const max=entries[0]?entries[0][1]:1;
-  document.getElementById(id).innerHTML=entries.map((e,i)=>`
+function mkRank(id, entries) {
+  const max = entries[0] ? entries[0][1] : 1;
+  document.getElementById(id).innerHTML = entries.map((e, i) => `
     <div class="rank-row">
+      <div class="rank-num">${i+1}</div>
       <div class="rank-name">${e[0]}</div>
       <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(e[1]/max*100)}%;background:${PALETTE[i%PALETTE.length]}"></div></div>
       <div class="rank-val">$${Math.round(e[1]).toLocaleString()}</div>
     </div>`).join('');
 }
 
-function kill(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+function kill(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
-function render(data){
+function render(data) {
   CURRENT_DATA = data;
-  document.getElementById('ai-empty').style.display='block';
-  document.getElementById('ai-loading').style.display='none';
-  document.getElementById('ai-result').style.display='none';
-  document.getElementById('ai-btn').disabled=false;
+  document.getElementById('ai-empty').style.display = 'block';
+  document.getElementById('ai-loading').style.display = 'none';
+  document.getElementById('ai-result').style.display = 'none';
+  document.getElementById('ai-btn').disabled = false;
 
-  const tot=data.reduce((s,r)=>s+r.rev,0);
-  const avg=data.length?tot/data.length:0;
-  const byP=grp(data,'product'),byC=grp(data,'city');
-  const tp=byP[0]||['—',0],tc=byC[0]||['—',0];
+  const tot = data.reduce((s, r) => s + r.rev, 0);
+  const avg = data.length ? tot / data.length : 0;
+  const byP = grp(data, 'product'), byC = grp(data, 'city');
+  const tp = byP[0] || ['—', 0], tc = byC[0] || ['—', 0];
 
-  document.getElementById('kRev').textContent='$'+Math.round(tot).toLocaleString();
-  document.getElementById('kOrd').textContent=data.length+' transactions';
-  document.getElementById('kAvg').textContent='$'+avg.toFixed(0);
-  document.getElementById('kTopP').textContent=tp[0];
-  document.getElementById('kTopPv').textContent='$'+Math.round(tp[1]).toLocaleString();
-  document.getElementById('kTopC').textContent=tc[0];
-  document.getElementById('kTopCv').textContent='$'+Math.round(tc[1]).toLocaleString();
+  document.getElementById('kRev').textContent  = '$' + Math.round(tot).toLocaleString();
+  document.getElementById('kOrd').textContent  = data.length + ' transactions';
+  document.getElementById('kAvg').textContent  = '$' + avg.toFixed(0);
+  document.getElementById('kTopP').textContent = tp[0];
+  document.getElementById('kTopPv').textContent= '$' + Math.round(tp[1]).toLocaleString();
+  document.getElementById('kTopC').textContent = tc[0];
+  document.getElementById('kTopCv').textContent= '$' + Math.round(tc[1]).toLocaleString();
 
-  const byDay={};
-  data.forEach(r=>{byDay[r.date]=(byDay[r.date]||0)+r.rev;});
-  const days=Object.keys(byDay).sort((a,b)=>parseDt(a)-parseDt(b));
+  const byDay = {};
+  data.forEach(r => { byDay[r.date] = (byDay[r.date] || 0) + r.rev; });
+  const days = Object.keys(byDay).sort((a, b) => parseDt(a) - parseDt(b));
 
   kill('cTime');
-  charts['cTime']=new Chart(document.getElementById('cTime'),{
-    type:'line',
-    data:{labels:days,datasets:[{data:days.map(d=>byDay[d]),borderColor:'#185FA5',backgroundColor:'rgba(24,95,165,0.07)',tension:0.3,fill:true,pointRadius:2,borderWidth:2}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{font:{size:10},maxRotation:45,autoSkip:true,maxTicksLimit:14}},
-              y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1000)+'k'}}}}
+  charts['cTime'] = new Chart(document.getElementById('cTime'), {
+    type: 'line',
+    data: {
+      labels: days,
+      datasets: [{
+        data: days.map(d => byDay[d]),
+        borderColor: '#00D4AA',
+        backgroundColor: 'rgba(0,212,170,0.07)',
+        tension: 0.35,
+        fill: true,
+        pointRadius: 2,
+        pointBackgroundColor: '#00D4AA',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { font: { size: 10 }, maxRotation: 45, autoSkip: true, maxTicksLimit: 14 }, grid: { color: '#21262D' } },
+        y: { ticks: { font: { size: 10 }, callback: v => '$' + Math.round(v/1000) + 'k' }, grid: { color: '#21262D' } }
+      }
+    }
   });
 
-  const byChan=grp(data,'channel');
-  mkLeg('lChan',byChan);
+  const byChan = grp(data, 'channel');
+  mkLeg('lChan', byChan);
   kill('cChan');
-  charts['cChan']=new Chart(document.getElementById('cChan'),{
-    type:'doughnut',
-    data:{labels:byChan.map(e=>e[0]),datasets:[{data:byChan.map(e=>e[1]),backgroundColor:byChan.map((_,i)=>PALETTE[i%PALETTE.length]),borderWidth:0}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false}}}
+  charts['cChan'] = new Chart(document.getElementById('cChan'), {
+    type: 'doughnut',
+    data: {
+      labels: byChan.map(e => e[0]),
+      datasets: [{ data: byChan.map(e => e[1]), backgroundColor: byChan.map((_, i) => PALETTE[i%PALETTE.length]), borderWidth: 0, hoverOffset: 4 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { display: false } } }
   });
 
-  const byPay=grp(data,'payment');
-  mkLeg('lPay',byPay);
+  const byPay = grp(data, 'payment');
+  mkLeg('lPay', byPay);
   kill('cPay');
-  charts['cPay']=new Chart(document.getElementById('cPay'),{
-    type:'doughnut',
-    data:{labels:byPay.map(e=>e[0]),datasets:[{data:byPay.map(e=>e[1]),backgroundColor:byPay.map((_,i)=>PALETTE[i%PALETTE.length]),borderWidth:0}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false}}}
+  charts['cPay'] = new Chart(document.getElementById('cPay'), {
+    type: 'doughnut',
+    data: {
+      labels: byPay.map(e => e[0]),
+      datasets: [{ data: byPay.map(e => e[1]), backgroundColor: byPay.map((_, i) => PALETTE[i%PALETTE.length]), borderWidth: 0, hoverOffset: 4 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { display: false } } }
   });
 
   kill('cProd');
-  charts['cProd']=new Chart(document.getElementById('cProd'),{
-    type:'bar',
-    data:{labels:byP.map(e=>e[0]),datasets:[{data:byP.map(e=>e[1]),backgroundColor:byP.map((_,i)=>PALETTE[i%PALETTE.length]),borderRadius:4,borderSkipped:false}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1000)+'k'}}}}
+  const byP2 = grp(data, 'product');
+  charts['cProd'] = new Chart(document.getElementById('cProd'), {
+    type: 'bar',
+    data: {
+      labels: byP2.map(e => e[0]),
+      datasets: [{
+        data: byP2.map(e => e[1]),
+        backgroundColor: byP2.map((_, i) => PALETTE[i%PALETTE.length] + 'CC'),
+        borderRadius: 5,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { font: { size: 10 } }, grid: { color: '#21262D' } },
+        y: { ticks: { font: { size: 10 }, callback: v => '$' + Math.round(v/1000) + 'k' }, grid: { color: '#21262D' } }
+      }
+    }
   });
 
-  mkRank('rProd',byP);
-  mkRank('rCity',byC);
-  mkRank('rMgr',grp(data,'manager'));
+  mkRank('rProd', byP);
+  mkRank('rCity', byC);
+  mkRank('rMgr', grp(data, 'manager'));
 }
 
-function pop(){
-  [['fCity','city'],['fMgr','manager'],['fProd','product'],['fChan','channel']].forEach(([id,k])=>{
-    const sel=document.getElementById(id);
-    [...new Set(ALL.map(r=>r[k]))].sort().forEach(v=>{
-      const o=document.createElement('option');o.value=v;o.textContent=v;sel.appendChild(o);
+function pop() {
+  [['fCity','city'], ['fMgr','manager'], ['fProd','product'], ['fChan','channel']].forEach(([id, k]) => {
+    const sel = document.getElementById(id);
+    [...new Set(ALL.map(r => r[k]))].sort().forEach(v => {
+      const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o);
     });
   });
 }
 
-function go(){
-  const city=document.getElementById('fCity').value;
-  const mgr=document.getElementById('fMgr').value;
-  const prod=document.getElementById('fProd').value;
-  const chan=document.getElementById('fChan').value;
-  let d=ALL;
-  if(city)d=d.filter(r=>r.city===city);
-  if(mgr)d=d.filter(r=>r.manager===mgr);
-  if(prod)d=d.filter(r=>r.product===prod);
-  if(chan)d=d.filter(r=>r.channel===chan);
+function go() {
+  const city = document.getElementById('fCity').value;
+  const mgr  = document.getElementById('fMgr').value;
+  const prod = document.getElementById('fProd').value;
+  const chan = document.getElementById('fChan').value;
+  let d = ALL;
+  if (city) d = d.filter(r => r.city === city);
+  if (mgr)  d = d.filter(r => r.manager === mgr);
+  if (prod) d = d.filter(r => r.product === prod);
+  if (chan)  d = d.filter(r => r.channel === chan);
   render(d);
 }
 
 // ── AI Analysis ──
-const MSGS=['Analyzing patterns...','Comparing channels and products...','Identifying key insights...','Generating recommendations...'];
+const MSGS = ['Analyzing patterns...', 'Comparing channels and products...', 'Identifying key insights...', 'Generating recommendations...'];
 
 async function runAnalysis() {
-  const btn=document.getElementById('ai-btn');
-  btn.disabled=true;
-  document.getElementById('ai-empty').style.display='none';
-  document.getElementById('ai-result').style.display='none';
-  document.getElementById('ai-loading').style.display='flex';
+  const btn = document.getElementById('ai-btn');
+  btn.disabled = true;
+  document.getElementById('ai-empty').style.display = 'none';
+  document.getElementById('ai-result').style.display = 'none';
+  document.getElementById('ai-loading').style.display = 'flex';
 
-  let mi=0;
-  const ticker=setInterval(()=>{
-    mi=(mi+1)%MSGS.length;
-    document.getElementById('ai-loading-txt').textContent=MSGS[mi];
-  },1500);
+  let mi = 0;
+  const ticker = setInterval(() => {
+    mi = (mi + 1) % MSGS.length;
+    document.getElementById('ai-loading-txt').textContent = MSGS[mi];
+  }, 1500);
 
-  const data=CURRENT_DATA;
-  const tot=data.reduce((s,r)=>s+r.rev,0);
-  const avg=data.length?tot/data.length:0;
+  const data = CURRENT_DATA;
+  const tot  = data.reduce((s, r) => s + r.rev, 0);
+  const avg  = data.length ? tot / data.length : 0;
 
-  function top(key,n=3){
-    return grp(data,key).slice(0,n).map(([k,v])=>`${k}: $${Math.round(v).toLocaleString()}`).join(', ');
+  function top(key, n = 3) {
+    return grp(data, key).slice(0, n).map(([k, v]) => `${k}: $${Math.round(v).toLocaleString()}`).join(', ');
   }
 
-  const dates=data.map(r=>parseDt(r.date)).sort((a,b)=>a-b);
-  const dateRange=dates.length
-    ?`${dates[0].toLocaleDateString('en-GB')} – ${dates[dates.length-1].toLocaleDateString('en-GB')}`
-    :'unknown period';
+  const dates = data.map(r => parseDt(r.date)).sort((a, b) => a - b);
+  const dateRange = dates.length
+    ? `${dates[0].toLocaleDateString('en-GB')} – ${dates[dates.length-1].toLocaleDateString('en-GB')}`
+    : 'unknown period';
 
-  const city=document.getElementById('fCity').value;
-  const mgr=document.getElementById('fMgr').value;
-  const prod=document.getElementById('fProd').value;
-  const chan=document.getElementById('fChan').value;
-  const filters=[city&&`City: ${city}`,mgr&&`Manager: ${mgr}`,prod&&`Product: ${prod}`,chan&&`Channel: ${chan}`]
-    .filter(Boolean).join(', ')||'No filters (full dataset)';
+  const city = document.getElementById('fCity').value;
+  const mgr  = document.getElementById('fMgr').value;
+  const prod = document.getElementById('fProd').value;
+  const chan = document.getElementById('fChan').value;
+  const filters = [city&&`City: ${city}`, mgr&&`Manager: ${mgr}`, prod&&`Product: ${prod}`, chan&&`Channel: ${chan}`]
+    .filter(Boolean).join(', ') || 'No filters (full dataset)';
 
-  const summary=`
+  const summary = `
 Period: ${dateRange}
 Active filters: ${filters}
 Total revenue: $${Math.round(tot).toLocaleString()}
@@ -362,7 +912,7 @@ Channels: ${top('channel')}
 Payment methods: ${top('payment')}
   `.trim();
 
-  const prompt=`You are a sharp, experienced business analyst. Analyze this sales data snapshot and produce an executive narrative in English.
+  const prompt = `You are a sharp, experienced business analyst. Analyze this sales data snapshot and produce an executive narrative in English.
 
 DATA SNAPSHOT:
 ${summary}
@@ -384,33 +934,33 @@ Reply ONLY with a valid JSON object (no markdown, no extra text):
 Speak like a direct, smart CFO. Reference the actual numbers.`;
 
   try {
-    const resp=await fetch(WORKER_URL,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-5',
-        max_tokens:1000,
-        messages:[{role:'user',content:prompt}]
+    const resp = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
       })
     });
-    const json=await resp.json();
-    const raw=json.content.map(b=>b.text||'').join('');
-    const r=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    const json = await resp.json();
+    const raw  = json.content.map(b => b.text || '').join('');
+    const r    = JSON.parse(raw.replace(/```json|```/g, '').trim());
     clearInterval(ticker);
     showResult(r);
   } catch(e) {
     clearInterval(ticker);
-    document.getElementById('ai-loading').style.display='none';
-    document.getElementById('ai-empty').style.display='block';
-    document.getElementById('ai-empty').innerHTML=`<div class="ai-empty-icon">⚠</div>Error: ${e.message}`;
-    btn.disabled=false;
+    document.getElementById('ai-loading').style.display = 'none';
+    document.getElementById('ai-empty').style.display = 'block';
+    document.getElementById('ai-empty').innerHTML = `<div class="ai-empty-icon">⚠</div>Error: ${e.message}`;
+    btn.disabled = false;
   }
 }
 
-function showResult(r){
-  document.getElementById('ai-loading').style.display='none';
-  const pc={'URGENT':'ab-u','MEDIUM':'ab-m','LOW':'ab-b'};
-  document.getElementById('ai-result').innerHTML=`
+function showResult(r) {
+  document.getElementById('ai-loading').style.display = 'none';
+  const pc = { 'URGENT': 'ab-u', 'MEDIUM': 'ab-m', 'LOW': 'ab-b' };
+  document.getElementById('ai-result').innerHTML = `
     <div class="ai-lead">${r.headline}</div>
     <div class="ai-blocks">
       <div class="ai-block"><div class="ai-block-lbl">What happened</div><div class="ai-block-txt">${r.what_happened}</div></div>
@@ -418,9 +968,9 @@ function showResult(r){
       <div class="ai-block"><div class="ai-block-lbl">Opportunity / Risk</div><div class="ai-block-txt">${r.opportunity}</div></div>
     </div>
     <div class="ai-actions-title">Recommended actions</div>
-    ${r.actions.map(a=>`
+    ${r.actions.map(a => `
       <div class="ai-action">
-        <span class="abadge ${pc[a.priority]||'ab-b'}">${a.priority}</span>
+        <span class="abadge ${pc[a.priority] || 'ab-b'}">${a.priority}</span>
         <span>${a.text}</span>
       </div>`).join('')}
     <div class="ai-conf">
@@ -428,11 +978,10 @@ function showResult(r){
       <div class="ai-conf-track"><div class="ai-conf-fill" style="width:${r.confidence}%"></div></div>
       <span class="ai-conf-pct">${r.confidence}%</span>
     </div>`;
-  document.getElementById('ai-result').style.display='block';
-  document.getElementById('ai-btn').disabled=false;
+  document.getElementById('ai-result').style.display = 'block';
+  document.getElementById('ai-btn').disabled = false;
 }
 
-// Arranca
 loadCSV();
 </script>
 </body>
