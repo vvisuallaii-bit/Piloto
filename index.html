@@ -9,174 +9,127 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-:root {
-  --bg:       #0D1117;
-  --surface:  #161B22;
-  --surface2: #1C2128;
-  --border:   #21262D;
-  --border2:  #30363D;
-  --text:     #E6EDF3;
-  --muted:    #7D8590;
-  --faint:    #484F58;
-  --accent:   #00D4AA;
-  --accent2:  #00B894;
-  --blue:     #388BFD;
-  --purple:   #A371F7;
-  --amber:    #E3B341;
-  --red:      #F85149;
-  --green:    #3FB950;
-  --radius:   10px;
-  --radius-sm:6px;
+:root{
+  --bg:#0D1117;--surface:#161B22;--surface2:#1C2128;
+  --border:#21262D;--border2:#30363D;
+  --text:#E6EDF3;--muted:#7D8590;--faint:#484F58;
+  --accent:#00D4AA;--accent2:#00B894;
+  --blue:#388BFD;--purple:#A371F7;--amber:#E3B341;--red:#F85149;--green:#3FB950;
+  --radius:10px;--radius-sm:6px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 
-/* ── HEADER ── */
-.header{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 28px;
-  border-bottom:1px solid var(--border);
-  background:var(--surface);
-  position:sticky;top:0;z-index:50;
-}
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:50}
 .brand{display:flex;align-items:center;gap:10px}
-.brand-dot{
-  width:9px;height:9px;border-radius:50%;
-  background:var(--accent);
-  box-shadow:0 0 8px var(--accent);
-  animation:pulse-dot 2.5s ease-in-out infinite;
-  flex-shrink:0;
-}
-@keyframes pulse-dot{
-  0%,100%{box-shadow:0 0 6px var(--accent)}
-  50%{box-shadow:0 0 16px var(--accent),0 0 28px rgba(0,212,170,.25)}
-}
+.brand-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse-dot 2.5s ease-in-out infinite;flex-shrink:0}
+@keyframes pulse-dot{0%,100%{box-shadow:0 0 6px var(--accent)}50%{box-shadow:0 0 16px var(--accent),0 0 28px rgba(0,212,170,.25)}}
 .brand-name{font-size:16px;font-weight:700;color:var(--text);letter-spacing:-.02em}
 .brand-sub{font-size:11px;color:var(--muted);margin-top:1px}
-.header-right{display:flex;align-items:center;gap:8px}
-.header-badge{
-  font-size:10px;font-weight:600;
-  background:rgba(0,212,170,.1);color:var(--accent);
-  padding:3px 10px;border-radius:20px;
-  border:1px solid rgba(0,212,170,.2);
-  letter-spacing:.04em;
-}
+.header-badge{font-size:10px;font-weight:600;background:rgba(0,212,170,.1);color:var(--accent);padding:3px 10px;border-radius:20px;border:1px solid rgba(0,212,170,.2);letter-spacing:.04em}
 
-/* ── TAB NAV ── */
-.tab-nav{
-  display:flex;gap:0;
-  border-bottom:1px solid var(--border);
-  padding:0 28px;
-  background:var(--surface);
-}
-.tab-btn{
-  display:flex;align-items:center;gap:7px;
-  padding:12px 18px;
-  background:none;border:none;
-  border-bottom:2px solid transparent;
-  color:var(--muted);
-  font-family:'Inter',sans-serif;font-size:13px;font-weight:500;
-  cursor:pointer;transition:all .15s;
-  margin-bottom:-1px;
-}
+/* TAB NAV */
+.tab-nav{display:flex;border-bottom:1px solid var(--border);padding:0 28px;background:var(--surface)}
+.tab-btn{display:flex;align-items:center;gap:7px;padding:12px 18px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:-1px}
 .tab-btn:hover{color:var(--text);background:rgba(255,255,255,.03)}
 .tab-btn.active{color:var(--text);border-bottom-color:var(--accent)}
 .tab-btn svg{opacity:.6;transition:opacity .15s}
 .tab-btn.active svg,.tab-btn:hover svg{opacity:1}
-.tab-count{
-  font-size:10px;font-weight:600;
-  background:var(--surface2);color:var(--faint);
-  padding:1px 6px;border-radius:10px;
-  border:1px solid var(--border2);
-}
 
-/* ── PAGE WRAPPER ── */
+/* PAGE */
 .page{padding:24px 28px 48px}
 .tab-pane{display:none}.tab-pane.active{display:block}
 
-/* ── SALES TAB: FILTER BAR ── */
-.filter-bar{
-  display:flex;align-items:center;gap:8px;
-  flex-wrap:wrap;
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:10px 16px;
-  margin-bottom:18px;
-}
+/* FILTER BAR */
+.filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;margin-bottom:18px}
 .filter-label{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.07em;margin-right:4px;white-space:nowrap}
 .filter-divider{width:1px;height:18px;background:var(--border2);margin:0 4px}
-select{
-  font-family:'Inter',sans-serif;font-size:12px;font-weight:500;
-  padding:5px 24px 5px 10px;
-  border:1px solid var(--border2);border-radius:var(--radius-sm);
-  background:var(--surface2);color:var(--text);
-  cursor:pointer;outline:none;transition:border-color .15s;
-  appearance:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237D8590' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 8px center;
-}
+select{font-family:'Inter',sans-serif;font-size:12px;font-weight:500;padding:5px 24px 5px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);cursor:pointer;outline:none;transition:border-color .15s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237D8590' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
 select:hover,select:focus{border-color:var(--accent)}
-.filter-reset{
-  font-size:11px;color:var(--faint);background:none;border:none;
-  cursor:pointer;padding:4px 8px;border-radius:4px;
-  transition:color .15s;margin-left:auto;white-space:nowrap;
-}
+.filter-reset{font-size:11px;color:var(--faint);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:4px;transition:color .15s;margin-left:auto;white-space:nowrap}
 .filter-reset:hover{color:var(--accent)}
 
-/* ── KPI CARDS ── */
+/* KPIs */
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-.kpi{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radius);padding:18px 20px;
-  position:relative;overflow:hidden;transition:border-color .2s;
-}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;position:relative;overflow:hidden;transition:border-color .2s}
 .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
-.kpi.c-teal::before{background:var(--accent)}
-.kpi.c-blue::before{background:var(--blue)}
-.kpi.c-amber::before{background:var(--amber)}
-.kpi.c-purple::before{background:var(--purple)}
+.kpi.c-teal::before{background:var(--accent)}.kpi.c-blue::before{background:var(--blue)}.kpi.c-amber::before{background:var(--amber)}.kpi.c-purple::before{background:var(--purple)}
 .kpi:hover{border-color:var(--border2)}
 .kpi-icon{font-size:16px;margin-bottom:10px;opacity:.7}
 .kpi-label{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
 .kpi-val{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:600;color:var(--text);line-height:1.1;letter-spacing:-.02em}
 .kpi-sub{font-size:11px;color:var(--muted);margin-top:5px}
 
-/* ── CARDS & GRIDS ── */
+/* CARDS & GRIDS */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px}
 .card-title{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px}
 .grid-main{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px}
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
 
-/* ── RANK ROWS ── */
-.rank-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)}
-.rank-row:last-child{border-bottom:none}
+/* RANK ROWS — clickable */
+.rank-row{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:6px;cursor:pointer;transition:background .15s;margin-bottom:2px}
+.rank-row:hover{background:var(--surface2)}
+.rank-row.active{background:rgba(0,212,170,.07);border:1px solid rgba(0,212,170,.2)}
+.rank-hint{font-size:9px;color:var(--faint);margin-top:6px;text-align:center;letter-spacing:.04em}
 .rank-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--faint);width:14px;flex-shrink:0}
 .rank-name{font-size:12px;font-weight:500;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rank-bar-wrap{flex:2;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden}
 .rank-bar{height:100%;border-radius:2px;transition:width .4s ease}
 .rank-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);min-width:72px;text-align:right}
+.rank-chevron{font-size:10px;color:var(--faint);transition:transform .2s;flex-shrink:0}
+.rank-row.active .rank-chevron{transform:rotate(90deg);color:var(--accent)}
 
-/* ── LEGEND ── */
+/* DRILL-DOWN PANEL */
+.drill-panel{
+  display:none;
+  background:var(--surface2);
+  border:1px solid rgba(0,212,170,.2);
+  border-radius:var(--radius);
+  padding:16px 18px;
+  margin-top:8px;
+  animation:slideDown .2s ease;
+}
+.drill-panel.open{display:block}
+@keyframes slideDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.drill-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.drill-title{font-size:12px;font-weight:600;color:var(--accent);letter-spacing:.01em}
+.drill-close{background:none;border:none;color:var(--faint);cursor:pointer;font-size:16px;line-height:1;padding:2px 6px;border-radius:4px;transition:color .15s}
+.drill-close:hover{color:var(--text)}
+.drill-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.drill-section-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
+.drill-row{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border)}
+.drill-row:last-child{border-bottom:none}
+.drill-row-name{font-size:11px;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drill-row-bar-w{flex:1.5;height:3px;background:var(--border2);border-radius:2px;overflow:hidden}
+.drill-row-bar{height:100%;border-radius:2px}
+.drill-row-val{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);min-width:60px;text-align:right}
+.drill-stat{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:8px}
+.drill-stat-lbl{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px}
+.drill-stat-val{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;color:var(--text)}
+.drill-stat-sub{font-size:10px;color:var(--faint);margin-top:2px}
+.drill-chart-wrap{position:relative;height:100px;margin-top:8px}
+
+/* LEGEND */
 .leg{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px}
 .leg span{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
 .leg-sq{width:8px;height:8px;border-radius:2px;flex-shrink:0}
 
-/* ── LOADING ── */
+/* LOADING */
 #loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:100}
 #loading p{font-size:13px;color:var(--muted)}
 .spinner{width:28px;height:28px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ── AI PANEL ── */
+/* AI PANEL */
 .ai-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px}
 .ai-panel-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--surface2)}
 .ai-panel-title{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:var(--text)}
 .ai-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:aipulse 2s ease-in-out infinite}
 @keyframes aipulse{0%,100%{box-shadow:0 0 0 0 rgba(0,212,170,.4)}50%{box-shadow:0 0 0 5px rgba(0,212,170,0)}}
 .ai-badge{font-size:10px;font-weight:700;background:rgba(0,212,170,.12);color:var(--accent);padding:2px 8px;border-radius:20px;border:1px solid rgba(0,212,170,.25);letter-spacing:.04em}
-.ai-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--accent);color:#0D1117;border:none;border-radius:var(--radius-sm);font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .18s;letter-spacing:.01em}
+.ai-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--accent);color:#0D1117;border:none;border-radius:var(--radius-sm);font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .18s}
 .ai-btn:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,212,170,.3)}
 .ai-btn:disabled{opacity:.4;cursor:default;transform:none;box-shadow:none}
 .ai-body{padding:20px}
@@ -194,7 +147,7 @@ select:hover,select:focus{border-color:var(--accent)}
 .ai-block-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
 .ai-block-txt{font-size:12px;line-height:1.65;color:var(--text);opacity:.85}
 .ai-actions-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:9px;padding-top:14px;border-top:1px solid var(--border)}
-.ai-action{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;font-size:12px;line-height:1.55;color:var(--text);opacity:.9}
+.ai-action{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;font-size:12px;line-height:1.55;color:var(--text)}
 .abadge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;flex-shrink:0;margin-top:1px;letter-spacing:.04em}
 .ab-u{background:rgba(248,81,73,.15);color:#F85149;border:1px solid rgba(248,81,73,.25)}
 .ab-m{background:rgba(227,179,65,.15);color:#E3B341;border:1px solid rgba(227,179,65,.25)}
@@ -205,7 +158,7 @@ select:hover,select:focus{border-color:var(--accent)}
 .ai-conf-fill{height:3px;border-radius:2px;background:linear-gradient(90deg,var(--accent2),var(--accent))}
 .ai-conf-pct{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--accent)}
 
-/* ── MARKET INTELLIGENCE ── */
+/* MARKET INTELLIGENCE */
 .mi-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
 .mi-title-block h2{font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.02em}
 .mi-title-block p{font-size:12px;color:var(--muted);margin-top:4px}
@@ -230,10 +183,11 @@ select:hover,select:focus{border-color:var(--accent)}
 .mi-empty{text-align:center;padding:60px 20px;color:var(--faint);font-size:13px}
 .mi-empty-icon{font-size:32px;margin-bottom:12px;opacity:.3}
 
-/* ── RESPONSIVE ── */
+/* RESPONSIVE */
 @media(max-width:900px){
   .kpis{grid-template-columns:1fr 1fr}
   .grid-main,.grid-3,.grid-2{grid-template-columns:1fr}
+  .drill-grid{grid-template-columns:1fr}
   .mi-grid{grid-template-columns:1fr}
   .page{padding:16px 16px 40px}
   .tab-nav,.header{padding-left:16px;padding-right:16px}
@@ -246,10 +200,7 @@ select:hover,select:focus{border-color:var(--accent)}
 </head>
 <body>
 
-<div id="loading">
-  <div class="spinner"></div>
-  <p>Loading data...</p>
-</div>
+<div id="loading"><div class="spinner"></div><p>Loading data...</p></div>
 
 <div id="app" style="display:none">
 
@@ -262,416 +213,405 @@ select:hover,select:focus{border-color:var(--accent)}
       <div class="brand-sub">Intelligence Dashboard</div>
     </div>
   </div>
-  <div class="header-right">
-    <span class="header-badge">Powered by Claude AI</span>
-  </div>
+  <span class="header-badge">Powered by Claude AI</span>
 </header>
 
 <!-- TAB NAV -->
 <nav class="tab-nav">
-  <button class="tab-btn active" id="tab-btn-sales" onclick="switchTab('sales',this)">
-    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-    </svg>
+  <button class="tab-btn active" onclick="switchTab('sales',this)">
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
     Sales Performance
   </button>
-  <button class="tab-btn" id="tab-btn-market" onclick="switchTab('market',this)">
-    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-    </svg>
+  <button class="tab-btn" onclick="switchTab('market',this)">
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
     Market Intelligence
   </button>
 </nav>
 
 <div class="page">
 
-  <!-- ══ TAB: SALES PERFORMANCE ══ -->
-  <div class="tab-pane active" id="tab-sales">
+<!-- ══ SALES PERFORMANCE ══ -->
+<div class="tab-pane active" id="tab-sales">
 
-    <!-- FILTER BAR (dentro del tab) -->
-    <div class="filter-bar">
-      <span class="filter-label">Filter by</span>
-      <div class="filter-divider"></div>
-      <select id="fCity" onchange="go()"><option value="">All cities</option></select>
-      <select id="fMgr"  onchange="go()"><option value="">All managers</option></select>
-      <select id="fProd" onchange="go()"><option value="">All products</option></select>
-      <select id="fChan" onchange="go()"><option value="">All channels</option></select>
-      <button class="filter-reset" onclick="resetFilters()">✕ Reset filters</button>
+  <div class="filter-bar">
+    <span class="filter-label">Filter by</span>
+    <div class="filter-divider"></div>
+    <select id="fCity" onchange="go()"><option value="">All cities</option></select>
+    <select id="fMgr"  onchange="go()"><option value="">All managers</option></select>
+    <select id="fProd" onchange="go()"><option value="">All products</option></select>
+    <select id="fChan" onchange="go()"><option value="">All channels</option></select>
+    <button class="filter-reset" onclick="resetFilters()">✕ Reset</button>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi c-teal"><div class="kpi-icon">💰</div><div class="kpi-label">Total revenue</div><div class="kpi-val" id="kRev">—</div><div class="kpi-sub" id="kOrd">—</div></div>
+    <div class="kpi c-blue"><div class="kpi-icon">📊</div><div class="kpi-label">Avg per order</div><div class="kpi-val" id="kAvg">—</div><div class="kpi-sub">per transaction</div></div>
+    <div class="kpi c-amber"><div class="kpi-icon">🏆</div><div class="kpi-label">Top product</div><div class="kpi-val" id="kTopP" style="font-size:17px;padding-top:2px">—</div><div class="kpi-sub" id="kTopPv">—</div></div>
+    <div class="kpi c-purple"><div class="kpi-icon">📍</div><div class="kpi-label">Top city</div><div class="kpi-val" id="kTopC" style="font-size:17px;padding-top:2px">—</div><div class="kpi-sub" id="kTopCv">—</div></div>
+  </div>
+
+  <div class="ai-panel">
+    <div class="ai-panel-header">
+      <div class="ai-panel-title"><div class="ai-dot"></div>AI Executive Analysis<span class="ai-badge">Claude</span></div>
+      <button class="ai-btn" id="ai-btn" onclick="runAnalysis()">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        Analyze with AI
+      </button>
     </div>
-
-    <!-- KPIs -->
-    <div class="kpis">
-      <div class="kpi c-teal">
-        <div class="kpi-icon">💰</div>
-        <div class="kpi-label">Total revenue</div>
-        <div class="kpi-val" id="kRev">—</div>
-        <div class="kpi-sub" id="kOrd">—</div>
-      </div>
-      <div class="kpi c-blue">
-        <div class="kpi-icon">📊</div>
-        <div class="kpi-label">Avg per order</div>
-        <div class="kpi-val" id="kAvg">—</div>
-        <div class="kpi-sub">per transaction</div>
-      </div>
-      <div class="kpi c-amber">
-        <div class="kpi-icon">🏆</div>
-        <div class="kpi-label">Top product</div>
-        <div class="kpi-val" id="kTopP" style="font-size:17px;padding-top:2px">—</div>
-        <div class="kpi-sub" id="kTopPv">—</div>
-      </div>
-      <div class="kpi c-purple">
-        <div class="kpi-icon">📍</div>
-        <div class="kpi-label">Top city</div>
-        <div class="kpi-val" id="kTopC" style="font-size:17px;padding-top:2px">—</div>
-        <div class="kpi-sub" id="kTopCv">—</div>
-      </div>
+    <div class="ai-body">
+      <div class="ai-empty" id="ai-empty"><div class="ai-empty-icon">◈</div>Click <strong style="color:var(--accent)">Analyze with AI</strong> to generate an executive narrative. Active filters apply.</div>
+      <div class="ai-loading" id="ai-loading"><div class="ld"><span></span><span></span><span></span></div><span id="ai-loading-txt">Analyzing patterns...</span></div>
+      <div class="ai-result" id="ai-result"></div>
     </div>
+  </div>
 
-    <!-- AI PANEL -->
-    <div class="ai-panel">
-      <div class="ai-panel-header">
-        <div class="ai-panel-title">
-          <div class="ai-dot"></div>
-          AI Executive Analysis
-          <span class="ai-badge">Claude</span>
+  <div class="grid-main">
+    <div class="card"><div class="card-title">Daily revenue trend</div><div style="position:relative;height:200px"><canvas id="cTime"></canvas></div></div>
+    <div class="card"><div class="card-title">Channel mix</div><div id="lChan" class="leg"></div><div style="position:relative;height:160px"><canvas id="cChan"></canvas></div></div>
+  </div>
+
+  <!-- RANK CARDS — drill-down enabled -->
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">Revenue by product</div>
+      <div id="rProd"></div>
+      <div class="drill-panel" id="drill-prod">
+        <div class="drill-header">
+          <span class="drill-title" id="drill-prod-title">Product detail</span>
+          <button class="drill-close" onclick="closeDrill('prod')">✕</button>
         </div>
-        <button class="ai-btn" id="ai-btn" onclick="runAnalysis()">
-          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-          </svg>
-          Analyze with AI
-        </button>
-      </div>
-      <div class="ai-body">
-        <div class="ai-empty" id="ai-empty">
-          <div class="ai-empty-icon">◈</div>
-          Click <strong style="color:var(--accent)">Analyze with AI</strong> to generate a narrative explanation of the current data view. Active filters apply.
+        <div class="drill-grid">
+          <div>
+            <div class="drill-section-label">Revenue by city</div>
+            <div id="drill-prod-city"></div>
+          </div>
+          <div>
+            <div class="drill-section-label">Revenue by channel</div>
+            <div id="drill-prod-chan"></div>
+            <div style="margin-top:14px"><div class="drill-section-label">Top manager</div><div id="drill-prod-mgr"></div></div>
+          </div>
         </div>
-        <div class="ai-loading" id="ai-loading">
-          <div class="ld"><span></span><span></span><span></span></div>
-          <span id="ai-loading-txt">Analyzing patterns...</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Revenue by city</div>
+      <div id="rCity"></div>
+      <div class="drill-panel" id="drill-city">
+        <div class="drill-header">
+          <span class="drill-title" id="drill-city-title">City detail</span>
+          <button class="drill-close" onclick="closeDrill('city')">✕</button>
         </div>
-        <div class="ai-result" id="ai-result"></div>
+        <div class="drill-grid">
+          <div>
+            <div class="drill-section-label">Revenue by product</div>
+            <div id="drill-city-prod"></div>
+          </div>
+          <div>
+            <div class="drill-section-label">Revenue by manager</div>
+            <div id="drill-city-mgr"></div>
+            <div style="margin-top:14px"><div class="drill-section-label">Preferred channel</div><div id="drill-city-chan"></div></div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- CHARTS -->
-    <div class="grid-main">
-      <div class="card">
-        <div class="card-title">Daily revenue trend</div>
-        <div style="position:relative;height:200px"><canvas id="cTime"></canvas></div>
-      </div>
-      <div class="card">
-        <div class="card-title">Channel mix</div>
-        <div id="lChan" class="leg"></div>
-        <div style="position:relative;height:160px"><canvas id="cChan"></canvas></div>
-      </div>
-    </div>
-
-    <div class="grid-3">
-      <div class="card"><div class="card-title">Revenue by product</div><div id="rProd"></div></div>
-      <div class="card"><div class="card-title">Revenue by city</div><div id="rCity"></div></div>
-      <div class="card"><div class="card-title">Manager performance</div><div id="rMgr"></div></div>
-    </div>
-
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-title">Payment method</div>
-        <div id="lPay" class="leg"></div>
-        <div style="position:relative;height:160px"><canvas id="cPay"></canvas></div>
-      </div>
-      <div class="card">
-        <div class="card-title">Revenue by product (bars)</div>
-        <div style="position:relative;height:160px"><canvas id="cProd"></canvas></div>
+    <div class="card">
+      <div class="card-title">Manager performance</div>
+      <div id="rMgr"></div>
+      <div class="drill-panel" id="drill-mgr">
+        <div class="drill-header">
+          <span class="drill-title" id="drill-mgr-title">Manager detail</span>
+          <button class="drill-close" onclick="closeDrill('mgr')">✕</button>
+        </div>
+        <div class="drill-grid">
+          <div>
+            <div class="drill-section-label">Revenue by product</div>
+            <div id="drill-mgr-prod"></div>
+          </div>
+          <div>
+            <div class="drill-section-label">Revenue by city</div>
+            <div id="drill-mgr-city"></div>
+            <div style="margin-top:14px"><div class="drill-section-label">Channel mix</div><div id="drill-mgr-chan"></div></div>
+          </div>
+        </div>
       </div>
     </div>
+  </div>
 
-  </div><!-- /tab-sales -->
+  <div class="grid-2">
+    <div class="card"><div class="card-title">Payment method</div><div id="lPay" class="leg"></div><div style="position:relative;height:160px"><canvas id="cPay"></canvas></div></div>
+    <div class="card"><div class="card-title">Revenue by product (bars)</div><div style="position:relative;height:160px"><canvas id="cProd"></canvas></div></div>
+  </div>
 
-  <!-- ══ TAB: MARKET INTELLIGENCE ══ -->
-  <div class="tab-pane" id="tab-market">
+</div><!-- /tab-sales -->
 
-    <div class="mi-header">
-      <div class="mi-title-block">
-        <h2>Market Intelligence</h2>
-        <p>Industry trends and competitor insights — curated for Miconos Burger</p>
-      </div>
-      <div class="mi-filter-bar">
-        <button class="mi-filter-btn active" onclick="filterArticles('all',this)">All</button>
-        <button class="mi-filter-btn" onclick="filterArticles('Industry Trend',this)">Industry Trends</button>
-        <button class="mi-filter-btn" onclick="filterArticles('Competitor Move',this)">Competitor Moves</button>
-        <button class="mi-filter-btn" onclick="filterArticles('Market Intelligence',this)">Market Data</button>
-      </div>
+<!-- ══ MARKET INTELLIGENCE ══ -->
+<div class="tab-pane" id="tab-market">
+  <div class="mi-header">
+    <div class="mi-title-block">
+      <h2>Market Intelligence</h2>
+      <p>Industry trends and competitor insights — curated for Miconos Burger</p>
     </div>
-
-    <div class="mi-grid" id="mi-grid">
-      <div class="mi-empty">
-        <div class="mi-empty-icon">📡</div>
-        <p>Loading intelligence feed...</p>
-      </div>
+    <div class="mi-filter-bar">
+      <button class="mi-filter-btn active" onclick="filterArticles('all',this)">All</button>
+      <button class="mi-filter-btn" onclick="filterArticles('Industry Trend',this)">Industry Trends</button>
+      <button class="mi-filter-btn" onclick="filterArticles('Competitor Move',this)">Competitor Moves</button>
+      <button class="mi-filter-btn" onclick="filterArticles('Market Intelligence',this)">Market Data</button>
     </div>
-
-  </div><!-- /tab-market -->
+  </div>
+  <div class="mi-grid" id="mi-grid"><div class="mi-empty"><div class="mi-empty-icon">📡</div><p>Loading intelligence feed...</p></div></div>
+</div>
 
 </div><!-- /page -->
 </div><!-- /app -->
 
 <script>
-const PALETTE    = ['#00D4AA','#388BFD','#E3B341','#A371F7','#F85149','#3FB950'];
-const WORKER_URL = 'https://claude-proxy.vvisuall-aii.workers.dev';
+const PALETTE=['#00D4AA','#388BFD','#E3B341','#A371F7','#F85149','#3FB950'];
+const WORKER_URL='https://claude-proxy.vvisuall-aii.workers.dev';
+Chart.defaults.color='#7D8590';Chart.defaults.borderColor='#21262D';Chart.defaults.font.family="'Inter',system-ui,sans-serif";
 
-Chart.defaults.color       = '#7D8590';
-Chart.defaults.borderColor = '#21262D';
-Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
-
-let ALL = [], charts = {}, CURRENT_DATA = [];
-let ARTICLES = [];
+let ALL=[],charts={},CURRENT_DATA=[];
+let ARTICLES=[];
+let activeDrill={prod:null,city:null,mgr:null};
 
 /* ── TABS ── */
-function switchTab(name, btn) {
-  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
   btn.classList.add('active');
 }
 
-/* ── LOAD CSV ── */
-async function loadCSV() {
-  try {
-    const res  = await fetch('data.csv');
-    const text = await res.text();
-    const lines   = text.trim().split('\n');
-    const headers = lines[0].split(',');
-    ALL = lines.slice(1).map(line => {
-      const cols = line.split(',');
-      const r = {};
-      headers.forEach((h,i) => { r[h.trim()] = cols[i] ? cols[i].trim() : ''; });
-      r.price = parseFloat(r.price);
-      r.qty   = parseFloat(r.qty);
-      r.rev   = r.price * r.qty;
-      return r;
-    }).filter(r => !isNaN(r.rev));
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('app').style.display     = 'block';
-    pop();
-    render(ALL);
-  } catch(e) {
-    document.getElementById('loading').innerHTML =
-      '<p style="color:#F85149">Error loading data.csv — make sure the file is in the same folder.</p>';
-  }
-}
-
-/* ── LOAD ARTICLES ── */
-async function loadArticles() {
-  try {
-    const res = await fetch('articles.json');
-    ARTICLES  = await res.json();
-    renderArticles(ARTICLES);
-  } catch(e) {
-    document.getElementById('mi-grid').innerHTML =
-      `<div class="mi-empty"><div class="mi-empty-icon">⚠️</div><p>Could not load articles.json — make sure the file is in the same folder as index.html.</p></div>`;
+/* ── CSV ── */
+async function loadCSV(){
+  try{
+    const res=await fetch('data.csv');const text=await res.text();
+    const lines=text.trim().split('\n');const headers=lines[0].split(',');
+    ALL=lines.slice(1).map(line=>{
+      const cols=line.split(',');const r={};
+      headers.forEach((h,i)=>{r[h.trim()]=cols[i]?cols[i].trim():'';});
+      r.price=parseFloat(r.price);r.qty=parseFloat(r.qty);r.rev=r.price*r.qty;return r;
+    }).filter(r=>!isNaN(r.rev));
+    document.getElementById('loading').style.display='none';
+    document.getElementById('app').style.display='block';
+    pop();render(ALL);
+  }catch(e){
+    document.getElementById('loading').innerHTML='<p style="color:#F85149">Error loading data.csv</p>';
   }
 }
 
 /* ── ARTICLES ── */
-function renderArticles(list) {
-  const grid = document.getElementById('mi-grid');
-  if (!list.length) {
-    grid.innerHTML = `<div class="mi-empty"><div class="mi-empty-icon">📭</div><p>No articles in this category yet.</p></div>`;
-    return;
+async function loadArticles(){
+  try{
+    ARTICLES=await(await fetch('articles.json')).json();renderArticles(ARTICLES);
+  }catch(e){
+    document.getElementById('mi-grid').innerHTML='<div class="mi-empty"><div class="mi-empty-icon">⚠️</div><p>Could not load articles.json</p></div>';
   }
-  const order = {red:0,amber:1,green:2};
-  const sorted = [...list].sort((a,b) => {
-    const d = (order[a.tag_color]??3) - (order[b.tag_color]??3);
-    return d !== 0 ? d : new Date(b.date) - new Date(a.date);
-  });
-  grid.innerHTML = sorted.map(a => `
+}
+function renderArticles(list){
+  const grid=document.getElementById('mi-grid');
+  if(!list.length){grid.innerHTML='<div class="mi-empty"><div class="mi-empty-icon">📭</div><p>No articles yet.</p></div>';return;}
+  const order={red:0,amber:1,green:2};
+  const sorted=[...list].sort((a,b)=>{const d=(order[a.tag_color]??3)-(order[b.tag_color]??3);return d!==0?d:new Date(b.date)-new Date(a.date);});
+  grid.innerHTML=sorted.map(a=>`
     <div class="mi-card">
-      <div class="mi-card-top">
-        <span class="mi-category">${a.category}</span>
-        <span class="mi-tag ${a.tag_color}">${a.tag}</span>
-      </div>
-      <h3>${a.title}</h3>
-      <p>${a.summary}</p>
-      <div class="mi-card-footer">
-        <span class="mi-source">📰 ${a.source}</span>
-        <span class="mi-date">${fmtDate(a.date)}</span>
-      </div>
+      <div class="mi-card-top"><span class="mi-category">${a.category}</span><span class="mi-tag ${a.tag_color}">${a.tag}</span></div>
+      <h3>${a.title}</h3><p>${a.summary}</p>
+      <div class="mi-card-footer"><span class="mi-source">📰 ${a.source}</span><span class="mi-date">${fmtDate(a.date)}</span></div>
     </div>`).join('');
 }
+function filterArticles(cat,btn){
+  document.querySelectorAll('.mi-filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  renderArticles(cat==='all'?ARTICLES:ARTICLES.filter(a=>a.category===cat));
+}
+function fmtDate(s){return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
 
-function filterArticles(cat, btn) {
-  document.querySelectorAll('.mi-filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderArticles(cat === 'all' ? ARTICLES : ARTICLES.filter(a => a.category === cat));
-}
-
-function fmtDate(s) {
-  return new Date(s + 'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
-}
-
-/* ── SALES HELPERS ── */
-function grp(data, key) {
-  const m = {};
-  data.forEach(r => { m[r[key]] = (m[r[key]]||0) + r.rev; });
-  return Object.entries(m).sort((a,b) => b[1]-a[1]);
-}
-function parseDt(s) {
-  const p = s.split('/');
-  return p.length===3 ? new Date(+p[2],+p[1]-1,+p[0]) : new Date(s);
-}
-function mkLeg(id, entries) {
-  const tot = entries.reduce((s,e) => s+e[1], 0);
-  document.getElementById(id).innerHTML = entries.map((e,i) =>
+/* ── HELPERS ── */
+function grp(data,key){const m={};data.forEach(r=>{m[r[key]]=(m[r[key]]||0)+r.rev;});return Object.entries(m).sort((a,b)=>b[1]-a[1]);}
+function parseDt(s){const p=s.split('/');return p.length===3?new Date(+p[2],+p[1]-1,+p[0]):new Date(s);}
+function mkLeg(id,entries){
+  const tot=entries.reduce((s,e)=>s+e[1],0);
+  document.getElementById(id).innerHTML=entries.map((e,i)=>
     `<span><span class="leg-sq" style="background:${PALETTE[i%PALETTE.length]}"></span>${e[0]} <strong style="color:var(--text);font-weight:500">${Math.round(e[1]/tot*100)}%</strong></span>`
   ).join('');
 }
-function mkRank(id, entries) {
-  const max = entries[0] ? entries[0][1] : 1;
-  document.getElementById(id).innerHTML = entries.map((e,i) => `
-    <div class="rank-row">
+function kill(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+/* ── DRILL-DOWN ROWS ── */
+function mkDrillRows(id,entries){
+  const max=entries[0]?entries[0][1]:1;
+  document.getElementById(id).innerHTML=entries.slice(0,4).map((e,i)=>`
+    <div class="drill-row">
+      <div class="drill-row-name">${e[0]}</div>
+      <div class="drill-row-bar-w"><div class="drill-row-bar" style="width:${Math.round(e[1]/max*100)}%;background:${PALETTE[i%PALETTE.length]}"></div></div>
+      <div class="drill-row-val">$${Math.round(e[1]).toLocaleString()}</div>
+    </div>`).join('');
+}
+
+/* ── RANK ROWS with drill trigger ── */
+function mkRank(id,entries,drillType){
+  const max=entries[0]?entries[0][1]:1;
+  const hint=drillType?'<div class="rank-hint">Click a row to see breakdown →</div>':'';
+  document.getElementById(id).innerHTML=entries.map((e,i)=>`
+    <div class="rank-row" id="rank-${drillType}-${i}" onclick="${drillType?`openDrill('${drillType}','${e[0].replace(/'/g,"\\'")}',${i})`:''}">
       <div class="rank-num">${i+1}</div>
       <div class="rank-name">${e[0]}</div>
       <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(e[1]/max*100)}%;background:${PALETTE[i%PALETTE.length]}"></div></div>
       <div class="rank-val">$${Math.round(e[1]).toLocaleString()}</div>
-    </div>`).join('');
+      ${drillType?'<div class="rank-chevron">›</div>':''}
+    </div>`).join('')+hint;
 }
-function kill(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
-function render(data) {
-  CURRENT_DATA = data;
-  document.getElementById('ai-empty').style.display   = 'block';
-  document.getElementById('ai-loading').style.display = 'none';
-  document.getElementById('ai-result').style.display  = 'none';
-  document.getElementById('ai-btn').disabled = false;
+/* ── OPEN DRILL ── */
+function openDrill(type,name,idx){
+  const data=CURRENT_DATA;
+  const subset=data.filter(r=>r[type==='prod'?'product':type==='city'?'city':'manager']===name);
+  const panel=document.getElementById('drill-'+type);
+  const titleEl=document.getElementById('drill-'+type+'-title');
 
-  const tot = data.reduce((s,r) => s+r.rev, 0);
-  const avg = data.length ? tot/data.length : 0;
-  const byP = grp(data,'product'), byC = grp(data,'city');
-  const tp = byP[0]||['—',0], tc = byC[0]||['—',0];
+  // deactivate previous active row in this column
+  document.querySelectorAll(`[id^="rank-${type}-"]`).forEach(el=>el.classList.remove('active'));
+  const rowEl=document.getElementById(`rank-${type}-${idx}`);
 
-  document.getElementById('kRev').textContent   = '$'+Math.round(tot).toLocaleString();
-  document.getElementById('kOrd').textContent   = data.length+' transactions';
-  document.getElementById('kAvg').textContent   = '$'+avg.toFixed(0);
-  document.getElementById('kTopP').textContent  = tp[0];
-  document.getElementById('kTopPv').textContent = '$'+Math.round(tp[1]).toLocaleString();
-  document.getElementById('kTopC').textContent  = tc[0];
-  document.getElementById('kTopCv').textContent = '$'+Math.round(tc[1]).toLocaleString();
+  // if same item clicked again → toggle close
+  if(activeDrill[type]===name){
+    closeDrill(type);return;
+  }
+  activeDrill[type]=name;
+  if(rowEl) rowEl.classList.add('active');
 
-  const byDay = {};
-  data.forEach(r => { byDay[r.date]=(byDay[r.date]||0)+r.rev; });
-  const days = Object.keys(byDay).sort((a,b)=>parseDt(a)-parseDt(b));
+  const tot=subset.reduce((s,r)=>s+r.rev,0);
+  const txn=subset.length;
+  const avg=txn?tot/txn:0;
+
+  if(type==='prod'){
+    titleEl.textContent=`📦 ${name}`;
+    mkDrillRows('drill-prod-city',grp(subset,'city'));
+    mkDrillRows('drill-prod-chan',grp(subset,'channel'));
+    mkDrillRows('drill-prod-mgr',grp(subset,'manager'));
+  } else if(type==='city'){
+    titleEl.textContent=`📍 ${name}`;
+    mkDrillRows('drill-city-prod',grp(subset,'product'));
+    mkDrillRows('drill-city-mgr',grp(subset,'manager'));
+    mkDrillRows('drill-city-chan',grp(subset,'channel'));
+  } else if(type==='mgr'){
+    titleEl.textContent=`👤 ${name}`;
+    mkDrillRows('drill-mgr-prod',grp(subset,'product'));
+    mkDrillRows('drill-mgr-city',grp(subset,'city'));
+    mkDrillRows('drill-mgr-chan',grp(subset,'channel'));
+  }
+
+  panel.classList.add('open');
+}
+
+function closeDrill(type){
+  document.getElementById('drill-'+type).classList.remove('open');
+  document.querySelectorAll(`[id^="rank-${type}-"]`).forEach(el=>el.classList.remove('active'));
+  activeDrill[type]=null;
+}
+
+/* ── RENDER ── */
+function render(data){
+  CURRENT_DATA=data;
+  // reset drills
+  ['prod','city','mgr'].forEach(t=>{
+    document.getElementById('drill-'+t).classList.remove('open');
+    activeDrill[t]=null;
+  });
+  document.getElementById('ai-empty').style.display='block';
+  document.getElementById('ai-loading').style.display='none';
+  document.getElementById('ai-result').style.display='none';
+  document.getElementById('ai-btn').disabled=false;
+
+  const tot=data.reduce((s,r)=>s+r.rev,0);
+  const avg=data.length?tot/data.length:0;
+  const byP=grp(data,'product'),byC=grp(data,'city');
+  const tp=byP[0]||['—',0],tc=byC[0]||['—',0];
+
+  document.getElementById('kRev').textContent='$'+Math.round(tot).toLocaleString();
+  document.getElementById('kOrd').textContent=data.length+' transactions';
+  document.getElementById('kAvg').textContent='$'+avg.toFixed(0);
+  document.getElementById('kTopP').textContent=tp[0];
+  document.getElementById('kTopPv').textContent='$'+Math.round(tp[1]).toLocaleString();
+  document.getElementById('kTopC').textContent=tc[0];
+  document.getElementById('kTopCv').textContent='$'+Math.round(tc[1]).toLocaleString();
+
+  const byDay={};data.forEach(r=>{byDay[r.date]=(byDay[r.date]||0)+r.rev;});
+  const days=Object.keys(byDay).sort((a,b)=>parseDt(a)-parseDt(b));
 
   kill('cTime');
-  charts['cTime'] = new Chart(document.getElementById('cTime'),{
-    type:'line',
-    data:{labels:days,datasets:[{data:days.map(d=>byDay[d]),borderColor:'#00D4AA',backgroundColor:'rgba(0,212,170,0.07)',tension:0.35,fill:true,pointRadius:2,pointBackgroundColor:'#00D4AA',borderWidth:2}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{font:{size:10},maxRotation:45,autoSkip:true,maxTicksLimit:14},grid:{color:'#21262D'}},
-              y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1000)+'k'},grid:{color:'#21262D'}}}}
+  charts['cTime']=new Chart(document.getElementById('cTime'),{
+    type:'line',data:{labels:days,datasets:[{data:days.map(d=>byDay[d]),borderColor:'#00D4AA',backgroundColor:'rgba(0,212,170,0.07)',tension:0.35,fill:true,pointRadius:2,pointBackgroundColor:'#00D4AA',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},maxRotation:45,autoSkip:true,maxTicksLimit:14},grid:{color:'#21262D'}},y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1000)+'k'},grid:{color:'#21262D'}}}}
   });
 
-  const byChan = grp(data,'channel');
-  mkLeg('lChan',byChan);
-  kill('cChan');
-  charts['cChan'] = new Chart(document.getElementById('cChan'),{
-    type:'doughnut',
-    data:{labels:byChan.map(e=>e[0]),datasets:[{data:byChan.map(e=>e[1]),backgroundColor:byChan.map((_,i)=>PALETTE[i%PALETTE.length]),borderWidth:0,hoverOffset:4}]},
+  const byChan=grp(data,'channel');mkLeg('lChan',byChan);kill('cChan');
+  charts['cChan']=new Chart(document.getElementById('cChan'),{
+    type:'doughnut',data:{labels:byChan.map(e=>e[0]),datasets:[{data:byChan.map(e=>e[1]),backgroundColor:byChan.map((_,i)=>PALETTE[i%PALETTE.length]),borderWidth:0,hoverOffset:4}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false}}}
   });
 
-  const byPay = grp(data,'payment');
-  mkLeg('lPay',byPay);
-  kill('cPay');
-  charts['cPay'] = new Chart(document.getElementById('cPay'),{
-    type:'doughnut',
-    data:{labels:byPay.map(e=>e[0]),datasets:[{data:byPay.map(e=>e[1]),backgroundColor:byPay.map((_,i)=>PALETTE[i%PALETTE.length]),borderWidth:0,hoverOffset:4}]},
+  const byPay=grp(data,'payment');mkLeg('lPay',byPay);kill('cPay');
+  charts['cPay']=new Chart(document.getElementById('cPay'),{
+    type:'doughnut',data:{labels:byPay.map(e=>e[0]),datasets:[{data:byPay.map(e=>e[1]),backgroundColor:byPay.map((_,i)=>PALETTE[i%PALETTE.length]),borderWidth:0,hoverOffset:4}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false}}}
   });
 
   kill('cProd');
-  charts['cProd'] = new Chart(document.getElementById('cProd'),{
-    type:'bar',
-    data:{labels:byP.map(e=>e[0]),datasets:[{data:byP.map(e=>e[1]),backgroundColor:byP.map((_,i)=>PALETTE[i%PALETTE.length]+'CC'),borderRadius:5,borderSkipped:false}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{font:{size:10}},grid:{color:'#21262D'}},y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1000)+'k'},grid:{color:'#21262D'}}}}
+  charts['cProd']=new Chart(document.getElementById('cProd'),{
+    type:'bar',data:{labels:byP.map(e=>e[0]),datasets:[{data:byP.map(e=>e[1]),backgroundColor:byP.map((_,i)=>PALETTE[i%PALETTE.length]+'CC'),borderRadius:5,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10}},grid:{color:'#21262D'}},y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1000)+'k'},grid:{color:'#21262D'}}}}
   });
 
-  mkRank('rProd',byP);
-  mkRank('rCity',byC);
-  mkRank('rMgr',grp(data,'manager'));
+  mkRank('rProd',byP,'prod');
+  mkRank('rCity',byC,'city');
+  mkRank('rMgr',grp(data,'manager'),'mgr');
 }
 
-function pop() {
+function pop(){
   [['fCity','city'],['fMgr','manager'],['fProd','product'],['fChan','channel']].forEach(([id,k])=>{
-    const sel = document.getElementById(id);
+    const sel=document.getElementById(id);
     [...new Set(ALL.map(r=>r[k]))].sort().forEach(v=>{
       const o=document.createElement('option');o.value=v;o.textContent=v;sel.appendChild(o);
     });
   });
 }
-
-function go() {
-  const city = document.getElementById('fCity').value;
-  const mgr  = document.getElementById('fMgr').value;
-  const prod = document.getElementById('fProd').value;
-  const chan = document.getElementById('fChan').value;
-  let d = ALL;
-  if(city) d=d.filter(r=>r.city===city);
-  if(mgr)  d=d.filter(r=>r.manager===mgr);
-  if(prod) d=d.filter(r=>r.product===prod);
-  if(chan)  d=d.filter(r=>r.channel===chan);
+function go(){
+  const city=document.getElementById('fCity').value;const mgr=document.getElementById('fMgr').value;
+  const prod=document.getElementById('fProd').value;const chan=document.getElementById('fChan').value;
+  let d=ALL;
+  if(city)d=d.filter(r=>r.city===city);if(mgr)d=d.filter(r=>r.manager===mgr);
+  if(prod)d=d.filter(r=>r.product===prod);if(chan)d=d.filter(r=>r.channel===chan);
   render(d);
 }
+function resetFilters(){['fCity','fMgr','fProd','fChan'].forEach(id=>document.getElementById(id).value='');render(ALL);}
 
-function resetFilters() {
-  ['fCity','fMgr','fProd','fChan'].forEach(id => document.getElementById(id).value='');
-  render(ALL);
-}
-
-/* ── AI ANALYSIS ── */
+/* ── AI ── */
 const MSGS=['Analyzing patterns...','Comparing channels and products...','Identifying key insights...','Generating recommendations...'];
-
-async function runAnalysis() {
-  const btn=document.getElementById('ai-btn');
-  btn.disabled=true;
-  document.getElementById('ai-empty').style.display='none';
-  document.getElementById('ai-result').style.display='none';
-  document.getElementById('ai-loading').style.display='flex';
-  let mi=0;
-  const ticker=setInterval(()=>{ mi=(mi+1)%MSGS.length; document.getElementById('ai-loading-txt').textContent=MSGS[mi]; },1500);
-
-  const data=CURRENT_DATA;
-  const tot=data.reduce((s,r)=>s+r.rev,0);
-  const avg=data.length?tot/data.length:0;
-  function top(key,n=3){return grp(data,key).slice(0,n).map(([k,v])=>`${k}: $${Math.round(v).toLocaleString()}`).join(', ')}
+async function runAnalysis(){
+  const btn=document.getElementById('ai-btn');btn.disabled=true;
+  document.getElementById('ai-empty').style.display='none';document.getElementById('ai-result').style.display='none';document.getElementById('ai-loading').style.display='flex';
+  let mi=0;const ticker=setInterval(()=>{mi=(mi+1)%MSGS.length;document.getElementById('ai-loading-txt').textContent=MSGS[mi];},1500);
+  const data=CURRENT_DATA;const tot=data.reduce((s,r)=>s+r.rev,0);const avg=data.length?tot/data.length:0;
+  function top(key,n=3){return grp(data,key).slice(0,n).map(([k,v])=>`${k}: $${Math.round(v).toLocaleString()}`).join(', ');}
   const dates=data.map(r=>parseDt(r.date)).sort((a,b)=>a-b);
   const dateRange=dates.length?`${dates[0].toLocaleDateString('en-GB')} – ${dates[dates.length-1].toLocaleDateString('en-GB')}`:'unknown period';
-  const city=document.getElementById('fCity').value;
-  const mgr=document.getElementById('fMgr').value;
-  const prod=document.getElementById('fProd').value;
-  const chan=document.getElementById('fChan').value;
+  const city=document.getElementById('fCity').value;const mgr=document.getElementById('fMgr').value;
+  const prod=document.getElementById('fProd').value;const chan=document.getElementById('fChan').value;
   const filters=[city&&`City: ${city}`,mgr&&`Manager: ${mgr}`,prod&&`Product: ${prod}`,chan&&`Channel: ${chan}`].filter(Boolean).join(', ')||'No filters (full dataset)';
   const summary=`Period: ${dateRange}\nActive filters: ${filters}\nTotal revenue: $${Math.round(tot).toLocaleString()}\nTransactions: ${data.length}\nAvg per transaction: $${avg.toFixed(0)}\nTop products: ${top('product')}\nTop cities: ${top('city')}\nTop managers: ${top('manager')}\nChannels: ${top('channel')}\nPayment methods: ${top('payment')}`;
-  const prompt=`You are a sharp, experienced business analyst. Analyze this sales data snapshot and produce an executive narrative in English.\n\nDATA SNAPSHOT:\n${summary}\n\nReply ONLY with a valid JSON object (no markdown, no extra text):\n{\n  "headline": "One punchy sentence summarizing the most important finding with real numbers.",\n  "what_happened": "2-3 sentences describing what the data shows.",\n  "why_it_matters": "2-3 sentences on the likely cause or business implication.",\n  "opportunity": "1-2 sentences on the single biggest risk or opportunity.",\n  "actions": [\n    {"priority": "URGENT", "text": "Specific action the manager should take this week."},\n    {"priority": "MEDIUM", "text": "Action for the next 30 days."},\n    {"priority": "LOW", "text": "Strategic action for the next quarter."}\n  ],\n  "confidence": 78\n}\n\nSpeak like a direct, smart CFO. Reference the actual numbers.`;
-
-  try {
+  const prompt=`You are a sharp, experienced business analyst. Analyze this sales data snapshot and produce an executive narrative in English.\n\nDATA SNAPSHOT:\n${summary}\n\nReply ONLY with a valid JSON object (no markdown, no extra text):\n{"headline":"One punchy sentence summarizing the most important finding with real numbers.","what_happened":"2-3 sentences describing what the data shows.","why_it_matters":"2-3 sentences on the likely cause or business implication.","opportunity":"1-2 sentences on the single biggest risk or opportunity.","actions":[{"priority":"URGENT","text":"Specific action the manager should take this week."},{"priority":"MEDIUM","text":"Action for the next 30 days."},{"priority":"LOW","text":"Strategic action for the next quarter."}],"confidence":78}\n\nSpeak like a direct, smart CFO. Reference the actual numbers.`;
+  try{
     const resp=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
-    const json=await resp.json();
-    const raw=json.content.map(b=>b.text||'').join('');
-    const r=JSON.parse(raw.replace(/```json|```/g,'').trim());
-    clearInterval(ticker);
-    showResult(r);
-  } catch(e) {
-    clearInterval(ticker);
-    document.getElementById('ai-loading').style.display='none';
-    document.getElementById('ai-empty').style.display='block';
-    document.getElementById('ai-empty').innerHTML=`<div class="ai-empty-icon">⚠</div>Error: ${e.message}`;
-    btn.disabled=false;
+    const json=await resp.json();const raw=json.content.map(b=>b.text||'').join('');
+    const r=JSON.parse(raw.replace(/```json|```/g,'').trim());clearInterval(ticker);showResult(r);
+  }catch(e){
+    clearInterval(ticker);document.getElementById('ai-loading').style.display='none';document.getElementById('ai-empty').style.display='block';
+    document.getElementById('ai-empty').innerHTML=`<div class="ai-empty-icon">⚠</div>Error: ${e.message}`;btn.disabled=false;
   }
 }
-
-function showResult(r) {
+function showResult(r){
   document.getElementById('ai-loading').style.display='none';
   const pc={'URGENT':'ab-u','MEDIUM':'ab-m','LOW':'ab-b'};
   document.getElementById('ai-result').innerHTML=`
@@ -683,17 +623,11 @@ function showResult(r) {
     </div>
     <div class="ai-actions-title">Recommended actions</div>
     ${r.actions.map(a=>`<div class="ai-action"><span class="abadge ${pc[a.priority]||'ab-b'}">${a.priority}</span><span>${a.text}</span></div>`).join('')}
-    <div class="ai-conf">
-      <span class="ai-conf-lbl">Analysis confidence</span>
-      <div class="ai-conf-track"><div class="ai-conf-fill" style="width:${r.confidence}%"></div></div>
-      <span class="ai-conf-pct">${r.confidence}%</span>
-    </div>`;
-  document.getElementById('ai-result').style.display='block';
-  document.getElementById('ai-btn').disabled=false;
+    <div class="ai-conf"><span class="ai-conf-lbl">Analysis confidence</span><div class="ai-conf-track"><div class="ai-conf-fill" style="width:${r.confidence}%"></div></div><span class="ai-conf-pct">${r.confidence}%</span></div>`;
+  document.getElementById('ai-result').style.display='block';document.getElementById('ai-btn').disabled=false;
 }
 
-loadCSV();
-loadArticles();
+loadCSV();loadArticles();
 </script>
 </body>
 </html>
