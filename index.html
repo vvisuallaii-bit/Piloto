@@ -215,6 +215,28 @@ select:hover,select:focus{border-color:var(--accent)}
 .chat-send:disabled{opacity:.4;cursor:default;transform:none}
 .chat-context-bar{font-size:10px;color:var(--faint);text-align:center;margin-top:8px;letter-spacing:.03em}
 
+/* HEALTH SCORE */
+.hs-wrap{display:grid;grid-template-columns:auto 1fr;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px}
+.hs-left{padding:24px 28px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:180px;border-right:1px solid var(--border);position:relative}
+.hs-ring-wrap{position:relative;width:110px;height:110px;margin-bottom:12px}
+.hs-ring-wrap svg{transform:rotate(-90deg)}
+.hs-score-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.hs-score-num{font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:600;line-height:1;color:var(--text)}
+.hs-score-max{font-size:11px;color:var(--muted);margin-top:2px}
+.hs-label{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.hs-label.excellent{color:#3FB950}.hs-label.good{color:#00D4AA}.hs-label.fair{color:#E3B341}.hs-label.poor{color:#F85149}
+.hs-right{padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:10px;align-content:center}
+.hs-item{display:flex;flex-direction:column;gap:5px}
+.hs-item-head{display:flex;align-items:center;justify-content:space-between}
+.hs-item-name{font-size:11px;color:var(--muted);font-weight:500}
+.hs-item-val{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600}
+.hs-item-val.green{color:#3FB950}.hs-item-val.amber{color:#E3B341}.hs-item-val.red{color:#F85149}
+.hs-bar-track{height:4px;background:var(--border2);border-radius:2px;overflow:hidden}
+.hs-bar-fill{height:4px;border-radius:2px;transition:width .6s ease}
+.hs-bar-fill.green{background:#3FB950}.hs-bar-fill.amber{background:#E3B341}.hs-bar-fill.red{background:#F85149}
+.hs-item-bench{font-size:9px;color:var(--faint);margin-top:1px}
+@media(max-width:700px){.hs-wrap{grid-template-columns:1fr}.hs-left{border-right:none;border-bottom:1px solid var(--border)}.hs-right{grid-template-columns:1fr 1fr}}
+
 @media(max-width:900px){
   .kpis,.kpis-2{grid-template-columns:1fr 1fr}
   .grid-main,.grid-3,.grid-2{grid-template-columns:1fr}
@@ -270,6 +292,26 @@ select:hover,select:focus{border-color:var(--accent)}
     <div class="filter-divider"></div>
     <select id="fMonth" onchange="go()"><option value="">All months</option></select>
     <button class="filter-reset" onclick="resetFilters()">✕ Reset</button>
+  </div>
+
+  <!-- PRACTICE HEALTH SCORE -->
+  <div class="hs-wrap" id="hs-wrap">
+    <div class="hs-left">
+      <div class="hs-ring-wrap">
+        <svg width="110" height="110" viewBox="0 0 110 110">
+          <circle cx="55" cy="55" r="46" fill="none" stroke="#21262D" stroke-width="8"/>
+          <circle cx="55" cy="55" r="46" fill="none" stroke="#00D4AA" stroke-width="8"
+            stroke-dasharray="289" stroke-dashoffset="289"
+            stroke-linecap="round" id="hs-ring" style="transition:stroke-dashoffset .8s ease,stroke .4s"/>
+        </svg>
+        <div class="hs-score-center">
+          <div class="hs-score-num" id="hs-num">—</div>
+          <div class="hs-score-max">/100</div>
+        </div>
+      </div>
+      <div class="hs-label" id="hs-label">Loading...</div>
+    </div>
+    <div class="hs-right" id="hs-items"></div>
   </div>
 
   <!-- Row 1 KPIs: Financial -->
@@ -501,9 +543,97 @@ function mkRank(id,entries,fmt){
 function fmtUSD(v){return '$'+Math.round(v).toLocaleString();}
 function fmtDate(s){return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
 
+/* ── PRACTICE HEALTH SCORE ── */
+function computeHealthScore(data){
+  const sum=k=>data.reduce((s,r)=>s+r[k],0);
+  const totalCollections=sum('collections');
+  const totalOverhead=sum('overhead_costs');
+  const totalScheduled=sum('appointments_scheduled');
+  const totalNoShows=sum('no_shows');
+  const totalCompleted=sum('appointments_completed');
+  const totalPresented=sum('treatment_plans_presented');
+  const totalAccepted=sum('treatment_plans_accepted');
+  const totalNewPat=sum('new_patients');
+  const totalProduction=sum('gross_production');
+  const months=data.length||1;
+
+  // 1. Overhead rate — target <60%, good <65%, fair <70%, poor >=70%
+  const overheadRate=totalCollections?totalOverhead/totalCollections*100:100;
+  const overheadScore=overheadRate<60?100:overheadRate<65?75:overheadRate<70?45:20;
+  const overheadColor=overheadRate<60?'green':overheadRate<65?'amber':'red';
+
+  // 2. Treatment acceptance — target >75%, good >65%, fair >55%, poor <=55%
+  const acceptRate=totalPresented?totalAccepted/totalPresented*100:0;
+  const acceptScore=acceptRate>75?100:acceptRate>65?78:acceptRate>55?50:25;
+  const acceptColor=acceptRate>75?'green':acceptRate>65?'amber':'red';
+
+  // 3. No-show rate — target <8%, good <12%, fair <16%, poor >=16%
+  const noShowRate=totalScheduled?totalNoShows/totalScheduled*100:100;
+  const noShowScore=noShowRate<8?100:noShowRate<12?72:noShowRate<16?44:15;
+  const noShowColor=noShowRate<8?'green':noShowRate<12?'amber':'red';
+
+  // 4. New patient growth — target >30/mo, good >20, fair >12, poor <=12
+  const avgNewPat=totalNewPat/months;
+  const newPatScore=avgNewPat>30?100:avgNewPat>20?75:avgNewPat>12?48:22;
+  const newPatColor=avgNewPat>30?'green':avgNewPat>20?'amber':'red';
+
+  // 5. Collection rate (collections/production) — target >98%, good >95%, fair >92%
+  const colRate=totalProduction?totalCollections/totalProduction*100:0;
+  const colScore=colRate>98?100:colRate>95?80:colRate>92?55:30;
+  const colColor=colRate>98?'green':colRate>95?'amber':'red';
+
+  // Weighted total
+  const total=Math.round(
+    overheadScore*0.25 +
+    acceptScore*0.25 +
+    noShowScore*0.20 +
+    newPatScore*0.15 +
+    colScore*0.15
+  );
+
+  const label=total>=85?'Excellent':total>=70?'Good':total>=50?'Fair':'Needs attention';
+  const labelClass=total>=85?'excellent':total>=70?'good':total>=50?'fair':'poor';
+  const ringColor=total>=85?'#3FB950':total>=70?'#00D4AA':total>=50?'#E3B341':'#F85149';
+
+  return{
+    total,label,labelClass,ringColor,
+    items:[
+      {name:'Overhead rate',val:overheadRate.toFixed(1)+'%',bench:'Target: <60%',score:overheadScore,color:overheadColor},
+      {name:'Treatment acceptance',val:acceptRate.toFixed(0)+'%',bench:'Target: >75%',score:acceptScore,color:acceptColor},
+      {name:'No-show rate',val:noShowRate.toFixed(1)+'%',bench:'Target: <8%',score:noShowScore,color:noShowColor},
+      {name:'New patients/mo',val:avgNewPat.toFixed(0),bench:'Target: >30/mo',score:newPatScore,color:newPatColor},
+      {name:'Collection rate',val:colRate.toFixed(1)+'%',bench:'Target: >98%',score:colScore,color:colColor},
+    ]
+  };
+}
+
+function renderHealthScore(data){
+  const hs=computeHealthScore(data);
+  // ring — circumference 2π×46 ≈ 289
+  const circ=289;
+  const offset=circ-(circ*hs.total/100);
+  const ring=document.getElementById('hs-ring');
+  ring.style.strokeDashoffset=offset;
+  ring.style.stroke=hs.ringColor;
+  document.getElementById('hs-num').textContent=hs.total;
+  const lbl=document.getElementById('hs-label');
+  lbl.textContent=hs.label;
+  lbl.className='hs-label '+hs.labelClass;
+  document.getElementById('hs-items').innerHTML=hs.items.map(it=>`
+    <div class="hs-item">
+      <div class="hs-item-head">
+        <span class="hs-item-name">${it.name}</span>
+        <span class="hs-item-val ${it.color}">${it.val}</span>
+      </div>
+      <div class="hs-bar-track"><div class="hs-bar-fill ${it.color}" style="width:${it.score}%"></div></div>
+      <div class="hs-item-bench">${it.bench}</div>
+    </div>`).join('');
+}
+
 /* ── RENDER ── */
 function render(data){
   CURRENT_DATA=data;
+  renderHealthScore(data);
   document.getElementById('ai-empty').style.display='block';
   document.getElementById('ai-loading').style.display='none';
   document.getElementById('ai-result').style.display='none';
