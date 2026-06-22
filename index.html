@@ -219,6 +219,37 @@ select:hover,select:focus{border-color:var(--accent)}
 .chat-send:disabled{opacity:.4;cursor:default;transform:none}
 .chat-context-bar{font-size:10px;color:var(--faint);text-align:center;margin-top:8px;letter-spacing:.03em}
 
+/* BENCHMARK COMPARISON */
+.bm-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;overflow:hidden}
+.bm-header{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;cursor:pointer;user-select:none;transition:background .15s}
+.bm-header:hover{background:rgba(255,255,255,.02)}
+.bm-header-left{display:flex;align-items:center;gap:9px}
+.bm-title{font-size:12px;font-weight:600;color:var(--text)}
+.bm-subtitle{font-size:11px;color:var(--muted)}
+.bm-badge{font-size:9px;font-weight:700;background:rgba(56,139,253,.1);color:var(--blue);padding:2px 8px;border-radius:20px;border:1px solid rgba(56,139,253,.2);letter-spacing:.04em}
+.bm-toggle{color:var(--faint);font-size:11px;transition:transform .25s;display:inline-block}
+.bm-toggle.open{transform:rotate(180deg)}
+.bm-body{padding:0 18px 14px;display:none}
+.bm-body.open{display:block}
+.bm-source{font-size:10px;color:var(--faint);margin-bottom:12px;padding-top:2px}
+.bm-row{display:grid;grid-template-columns:160px 1fr 72px 72px 80px;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(33,38,45,.6)}
+.bm-row:last-child{border-bottom:none}
+.bm-row-label{font-size:11px;color:var(--muted);font-weight:500}
+.bm-bars{display:flex;flex-direction:column;gap:4px}
+.bm-bar-row{display:flex;align-items:center;gap:6px}
+.bm-bar-lbl{font-size:9px;color:var(--faint);width:26px;flex-shrink:0}
+.bm-bar-track{flex:1;height:3px;background:var(--border2);border-radius:2px;overflow:hidden}
+.bm-bar-fill{height:3px;border-radius:2px;transition:width .5s ease}
+.bm-bar-fill.you{background:var(--accent)}
+.bm-bar-fill.avg{background:rgba(125,133,144,.4)}
+.bm-val{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--text);text-align:right}
+.bm-bench{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--faint);text-align:right}
+.bm-delta{font-size:10px;font-weight:700;text-align:right;font-family:'JetBrains Mono',monospace}
+.bm-delta.good{color:var(--green)}.bm-delta.warn{color:var(--amber)}.bm-delta.bad{color:var(--red)}.bm-delta.neutral{color:var(--faint)}
+.bm-impact{font-size:9px;color:var(--faint);text-align:right;margin-top:1px}
+@media(max-width:700px){.bm-row{grid-template-columns:120px 1fr 60px 60px 70px;gap:6px}}
+@media(max-width:500px){.bm-row{grid-template-columns:1fr;gap:4px}.bm-val,.bm-bench,.bm-delta{text-align:left}}
+
 /* HEALTH SCORE */
 .hs-wrap{display:grid;grid-template-columns:auto 1fr;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px}
 .hs-left{padding:24px 28px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:180px;border-right:1px solid var(--border);position:relative}
@@ -332,6 +363,29 @@ select:hover,select:focus{border-color:var(--accent)}
     <div class="kpi c-amber"><div class="kpi-icon">📅</div><div class="kpi-label">Appointments</div><div class="kpi-val" id="kAppts">—</div><div class="kpi-sub" id="kApptsSub">completed</div></div>
     <div class="kpi c-teal"><div class="kpi-icon">✅</div><div class="kpi-label">Treatment Acceptance</div><div class="kpi-val" id="kAcceptance">—</div><div class="kpi-sub">industry avg: 65–80%</div></div>
     <div class="kpi c-blue"><div class="kpi-icon">⚠️</div><div class="kpi-label">No-Show Rate</div><div class="kpi-val" id="kNoShow">—</div><div class="kpi-sub">target: &lt;8%</div></div>
+  </div>
+
+  <!-- BENCHMARK COMPARISON -->
+  <div class="bm-wrap" id="bm-wrap">
+    <div class="bm-header" onclick="toggleBenchmark()">
+      <div class="bm-header-left">
+        <span class="bm-title">Benchmark Comparison</span>
+        <span class="bm-badge">ADA 2024</span>
+        <span class="bm-subtitle" id="bm-summary">vs. U.S. national averages</span>
+      </div>
+      <span class="bm-toggle" id="bm-toggle">▾</span>
+    </div>
+    <div class="bm-body" id="bm-body">
+      <div class="bm-source">Source: American Dental Association (ADA) Health Policy Institute · General Practice averages</div>
+      <div style="display:grid;grid-template-columns:160px 1fr 72px 72px 80px;gap:10px;padding:0 0 6px;border-bottom:1px solid var(--border)">
+        <span style="font-size:9px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em">Metric</span>
+        <span style="font-size:9px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em">You vs. average</span>
+        <span style="font-size:9px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;text-align:right">Your value</span>
+        <span style="font-size:9px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;text-align:right">Benchmark</span>
+        <span style="font-size:9px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;text-align:right">Delta</span>
+      </div>
+      <div id="bm-rows"></div>
+    </div>
   </div>
 
   <div class="ai-panel">
@@ -618,6 +672,151 @@ function computeHealthScore(data){
   };
 }
 
+/* ── BENCHMARKS ── */
+const ADA_BENCHMARKS=[
+  {
+    key:'overhead_rate', label:'Overhead Rate',
+    bench:59.3, unit:'%', lowerIsBetter:true,
+    good:60, warn:65,
+    format:v=>v.toFixed(1)+'%',
+    barMax:80,
+    impactFn:(you,bench,col)=>{
+      const diff=(you-bench)/100;
+      if(diff<=0)return null;
+      const annual=(col/1||0)*12;
+      return '$'+Math.round(annual*diff/1000)+'k excess/yr';
+    }
+  },
+  {
+    key:'collection_rate', label:'Collection Rate',
+    bench:98.0, unit:'%', lowerIsBetter:false,
+    good:98, warn:95,
+    format:v=>v.toFixed(1)+'%',
+    barMax:100,
+    impactFn:(you,bench,col)=>{
+      const diff=(bench-you)/100;
+      if(diff<=0)return null;
+      const annual=(col/1||0)*12;
+      return '$'+Math.round(annual*diff/1000)+'k uncollected/yr';
+    }
+  },
+  {
+    key:'treatment_acceptance', label:'Treatment Acceptance',
+    bench:75, unit:'%', lowerIsBetter:false,
+    good:75, warn:65,
+    format:v=>v.toFixed(0)+'%',
+    barMax:100,
+    impactFn:()=>null
+  },
+  {
+    key:'no_show_rate', label:'No-Show Rate',
+    bench:7.8, unit:'%', lowerIsBetter:true,
+    good:8, warn:12,
+    format:v=>v.toFixed(1)+'%',
+    barMax:20,
+    impactFn:()=>null
+  },
+  {
+    key:'new_patients_mo', label:'New Patients / Mo',
+    bench:28, unit:'', lowerIsBetter:false,
+    good:28, warn:20,
+    format:v=>v.toFixed(0)+'/mo',
+    barMax:60,
+    impactFn:()=>null
+  },
+  {
+    key:'production_per_visit', label:'Production / Visit',
+    bench:312, unit:'$', lowerIsBetter:false,
+    good:312, warn:250,
+    format:v=>'$'+Math.round(v),
+    barMax:500,
+    impactFn:()=>null
+  },
+];
+
+function computeBenchmarks(data){
+  if(!data.length)return[];
+  const sum=k=>data.reduce((s,r)=>s+r[k],0);
+  const months=data.length||1;
+  const totalCol=sum('collections');
+  const totalProd=sum('gross_production');
+  const totalOverh=sum('overhead_costs');
+  const totalSched=sum('appointments_scheduled');
+  const totalNoShow=sum('no_shows');
+  const totalComp=sum('appointments_completed');
+  const totalPP=sum('treatment_plans_presented');
+  const totalPA=sum('treatment_plans_accepted');
+  const totalNewPat=sum('new_patients');
+
+  const avgColPerMonth=totalCol/months;
+
+  const vals={
+    overhead_rate:totalCol?totalOverh/totalCol*100:0,
+    collection_rate:totalProd?totalCol/totalProd*100:0,
+    treatment_acceptance:totalPP?totalPA/totalPP*100:0,
+    no_show_rate:totalSched?totalNoShow/totalSched*100:0,
+    new_patients_mo:totalNewPat/months,
+    production_per_visit:totalComp?totalProd/totalComp:0,
+  };
+
+  return ADA_BENCHMARKS.map(bm=>{
+    const you=vals[bm.key];
+    const diff=bm.lowerIsBetter?(bm.bench-you):(you-bm.bench);
+    const pct=diff/bm.bench*100;
+    let status='good';
+    if(bm.lowerIsBetter){
+      status=you<bm.good?'good':you<bm.warn?'warn':'bad';
+    } else {
+      status=you>=bm.good?'good':you>=bm.warn?'warn':'bad';
+    }
+    const impact=bm.impactFn?bm.impactFn(you,bm.bench,avgColPerMonth):null;
+    return{...bm,you,diff,pct,status,impact};
+  });
+}
+
+function renderBenchmarks(data){
+  const rows=computeBenchmarks(data);
+  if(!rows.length)return;
+
+  // summary badge in header
+  const bad=rows.filter(r=>r.status==='bad').length;
+  const warn=rows.filter(r=>r.status==='warn').length;
+  const good=rows.filter(r=>r.status==='good').length;
+  const summaryEl=document.getElementById('bm-summary');
+  if(bad>0) summaryEl.innerHTML=`<span style="color:var(--red);font-weight:600">${bad} below benchmark</span>${warn>0?` · <span style="color:var(--amber)">${warn} near</span>`:''}`;
+  else if(warn>0) summaryEl.innerHTML=`<span style="color:var(--amber);font-weight:600">${warn} near benchmark</span> · <span style="color:var(--green)">${good} on track</span>`;
+  else summaryEl.innerHTML=`<span style="color:var(--green);font-weight:600">All metrics on track ✓</span>`;
+
+  const deltaClass={good:'good',warn:'warn',bad:'bad'}; 
+  document.getElementById('bm-rows').innerHTML=rows.map(r=>{
+    const youPct=Math.min(r.you/r.barMax*100,100);
+    const benchPct=Math.min(r.bench/r.barMax*100,100);
+    const sign=r.diff>=0?'+':'';
+    const deltaStr=sign+r.format(Math.abs(r.diff)).replace(/[^0-9.%$\/a-z]/gi,'');
+    const dClass=r.status==='good'?'good':r.status==='warn'?'warn':'bad';
+    return`<div class="bm-row">
+      <span class="bm-row-label">${r.label}</span>
+      <div class="bm-bars">
+        <div class="bm-bar-row"><span class="bm-bar-lbl">You</span><div class="bm-bar-track"><div class="bm-bar-fill you" style="width:${youPct}%"></div></div></div>
+        <div class="bm-bar-row"><span class="bm-bar-lbl">Avg</span><div class="bm-bar-track"><div class="bm-bar-fill avg" style="width:${benchPct}%"></div></div></div>
+      </div>
+      <span class="bm-val">${r.format(r.you)}</span>
+      <span class="bm-bench">${r.format(r.bench)}</span>
+      <div>
+        <div class="bm-delta ${dClass}">${r.diff>=0&&r.status==='good'?'▲ ':''}${r.diff<0||r.status==='bad'?'▼ ':''}${r.format(Math.abs(r.diff))}</div>
+        ${r.impact?`<div class="bm-impact">${r.impact}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleBenchmark(){
+  const body=document.getElementById('bm-body');
+  const tog=document.getElementById('bm-toggle');
+  body.classList.toggle('open');
+  tog.classList.toggle('open');
+}
+
 function renderHealthScore(data){
   const hs=computeHealthScore(data);
   // ring — circumference 2π×46 ≈ 289
@@ -645,6 +844,7 @@ function renderHealthScore(data){
 function render(data){
   CURRENT_DATA=data;
   renderHealthScore(data);
+  renderBenchmarks(data);
   document.getElementById('ai-empty').style.display='block';
   document.getElementById('ai-loading').style.display='none';
   document.getElementById('ai-result').style.display='none';
