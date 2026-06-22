@@ -219,6 +219,43 @@ select:hover,select:focus{border-color:var(--accent)}
 .chat-send:disabled{opacity:.4;cursor:default;transform:none}
 .chat-context-bar{font-size:10px;color:var(--faint);text-align:center;margin-top:8px;letter-spacing:.03em}
 
+/* PRACTICE PROFILE MODAL */
+.pp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:none;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px)}
+.pp-overlay.open{display:flex}
+.pp-modal{background:var(--surface);border:1px solid var(--border2);border-radius:14px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;animation:modalIn .22s ease}
+.pp-modal-header{padding:24px 28px 0}
+.pp-modal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.pp-modal-title{font-size:18px;font-weight:700;color:var(--text);letter-spacing:-.02em}
+.pp-modal-sub{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:20px}
+.pp-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px 8px;border-radius:6px;transition:all .15s}
+.pp-close:hover{color:var(--text);background:var(--surface2)}
+.pp-body{padding:0 28px 28px;display:flex;flex-direction:column;gap:16px}
+.pp-field{display:flex;flex-direction:column;gap:6px}
+.pp-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.pp-label span{color:var(--accent);margin-left:2px}
+.pp-input{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;outline:none;transition:border-color .15s;width:100%}
+.pp-input:focus{border-color:var(--accent)}
+.pp-input::placeholder{color:var(--faint)}
+.pp-select{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;outline:none;cursor:pointer;width:100%;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237D8590' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;transition:border-color .15s}
+.pp-select:focus{border-color:var(--accent)}
+.pp-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pp-chips{display:flex;flex-wrap:wrap;gap:7px}
+.pp-chip{padding:5px 13px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;user-select:none}
+.pp-chip:hover{border-color:var(--accent);color:var(--text)}
+.pp-chip.selected{background:rgba(0,212,170,.1);border-color:var(--accent);color:var(--accent)}
+.pp-footer{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-top:1px solid var(--border);margin-top:4px}
+.pp-skip{font-size:12px;color:var(--faint);background:none;border:none;cursor:pointer;font-family:'Inter',sans-serif;transition:color .15s}
+.pp-skip:hover{color:var(--muted)}
+.pp-save{display:flex;align-items:center;gap:7px;padding:9px 20px;background:var(--accent);color:#0D1117;border:none;border-radius:var(--radius-sm);font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .18s}
+.pp-save:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,212,170,.3)}
+.pp-divider{height:1px;background:var(--border);margin:4px 0}
+/* Profile pill in header */
+.profile-pill{display:flex;align-items:center;gap:7px;padding:5px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;cursor:pointer;transition:all .15s;font-size:12px;color:var(--muted)}
+.profile-pill:hover{border-color:var(--accent);color:var(--accent)}
+.profile-pill.complete{border-color:rgba(0,212,170,.3);color:var(--accent)}
+.profile-dot{width:6px;height:6px;border-radius:50%;background:var(--faint);flex-shrink:0}
+.profile-pill.complete .profile-dot{background:var(--accent)}
+
 /* BENCHMARK COMPARISON */
 .bm-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;overflow:hidden}
 .bm-header{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;cursor:pointer;user-select:none;transition:background .15s}
@@ -300,6 +337,10 @@ select:hover,select:focus{border-color:var(--accent)}
     </div>
   </div>
   <span class="header-badge">Powered by Claude AI</span>
+  <button class="profile-pill" id="profile-pill" onclick="openProfile()">
+    <span class="profile-dot"></span>
+    <span id="profile-pill-label">Set up practice profile</span>
+  </button>
 </header>
 
 <nav class="tab-nav">
@@ -524,6 +565,116 @@ select:hover,select:focus{border-color:var(--accent)}
 </div>
 
 </div><!-- /app -->
+
+<!-- PRACTICE PROFILE MODAL -->
+<div class="pp-overlay" id="pp-overlay" onclick="ppOverlayClick(event)">
+  <div class="pp-modal" id="pp-modal">
+    <div class="pp-modal-header">
+      <div class="pp-modal-top">
+        <div class="pp-modal-title">🦷 Practice Profile</div>
+        <button class="pp-close" onclick="closeProfile()">✕</button>
+      </div>
+      <div class="pp-modal-sub">This context stays saved locally and makes your AI Partner dramatically more precise — it'll answer specific to your situation, not generic advice.</div>
+    </div>
+    <div class="pp-body">
+
+      <div class="pp-row">
+        <div class="pp-field">
+          <label class="pp-label">Practice name <span>*</span></label>
+          <input class="pp-input" id="pp-name" placeholder="e.g. Smile Dental" maxlength="60"/>
+        </div>
+        <div class="pp-field">
+          <label class="pp-label">City / State</label>
+          <input class="pp-input" id="pp-location" placeholder="e.g. Austin, TX" maxlength="60"/>
+        </div>
+      </div>
+
+      <div class="pp-row">
+        <div class="pp-field">
+          <label class="pp-label">Number of operatories</label>
+          <select class="pp-select" id="pp-chairs">
+            <option value="">Select...</option>
+            <option value="1-2">1–2 chairs</option>
+            <option value="3-4">3–4 chairs</option>
+            <option value="5-6">5–6 chairs</option>
+            <option value="7+">7+ chairs</option>
+          </select>
+        </div>
+        <div class="pp-field">
+          <label class="pp-label">Providers in practice</label>
+          <select class="pp-select" id="pp-doctors">
+            <option value="">Select...</option>
+            <option value="solo">Solo doctor</option>
+            <option value="2">2 doctors</option>
+            <option value="3+">3+ doctors</option>
+            <option value="group">Group / DSO</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="pp-field">
+        <label class="pp-label">Insurance mix</label>
+        <div class="pp-chips" id="pp-insurance">
+          <div class="pp-chip" data-val="ppo" onclick="toggleChip(this,'pp-insurance')">PPO</div>
+          <div class="pp-chip" data-val="hmo" onclick="toggleChip(this,'pp-insurance')">HMO / Medicaid</div>
+          <div class="pp-chip" data-val="ffs" onclick="toggleChip(this,'pp-insurance')">Fee-for-service</div>
+          <div class="pp-chip" data-val="membership" onclick="toggleChip(this,'pp-insurance')">In-house membership plan</div>
+          <div class="pp-chip" data-val="mixed" onclick="toggleChip(this,'pp-insurance')">Mixed</div>
+        </div>
+      </div>
+
+      <div class="pp-field">
+        <label class="pp-label">Practice area</label>
+        <div class="pp-chips" id="pp-area">
+          <div class="pp-chip" data-val="urban" onclick="toggleChip(this,'pp-area',true)">Urban</div>
+          <div class="pp-chip" data-val="suburban" onclick="toggleChip(this,'pp-area',true)">Suburban</div>
+          <div class="pp-chip" data-val="rural" onclick="toggleChip(this,'pp-area',true)">Rural</div>
+        </div>
+      </div>
+
+      <div class="pp-field">
+        <label class="pp-label">Annual revenue goal</label>
+        <select class="pp-select" id="pp-goal">
+          <option value="">Select...</option>
+          <option value="under500k">Under $500k</option>
+          <option value="500k-750k">$500k – $750k</option>
+          <option value="750k-1m">$750k – $1M</option>
+          <option value="1m-1.5m">$1M – $1.5M</option>
+          <option value="1.5m+">$1.5M+</option>
+        </select>
+      </div>
+
+      <div class="pp-divider"></div>
+
+      <div class="pp-field">
+        <label class="pp-label">Biggest challenge right now</label>
+        <div class="pp-chips" id="pp-challenge">
+          <div class="pp-chip" data-val="new_patients" onclick="toggleChip(this,'pp-challenge',true)">Attracting new patients</div>
+          <div class="pp-chip" data-val="retention" onclick="toggleChip(this,'pp-challenge',true)">Patient retention</div>
+          <div class="pp-chip" data-val="overhead" onclick="toggleChip(this,'pp-challenge',true)">Reducing overhead</div>
+          <div class="pp-chip" data-val="acceptance" onclick="toggleChip(this,'pp-challenge',true)">Treatment acceptance</div>
+          <div class="pp-chip" data-val="noshows" onclick="toggleChip(this,'pp-challenge',true)">No-shows / cancellations</div>
+          <div class="pp-chip" data-val="staff" onclick="toggleChip(this,'pp-challenge',true)">Staff / hiring</div>
+          <div class="pp-chip" data-val="growth" onclick="toggleChip(this,'pp-challenge',true)">Scaling / growth</div>
+          <div class="pp-chip" data-val="cashflow" onclick="toggleChip(this,'pp-challenge',true)">Cash flow</div>
+        </div>
+      </div>
+
+      <div class="pp-field">
+        <label class="pp-label">Anything else the AI should know? <span style="color:var(--faint);font-weight:400;text-transform:none">(optional)</span></label>
+        <textarea class="pp-input" id="pp-notes" placeholder="e.g. We're planning to expand to a second location next year. We recently added Invisalign..." rows="3" style="resize:vertical;min-height:70px"></textarea>
+      </div>
+
+    </div>
+    <div class="pp-footer">
+      <button class="pp-skip" onclick="closeProfile()">Skip for now</button>
+      <button class="pp-save" onclick="saveProfile()">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        Save profile
+      </button>
+    </div>
+  </div>
+</div>
 
 <script>
 const PALETTE=['#00D4AA','#388BFD','#E3B341','#A371F7','#F85149','#3FB950'];
@@ -1280,6 +1431,120 @@ function exportPDF(){
 }
 
 
+/* ── PRACTICE PROFILE ── */
+const PP_KEY='smile_dental_practice_profile';
+let PRACTICE_PROFILE=null;
+
+function loadProfile(){
+  try{
+    const raw=localStorage.getItem(PP_KEY);
+    if(raw){PRACTICE_PROFILE=JSON.parse(raw);applyProfile();}
+    else{
+      // auto-open on first visit after 1.5s
+      setTimeout(()=>openProfile(),1500);
+    }
+  }catch(e){PRACTICE_PROFILE=null;}
+}
+
+function applyProfile(){
+  if(!PRACTICE_PROFILE)return;
+  const pill=document.getElementById('profile-pill');
+  const lbl=document.getElementById('profile-pill-label');
+  const name=PRACTICE_PROFILE.name||'Practice';
+  pill.classList.add('complete');
+  lbl.textContent=name+' · Profile saved';
+  // Update chat header name
+  const chatName=document.querySelector('.chat-header-name');
+  if(chatName)chatName.textContent=`AI Partner — ${name}`;
+  // Update welcome message
+  const wp=document.querySelector('.chat-welcome p');
+  if(wp)wp.textContent=`I know ${name}'s performance data and your practice context. Ask me anything — I give you direct, specific advice grounded in your numbers.`;
+}
+
+function openProfile(){
+  // populate fields if profile exists
+  if(PRACTICE_PROFILE){
+    const p=PRACTICE_PROFILE;
+    if(p.name)document.getElementById('pp-name').value=p.name;
+    if(p.location)document.getElementById('pp-location').value=p.location;
+    if(p.chairs)document.getElementById('pp-chairs').value=p.chairs;
+    if(p.doctors)document.getElementById('pp-doctors').value=p.doctors;
+    if(p.goal)document.getElementById('pp-goal').value=p.goal;
+    if(p.notes)document.getElementById('pp-notes').value=p.notes;
+    if(p.insurance)p.insurance.forEach(v=>{const c=document.querySelector(`#pp-insurance [data-val="${v}"]`);if(c)c.classList.add('selected');});
+    if(p.area){const c=document.querySelector(`#pp-area [data-val="${p.area}"]`);if(c)c.classList.add('selected');}
+    if(p.challenge)p.challenge.forEach(v=>{const c=document.querySelector(`#pp-challenge [data-val="${v}"]`);if(c)c.classList.add('selected');});
+  }
+  document.getElementById('pp-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function closeProfile(){
+  document.getElementById('pp-overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+function ppOverlayClick(e){if(e.target===document.getElementById('pp-overlay'))closeProfile();}
+
+function toggleChip(el,groupId,single=false){
+  if(single){
+    document.querySelectorAll(`#${groupId} .pp-chip`).forEach(c=>c.classList.remove('selected'));
+  }
+  el.classList.toggle('selected');
+}
+
+function getChipVals(groupId){
+  return [...document.querySelectorAll(`#${groupId} .pp-chip.selected`)].map(c=>c.dataset.val);
+}
+
+function saveProfile(){
+  const name=document.getElementById('pp-name').value.trim();
+  if(!name){document.getElementById('pp-name').focus();document.getElementById('pp-name').style.borderColor='var(--red)';return;}
+  document.getElementById('pp-name').style.borderColor='';
+
+  const profile={
+    name,
+    location:document.getElementById('pp-location').value.trim(),
+    chairs:document.getElementById('pp-chairs').value,
+    doctors:document.getElementById('pp-doctors').value,
+    goal:document.getElementById('pp-goal').value,
+    notes:document.getElementById('pp-notes').value.trim(),
+    insurance:getChipVals('pp-insurance'),
+    area:getChipVals('pp-area')[0]||'',
+    challenge:getChipVals('pp-challenge'),
+    savedAt:new Date().toISOString(),
+  };
+
+  localStorage.setItem(PP_KEY,JSON.stringify(profile));
+  PRACTICE_PROFILE=profile;
+  applyProfile();
+  // rebuild chat context with new profile
+  if(ALL.length)initChat();
+  closeProfile();
+}
+
+function buildProfileContext(){
+  if(!PRACTICE_PROFILE)return'';
+  const p=PRACTICE_PROFILE;
+  const insuranceLabels={'ppo':'PPO','hmo':'HMO/Medicaid','ffs':'Fee-for-service','membership':'In-house membership plan','mixed':'Mixed'};
+  const challengeLabels={'new_patients':'Attracting new patients','retention':'Patient retention','overhead':'Reducing overhead','acceptance':'Treatment acceptance','noshows':'No-shows/cancellations','staff':'Staff/hiring','growth':'Scaling/growth','cashflow':'Cash flow'};
+  const goalLabels={'under500k':'Under $500k','500k-750k':'$500k–$750k','750k-1m':'$750k–$1M','1m-1.5m':'$1M–$1.5M','1.5m+':'$1.5M+'};
+
+  let ctx=`\n=== PRACTICE PROFILE (owner-provided context) ===\n`;
+  ctx+=`Practice name: ${p.name}\n`;
+  if(p.location)ctx+=`Location: ${p.location}\n`;
+  if(p.chairs)ctx+=`Operatories: ${p.chairs}\n`;
+  if(p.doctors)ctx+=`Providers: ${p.doctors}\n`;
+  if(p.area)ctx+=`Area type: ${p.area}\n`;
+  if(p.insurance&&p.insurance.length)ctx+=`Insurance mix: ${p.insurance.map(v=>insuranceLabels[v]||v).join(', ')}\n`;
+  if(p.goal)ctx+=`Revenue goal: ${goalLabels[p.goal]||p.goal} annually\n`;
+  if(p.challenge&&p.challenge.length)ctx+=`Key challenges: ${p.challenge.map(v=>challengeLabels[v]||v).join(', ')}\n`;
+  if(p.notes)ctx+=`Additional context: ${p.notes}\n`;
+  ctx+=`=== END PROFILE ===\n`;
+  return ctx;
+}
+
+
 function buildDataContext(){
   if(!ALL.length)return'';
   const data=ALL;
@@ -1323,27 +1588,31 @@ SERVICE MIX:
 }
 
 function buildSystemPrompt(dataCtx){
-  return `You are the strategic business partner for Smile Dental, a U.S. dental practice. You have full access to their real performance data and act as a direct, data-driven advisor with deep knowledge of dental industry benchmarks.
+  const profileCtx=buildProfileContext();
+  const practiceName=PRACTICE_PROFILE?.name||'this dental practice';
+  return `You are the strategic business partner and on-demand advisor for ${practiceName}, a U.S. dental practice. You have full access to their performance data and practice profile. You act as a direct, data-driven CFO-level advisor available any time the owner needs to make a decision — at 11pm, early morning, whenever. You have the context of their specific situation, not just generic dental advice.
 
 ${dataCtx}
-
+${profileCtx}
 YOUR SCOPE — only respond on these topics:
-1. Analysis of Smile Dental's performance data (collections, production, patients, treatment acceptance, no-shows, service mix, overhead)
-2. Business strategy directly tied to the data
+1. Analysis of ${practiceName}'s performance data (collections, production, patients, treatment acceptance, no-shows, service mix, overhead)
+2. Business strategy and operational decisions directly tied to their data and profile
 3. Benchmarking against U.S. dental industry standards
-4. Operational decisions: which service to grow, how to reduce no-shows, how to improve acceptance rates, overhead optimization
+4. Specific decisions: hiring, equipment, expansion, scheduling, pricing, insurance mix
 
-OUT OF SCOPE — if asked anything unrelated to the practice or its data, respond: "That's outside what I can help with here. I'm focused on Smile Dental's data and strategy. Is there something about the practice I can help you with?"
+OUT OF SCOPE — if asked anything unrelated to the practice or its data, respond: "That's outside what I can help with here. I'm focused on ${practiceName}'s data and strategy."
 
 HOW YOU OPERATE:
-- Always base responses on the real data above. Cite specific numbers.
+- Always base responses on the real data and profile context above. Cite specific numbers.
 - Compare against industry benchmarks when relevant.
+- Use the practice profile to make answers specific — if they have 3–4 chairs and are suburban, factor that in. If their challenge is overhead, prioritize that lens.
 - When the owner proposes an idea, validate or challenge it with data — don't just say "great idea."
 - Give direct opinions: if something doesn't add up, say so.
 - Concise and executive. No filler. No generic advice.
-- Respond in the language the owner uses.
+- Respond in the language the owner uses (English or Spanish).
+- If the profile is incomplete, still give the best possible answer with available data.
 
-STYLE: Strategic partner with sharp judgment, not a consultant selling fluff. Direct, honest, grounded in numbers.`;
+STYLE: Trusted advisor who knows their business deeply. Direct, honest, grounded in their specific numbers and context. Like a CFO who's always available.`;
 }
 
 function initChat(){
@@ -1352,7 +1621,8 @@ function initChat(){
   chatReady=true;
   const bar=document.getElementById('chat-context-bar');
   const tot=ALL.reduce((s,r)=>s+r.collections,0);
-  bar.textContent=`✓ Context loaded — ${ALL.length} months · $${Math.round(tot).toLocaleString()} in collections · ${ALL.reduce((s,r)=>s+r.new_patients,0)} new patients`;
+  const profileTag=PRACTICE_PROFILE?` · Profile: ${PRACTICE_PROFILE.name}`:'';
+  bar.textContent=`✓ Context loaded — ${ALL.length} months · $${Math.round(tot).toLocaleString()} in collections · ${ALL.reduce((s,r)=>s+r.new_patients,0)} new patients${profileTag}`;
   bar.style.color='var(--accent)';
 }
 
@@ -1437,7 +1707,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(ta)ta.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';});
 });
 
-loadCSV();loadArticles();
+loadCSV();loadArticles();loadProfile();
 </script>
 </body>
 </html>
