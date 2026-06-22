@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
   --bg:#0D1117;--surface:#161B22;--surface2:#1C2128;
@@ -89,6 +90,9 @@ select:hover,select:focus{border-color:var(--accent)}
 .ai-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--accent);color:#0D1117;border:none;border-radius:var(--radius-sm);font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .18s}
 .ai-btn:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,212,170,.3)}
 .ai-btn:disabled{opacity:.4;cursor:default;transform:none;box-shadow:none}
+.pdf-btn{display:none;align-items:center;gap:6px;padding:8px 16px;background:transparent;color:var(--accent);border:1px solid rgba(0,212,170,.35);border-radius:var(--radius-sm);font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .18s}
+.pdf-btn:hover{background:rgba(0,212,170,.08);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,212,170,.15)}
+.pdf-btn.visible{display:flex}
 .ai-body{padding:20px}
 .ai-empty{text-align:center;padding:32px;color:var(--faint);font-size:13px;line-height:1.6}
 .ai-empty-icon{font-size:26px;margin-bottom:8px;opacity:.4}
@@ -333,10 +337,16 @@ select:hover,select:focus{border-color:var(--accent)}
   <div class="ai-panel">
     <div class="ai-panel-header">
       <div class="ai-panel-title"><div class="ai-dot"></div>AI Executive Analysis<span class="ai-badge">Claude</span></div>
-      <button class="ai-btn" id="ai-btn" onclick="runAnalysis()">
-        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-        Analyze with AI
-      </button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="pdf-btn" id="pdf-btn" onclick="exportPDF()">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Export PDF
+        </button>
+        <button class="ai-btn" id="ai-btn" onclick="runAnalysis()">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          Analyze with AI
+        </button>
+      </div>
     </div>
     <div class="ai-body">
       <div class="ai-empty" id="ai-empty"><div class="ai-empty-icon">◈</div>Click <strong style="color:var(--accent)">Analyze with AI</strong> to generate an executive narrative for Smile Dental. Active filters apply.</div>
@@ -469,6 +479,7 @@ Chart.defaults.color='#7D8590';Chart.defaults.borderColor='#21262D';Chart.defaul
 let ALL=[],charts={},CURRENT_DATA=[];
 let ARTICLES=[];
 let chatHistory=[],chatDataContext='',chatReady=false;
+let LAST_RESULT=null;
 
 function switchTab(name,btn){
   document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
@@ -868,7 +879,7 @@ Be direct. Reference actual numbers. Compare against benchmarks. Think like a de
     const json=await resp.json();
     const raw=json.content.map(b=>b.text||'').join('');
     const r=JSON.parse(raw.replace(/```json|```/g,'').trim());
-    clearInterval(ticker);showResult(r);
+    clearInterval(ticker);showResult(r);LAST_RESULT=r;
   }catch(e){
     clearInterval(ticker);
     document.getElementById('ai-loading').style.display='none';
@@ -893,9 +904,182 @@ function showResult(r){
     <div class="ai-conf"><span class="ai-conf-lbl">Analysis confidence</span><div class="ai-conf-track"><div class="ai-conf-fill" style="width:${r.confidence}%"></div></div><span class="ai-conf-pct">${r.confidence}%</span></div>`;
   document.getElementById('ai-result').style.display='block';
   document.getElementById('ai-btn').disabled=false;
+  document.getElementById('pdf-btn').classList.add('visible');
 }
 
-/* ── AI PARTNER CHAT ── */
+/* ── PDF EXPORT ── */
+function exportPDF(){
+  if(!LAST_RESULT||!CURRENT_DATA.length)return;
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210,M=18;
+  let y=0;
+
+  // helpers
+  const C={teal:[0,212,170],dark:[13,17,23],surface:[22,27,34],text:[230,237,243],muted:[125,133,144],white:[255,255,255],amber:[227,179,65],red:[248,81,73],green:[63,185,80],blue:[56,139,253]};
+  const rgb=(c)=>{doc.setTextColor(c[0],c[1],c[2]);};
+  const fill=(c)=>{doc.setFillColor(c[0],c[1],c[2]);};
+  const draw=(c)=>{doc.setDrawColor(c[0],c[1],c[2]);};
+
+  const addPage=()=>{doc.addPage();y=18;};
+  const checkY=(need=20)=>{if(y+need>280)addPage();};
+
+  // ── HEADER BLOCK ──
+  fill(C.dark);doc.rect(0,0,W,38,'F');
+  // accent bar
+  fill(C.teal);doc.rect(0,0,W,2.5,'F');
+  // logo dot
+  fill(C.teal);doc.circle(M,19,3,'F');
+  rgb(C.white);doc.setFont('helvetica','bold');doc.setFontSize(16);
+  doc.text('Smile Dental',M+7,16);
+  rgb(C.muted);doc.setFont('helvetica','normal');doc.setFontSize(9);
+  doc.text('Practice Intelligence Dashboard',M+7,22);
+  // right side
+  const now=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  rgb(C.muted);doc.setFontSize(8);
+  doc.text('Generated '+now,W-M,22,{align:'right'});
+  rgb(C.teal);doc.setFont('helvetica','bold');doc.setFontSize(8);
+  doc.text('Powered by Claude AI',W-M,16,{align:'right'});
+
+  y=46;
+
+  // ── ANALYSIS PERIOD ──
+  const data=CURRENT_DATA;
+  const fmtM=m=>new Date(m+'-02').toLocaleDateString('en-US',{month:'short',year:'numeric'});
+  const period=data.length?`${fmtM(data[0].month)} – ${fmtM(data[data.length-1].month)}`:'-';
+  rgb(C.muted);doc.setFont('helvetica','normal');doc.setFontSize(8.5);
+  doc.text(`Analysis period: ${period}  ·  ${data.length} months of data`,M,y);
+  y+=8;
+
+  // ── HEADLINE ──
+  fill(C.surface);doc.roundedRect(M,y,W-M*2,18,2,2,'F');
+  fill(C.teal);doc.rect(M,y,3,18,'F');
+  rgb(C.teal);doc.setFont('helvetica','bold');doc.setFontSize(7.5);
+  doc.text('AI EXECUTIVE FINDING',M+7,y+5.5);
+  rgb(C.text);doc.setFont('helvetica','bold');doc.setFontSize(10.5);
+  const headLines=doc.splitTextToSize(LAST_RESULT.headline,W-M*2-14);
+  doc.text(headLines,M+7,y+12);
+  y+=18+(headLines.length-1)*5+6;
+
+  // ── KPI GRID (2×4) ──
+  const sum=k=>data.reduce((s,r)=>s+r[k],0);
+  const totalCol=sum('collections'),totalProd=sum('gross_production'),totalNet=sum('net_income'),totalOverh=sum('overhead_costs');
+  const totalNewPat=sum('new_patients'),totalSched=sum('appointments_scheduled'),totalComp=sum('appointments_completed'),totalNoShow=sum('no_shows');
+  const totalPP=sum('treatment_plans_presented'),totalPA=sum('treatment_plans_accepted');
+  const overheadRate=totalCol?Math.round(totalOverh/totalCol*100):0;
+  const acceptRate=totalPP?Math.round(totalPA/totalPP*100):0;
+  const noShowRate=totalSched?Math.round(totalNoShow/totalSched*100):0;
+
+  const kpis=[
+    {label:'Total Collections',val:'$'+Math.round(totalCol/1000)+'k',sub:'Period total'},
+    {label:'Gross Production',val:'$'+Math.round(totalProd/1000)+'k',sub:'Period total'},
+    {label:'Net Income',val:'$'+Math.round(totalNet/1000)+'k',sub:totalCol?Math.round(totalNet/totalCol*100)+'% margin':'-'},
+    {label:'Overhead Rate',val:overheadRate+'%',sub:'Target: <60%',warn:overheadRate>=60},
+    {label:'New Patients',val:String(totalNewPat),sub:data.length?Math.round(totalNewPat/data.length)+'/mo avg':'-'},
+    {label:'Appts Completed',val:String(totalComp),sub:totalSched?Math.round(totalComp/totalSched*100)+'% of scheduled':'-'},
+    {label:'Treatment Acceptance',val:acceptRate+'%',sub:'Target: 65–80%',warn:acceptRate<65},
+    {label:'No-Show Rate',val:noShowRate+'%',sub:'Target: <8%',warn:noShowRate>=8},
+  ];
+
+  checkY(30);
+  const kW=(W-M*2-9)/4,kH=22;
+  kpis.forEach((k,i)=>{
+    const col=i%4,row=Math.floor(i/4);
+    const kx=M+col*(kW+3),ky=y+row*(kH+4);
+    fill(C.surface);doc.roundedRect(kx,ky,kW,kH,1.5,1.5,'F');
+    // color top bar
+    const barC=k.warn?C.red:C.teal;
+    fill(barC);doc.rect(kx,ky,kW,1.5,'F');
+    rgb(C.muted);doc.setFont('helvetica','normal');doc.setFontSize(6.5);
+    doc.text(k.label.toUpperCase(),kx+4,ky+7);
+    rgb(C.warn?C.red:C.white);doc.setFont('helvetica','bold');doc.setFontSize(12);
+    rgb(k.warn?C.amber:C.white);
+    doc.text(k.val,kx+4,ky+15);
+    rgb(C.muted);doc.setFont('helvetica','normal');doc.setFontSize(6);
+    doc.text(k.sub,kx+4,ky+20);
+  });
+  y+=kH*2+4*3+10;
+
+  // ── AI NARRATIVE BLOCKS ──
+  checkY(12);
+  rgb(C.muted);doc.setFont('helvetica','bold');doc.setFontSize(7.5);
+  doc.text('EXECUTIVE ANALYSIS',M,y);
+  y+=5;
+  draw(C.surface);doc.setLineWidth(0.2);doc.line(M,y,W-M,y);y+=5;
+
+  const blocks=[
+    {label:'What happened',txt:LAST_RESULT.what_happened},
+    {label:'Why it matters',txt:LAST_RESULT.why_it_matters},
+    {label:'Opportunity / Risk',txt:LAST_RESULT.opportunity},
+  ];
+  const bW=(W-M*2-8)/3;
+  let maxBH=0;
+  const blockLayouts=blocks.map((b,i)=>{
+    const lines=doc.splitTextToSize(b.txt,bW-8);
+    const bH=14+lines.length*4.2;
+    if(bH>maxBH)maxBH=bH;
+    return{...b,lines,bH,bx:M+i*(bW+4)};
+  });
+  checkY(maxBH+4);
+  blockLayouts.forEach(b=>{
+    fill(C.surface);doc.roundedRect(b.bx,y,bW,maxBH,1.5,1.5,'F');
+    fill(C.teal);doc.rect(b.bx,y,bW,1.5,'F');
+    rgb(C.teal);doc.setFont('helvetica','bold');doc.setFontSize(6.5);
+    doc.text(b.label.toUpperCase(),b.bx+4,y+8);
+    rgb(C.text);doc.setFont('helvetica','normal');doc.setFontSize(8);
+    doc.text(b.lines,b.bx+4,y+14);
+  });
+  y+=maxBH+8;
+
+  // ── RECOMMENDED ACTIONS ──
+  checkY(14);
+  rgb(C.muted);doc.setFont('helvetica','bold');doc.setFontSize(7.5);
+  doc.text('RECOMMENDED ACTIONS',M,y);y+=5;
+  draw(C.surface);doc.setLineWidth(0.2);doc.line(M,y,W-M,y);y+=5;
+
+  const prioColors={URGENT:C.red,MEDIUM:C.amber,LOW:C.green};
+  LAST_RESULT.actions.forEach(a=>{
+    const lines=doc.splitTextToSize(a.text,W-M*2-28);
+    const aH=Math.max(12,8+lines.length*4.5);
+    checkY(aH+3);
+    fill(C.surface);doc.roundedRect(M,y,W-M*2,aH,1.5,1.5,'F');
+    const pc=prioColors[a.priority]||C.green;
+    fill(pc);doc.roundedRect(M+3,y+aH/2-4,18,8,1,1,'F');
+    rgb(C.dark);doc.setFont('helvetica','bold');doc.setFontSize(6);
+    doc.text(a.priority,M+12,y+aH/2+1,{align:'center'});
+    rgb(C.text);doc.setFont('helvetica','normal');doc.setFontSize(8.5);
+    doc.text(lines,M+25,y+7);
+    y+=aH+4;
+  });
+
+  // ── CONFIDENCE BAR ──
+  y+=4;checkY(14);
+  fill(C.surface);doc.roundedRect(M,y,W-M*2,12,1.5,1.5,'F');
+  rgb(C.muted);doc.setFont('helvetica','normal');doc.setFontSize(7.5);
+  doc.text('Analysis confidence',M+4,y+8);
+  const barW=W-M*2-70;
+  fill([30,38,48]);doc.roundedRect(M+48,y+4.5,barW,3,1,1,'F');
+  fill(C.teal);doc.roundedRect(M+48,y+4.5,barW*(LAST_RESULT.confidence/100),3,1,1,'F');
+  rgb(C.teal);doc.setFont('helvetica','bold');doc.setFontSize(8);
+  doc.text(LAST_RESULT.confidence+'%',W-M-4,y+8,{align:'right'});
+  y+=16;
+
+  // ── FOOTER ──
+  const pages=doc.getNumberOfPages();
+  for(let p=1;p<=pages;p++){
+    doc.setPage(p);
+    fill(C.dark);doc.rect(0,285,W,12,'F');
+    fill(C.teal);doc.rect(0,285,W,0.8,'F');
+    rgb(C.muted);doc.setFont('helvetica','normal');doc.setFontSize(7);
+    doc.text('Smile Dental — Practice Intelligence Report',M,291);
+    doc.text(`Page ${p} of ${pages}`,W-M,291,{align:'right'});
+    rgb(C.teal);doc.text('Powered by Claude AI',W/2,291,{align:'center'});
+  }
+
+  doc.save(`SmileDental_Analysis_${new Date().toISOString().slice(0,10)}.pdf`);
+}
+
+
 function buildDataContext(){
   if(!ALL.length)return'';
   const data=ALL;
