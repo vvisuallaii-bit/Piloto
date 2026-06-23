@@ -320,6 +320,81 @@ select:hover,select:focus{border-color:var(--accent)}
   .kpi-val{font-size:20px}
   .tab-btn{font-size:12px;padding:10px 12px}
 }
+
+/* ── REVENUE FORECAST ── */
+.fc-hero{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.fc-hero-left h2{font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.02em;margin-bottom:4px}
+.fc-hero-left p{font-size:12px;color:var(--muted);line-height:1.5;max-width:480px}
+.fc-hero-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0}
+.fc-decision-label{font-size:11px;color:var(--faint);white-space:nowrap}
+.fc-decision-select{font-family:'Inter',sans-serif;font-size:12px;font-weight:500;padding:7px 28px 7px 12px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);cursor:pointer;outline:none;transition:border-color .15s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237D8590' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+.fc-decision-select:focus{border-color:var(--accent)}
+.fc-gen-btn{display:flex;align-items:center;gap:7px;padding:9px 20px;background:var(--accent);color:#0D1117;border:none;border-radius:var(--radius-sm);font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .18s;white-space:nowrap}
+.fc-gen-btn:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,212,170,.3)}
+.fc-gen-btn:disabled{opacity:.4;cursor:default;transform:none;box-shadow:none}
+.fc-chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:16px}
+.fc-chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.fc-chart-title{font-size:13px;font-weight:600;color:var(--text)}
+.fc-chart-legend{display:flex;gap:14px;flex-wrap:wrap}
+.fc-leg-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.fc-leg-line{width:20px;height:2px;border-radius:2px}
+.fc-empty{text-align:center;padding:56px 20px;color:var(--faint);font-size:13px;line-height:1.7}
+.fc-empty-icon{font-size:36px;margin-bottom:12px;opacity:.3}
+.fc-scenarios{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.fc-scenario{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden;transition:border-color .2s}
+.fc-scenario::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.fc-scenario.sc-bad::before{background:var(--red)}.fc-scenario.sc-base::before{background:var(--amber)}.fc-scenario.sc-opt::before{background:var(--green)}
+.fc-scenario:hover{border-color:var(--border2)}
+.fc-sc-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.fc-sc-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.fc-scenario.sc-bad .fc-sc-label{color:var(--red)}.fc-scenario.sc-base .fc-sc-label{color:var(--amber)}.fc-scenario.sc-opt .fc-sc-label{color:var(--green)}
+.fc-sc-conf{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--faint)}
+.fc-sc-conf-bar{width:36px;height:3px;background:var(--border2);border-radius:2px;overflow:hidden}
+.fc-sc-conf-fill{height:3px;border-radius:2px}
+.fc-scenario.sc-bad .fc-sc-conf-fill{background:var(--red)}.fc-scenario.sc-base .fc-sc-conf-fill{background:var(--amber)}.fc-scenario.sc-opt .fc-sc-conf-fill{background:var(--green)}
+.fc-sc-amount{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:600;color:var(--text);letter-spacing:-.02em;line-height:1}
+.fc-sc-period{font-size:11px;color:var(--muted);margin-top:3px}
+.fc-sc-cost{font-size:11px;color:var(--red);font-weight:600;padding:7px 10px;background:rgba(248,81,73,.07);border-radius:6px;border:1px solid rgba(248,81,73,.15);line-height:1.4}
+.fc-sc-factors{display:flex;flex-direction:column;gap:5px}
+.fc-sc-factor{font-size:11px;color:var(--muted);line-height:1.5;display:flex;align-items:flex-start;gap:6px}
+.fc-sc-factor::before{content:'›';color:var(--faint);flex-shrink:0}
+.fc-sc-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 14px;border-radius:var(--radius-sm);font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .18s;margin-top:4px;border:1px solid}
+.fc-scenario.sc-bad .fc-sc-btn{background:rgba(248,81,73,.08);color:var(--red);border-color:rgba(248,81,73,.2)}
+.fc-scenario.sc-base .fc-sc-btn{background:rgba(227,179,65,.08);color:var(--amber);border-color:rgba(227,179,65,.2)}
+.fc-scenario.sc-opt .fc-sc-btn{background:rgba(63,185,80,.08);color:var(--green);border-color:rgba(63,185,80,.2)}
+.fc-sc-btn:hover{transform:translateY(-1px);filter:brightness(1.2)}
+.fc-questions-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:16px}
+.fc-q-header{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.fc-q-title{font-size:13px;font-weight:600;color:var(--text)}
+.fc-q-badge{font-size:9px;font-weight:700;background:rgba(0,212,170,.1);color:var(--accent);padding:2px 8px;border-radius:20px;border:1px solid rgba(0,212,170,.2);letter-spacing:.04em}
+.fc-q-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fc-q-btn{display:flex;align-items:flex-start;gap:9px;padding:12px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);cursor:pointer;text-align:left;transition:all .18s;font-family:'Inter',sans-serif;width:100%}
+.fc-q-btn:hover{border-color:var(--accent);background:rgba(0,212,170,.04)}
+.fc-q-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+.fc-q-text{font-size:12px;color:var(--muted);line-height:1.5}
+.fc-q-btn:hover .fc-q-text{color:var(--text)}
+.fc-answer-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px;display:none}
+.fc-answer-card.visible{display:block}
+.fc-answer-head{display:flex;align-items:center;gap:10px;padding:13px 20px;background:var(--surface2);border-bottom:1px solid var(--border)}
+.fc-answer-q{font-size:12px;font-weight:600;color:var(--text);flex:1}
+.fc-answer-x{background:none;border:none;color:var(--faint);cursor:pointer;font-size:16px;padding:2px 6px;border-radius:4px;transition:color .15s}
+.fc-answer-x:hover{color:var(--text)}
+.fc-answer-body{padding:18px 20px}
+.fc-answer-ld{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
+.fc-answer-txt{font-size:13px;color:var(--text);line-height:1.75;opacity:.9}
+.fc-answer-txt strong{color:var(--accent)}
+.fc-answer-txt ul{margin:8px 0 8px 16px;display:flex;flex-direction:column;gap:4px}
+.fc-accuracy-bar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:none;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.fc-accuracy-bar.visible{display:flex}
+.fc-acc-icon{font-size:18px}
+.fc-acc-txt{font-size:12px;color:var(--muted);flex:1;line-height:1.5}
+.fc-acc-txt strong{color:var(--text)}
+.fc-acc-pill{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px}
+.fc-acc-pill.great{background:rgba(63,185,80,.12);color:var(--green);border:1px solid rgba(63,185,80,.25)}
+.fc-acc-pill.good{background:rgba(0,212,170,.12);color:var(--accent);border:1px solid rgba(0,212,170,.25)}
+.fc-acc-pill.fair{background:rgba(227,179,65,.12);color:var(--amber);border:1px solid rgba(227,179,65,.25)}
+@media(max-width:900px){.fc-scenarios{grid-template-columns:1fr}.fc-q-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.fc-hero{flex-direction:column;align-items:flex-start}.fc-hero-right{width:100%}.fc-decision-select{flex:1}}
 </style>
 </head>
 <body>
@@ -355,6 +430,10 @@ select:hover,select:focus{border-color:var(--accent)}
   <button class="tab-btn" onclick="switchTab('partner',this)">
     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
     AI Partner
+  </button>
+  <button class="tab-btn" onclick="switchTab('forecast',this)">
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+    Revenue Forecast
   </button>
 </nav>
 
@@ -535,6 +614,89 @@ select:hover,select:focus{border-color:var(--accent)}
     </div>
   </div>
 </div>
+
+<!-- REVENUE FORECAST -->
+<div class="tab-pane" id="tab-forecast">
+
+  <!-- Hero / Controls -->
+  <div class="fc-hero">
+    <div class="fc-hero-left">
+      <h2>📈 Revenue Forecast</h2>
+      <p>Based on your historical data, the AI projects your next month under 3 scenarios — so you can make hiring, purchasing, and scheduling decisions with confidence.</p>
+    </div>
+    <div class="fc-hero-right">
+      <span class="fc-decision-label">I'm deciding on:</span>
+      <select class="fc-decision-select" id="fc-decision">
+        <option value="general">General outlook</option>
+        <option value="hiring">Hiring a hygienist</option>
+        <option value="equipment">Buying equipment</option>
+        <option value="saturday">Opening Saturdays</option>
+        <option value="promotion">Running a promotion</option>
+        <option value="insurance">Dropping an insurance</option>
+        <option value="expansion">Expanding the practice</option>
+      </select>
+      <button class="fc-gen-btn" id="fc-gen-btn" onclick="generateForecast()">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        Generate Forecast
+      </button>
+    </div>
+  </div>
+
+  <!-- Accuracy tracker (shown after first forecast) -->
+  <div class="fc-accuracy-bar" id="fc-accuracy-bar">
+    <span class="fc-acc-icon">🎯</span>
+    <div class="fc-acc-txt" id="fc-acc-txt">Last month we projected <strong>$87,400</strong> (base scenario). You ended at <strong>$91,200</strong> — 4.3% above forecast.</div>
+    <span class="fc-acc-pill good" id="fc-acc-pill">+4.3% vs forecast</span>
+  </div>
+
+  <!-- Chart -->
+  <div class="fc-chart-card">
+    <div class="fc-chart-header">
+      <span class="fc-chart-title">Collections — historical + forecast</span>
+      <div class="fc-chart-legend" id="fc-legend">
+        <div class="fc-leg-item"><div class="fc-leg-line" style="background:var(--accent)"></div>Historical</div>
+        <div class="fc-leg-item" id="fc-leg-bad" style="display:none"><div class="fc-leg-line" style="background:var(--red)"></div>Pessimistic</div>
+        <div class="fc-leg-item" id="fc-leg-base" style="display:none"><div class="fc-leg-line" style="background:var(--amber)"></div>Base</div>
+        <div class="fc-leg-item" id="fc-leg-opt" style="display:none"><div class="fc-leg-line" style="background:var(--green)"></div>Optimistic</div>
+      </div>
+    </div>
+    <div id="fc-chart-area" style="position:relative;height:240px">
+      <div class="fc-empty" id="fc-chart-empty">
+        <div class="fc-empty-icon">📊</div>
+        Generate your forecast to see the projection chart
+      </div>
+      <canvas id="fc-chart" style="display:none"></canvas>
+    </div>
+  </div>
+
+  <!-- Scenario cards (hidden until forecast) -->
+  <div class="fc-scenarios" id="fc-scenarios" style="display:none">
+    <!-- Populated by JS -->
+  </div>
+
+  <!-- Quick questions (hidden until forecast) -->
+  <div class="fc-questions-card" id="fc-questions-card" style="display:none">
+    <div class="fc-q-header">
+      <div class="fc-ai-dot" style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:aipulse 2s ease-in-out infinite"></div>
+      <span class="fc-q-title">Ask about your forecast</span>
+      <span class="fc-q-badge">Quick answers</span>
+    </div>
+    <div class="fc-q-grid" id="fc-q-grid">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <!-- Answer panel -->
+  <div class="fc-answer-card" id="fc-answer-card">
+    <div class="fc-answer-head">
+      <div class="fc-ai-dot" style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:aipulse 2s ease-in-out infinite;flex-shrink:0"></div>
+      <span class="fc-answer-q" id="fc-answer-q"></span>
+      <button class="fc-answer-x" onclick="closeFcAnswer()">✕</button>
+    </div>
+    <div class="fc-answer-body" id="fc-answer-body"></div>
+  </div>
+
+</div><!-- /tab-forecast -->
 
 </div><!-- /page -->
 
@@ -1700,6 +1862,278 @@ function clearChat(){
         <button class="chat-suggestion" onclick="sendSuggestion(this)">Which months show the biggest revenue opportunity?</button>
       </div>
     </div>`;
+}
+
+
+/* ── REVENUE FORECAST ── */
+let FC_RESULT=null;
+let FC_CHART=null;
+
+function buildForecastDataContext(){
+  if(!ALL.length)return'';
+  const data=ALL;
+  const sum=k=>data.reduce((s,r)=>s+r[k],0);
+  const fmtM=m=>new Date(m+'-02').toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  const monthRows=data.map(r=>`  ${r.month}: collections=$${Math.round(r.collections).toLocaleString()}, production=$${Math.round(r.gross_production).toLocaleString()}, new_patients=${r.new_patients}, no_show_rate=${r.appointments_scheduled?Math.round(r.no_shows/r.appointments_scheduled*100):0}%, overhead_rate=${r.collections?Math.round(r.overhead_costs/r.collections*100):0}%`).join('\n');
+  const totalCol=sum('collections');
+  const months=data.length||1;
+  const avgCol=totalCol/months;
+  const lastThree=data.slice(-3);
+  const avgLast3=lastThree.reduce((s,r)=>s+r.collections,0)/lastThree.length;
+  const trend=avgLast3>avgCol?'upward':'downward';
+  const profileCtx=buildProfileContext();
+  return`HISTORICAL DATA (month by month):
+${monthRows}
+
+SUMMARY:
+  Period: ${fmtM(data[0].month)} to ${fmtM(data[data.length-1].month)}
+  Average monthly collections: $${Math.round(avgCol).toLocaleString()}
+  Last 3-month average: $${Math.round(avgLast3).toLocaleString()}
+  Trend: ${trend}
+  Avg new patients/mo: ${Math.round(sum('new_patients')/months)}
+  Avg overhead rate: ${Math.round(sum('overhead_costs')/totalCol*100)}%
+  Treatment acceptance: ${sum('treatment_plans_presented')?Math.round(sum('treatment_plans_accepted')/sum('treatment_plans_presented')*100):0}%
+  No-show rate: ${sum('appointments_scheduled')?Math.round(sum('no_shows')/sum('appointments_scheduled')*100):0}%
+${profileCtx}`;
+}
+
+const FC_DECISION_LABELS={
+  general:'General outlook',
+  hiring:'Hiring a hygienist',
+  equipment:'Buying equipment',
+  saturday:'Opening Saturdays',
+  promotion:'Running a promotion',
+  insurance:'Dropping an insurance',
+  expansion:'Expanding the practice'
+};
+
+async function generateForecast(){
+  if(!ALL.length)return;
+  const btn=document.getElementById('fc-gen-btn');
+  btn.disabled=true;btn.innerHTML='<svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Analyzing...';
+
+  const decision=document.getElementById('fc-decision').value;
+  const decisionLabel=FC_DECISION_LABELS[decision]||'General outlook';
+  const dataCtx=buildForecastDataContext();
+  const nextMonthDate=new Date();
+  nextMonthDate.setMonth(nextMonthDate.getMonth()+1);
+  const nextMonth=nextMonthDate.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+
+  const prompt=`You are a dental practice financial analyst. Analyze this practice's historical data and generate a revenue forecast for next month (${nextMonth}).
+
+The practice owner is focused on this decision: "${decisionLabel}"
+
+${dataCtx}
+
+DENTAL SEASONALITY CONTEXT:
+- January/February: typically slow (insurance deductibles reset, patients defer)
+- March-May: picks up as patients use benefits
+- June-August: summer slowdown (vacations, school schedules)
+- September-November: strong (back to school, year-end benefit usage starts)
+- December: strong (patients rushing to use benefits before year end)
+
+Apply seasonality to ${nextMonth} in your projections.
+
+Generate a forecast with 3 scenarios. Reply ONLY with valid JSON, no markdown:
+{
+  "next_month": "${nextMonth}",
+  "decision_context": "1-2 sentences on how the decision '${decisionLabel}' affects these projections",
+  "pessimistic": {
+    "collections": 82000,
+    "confidence": 72,
+    "label": "Pessimistic",
+    "driver": "Short phrase: main risk driver (e.g. 'No-shows spike above 12%')",
+    "factors": ["Factor 1 explaining why this could happen", "Factor 2", "Factor 3"],
+    "cost_of_inaction": "Dollar amount left on table if this scenario happens. e.g. '$9,200 below your 12-month average'",
+    "cta": "One specific action to avoid this scenario"
+  },
+  "base": {
+    "collections": 92000,
+    "confidence": 68,
+    "label": "Base Case",
+    "driver": "Short phrase: main assumption (e.g. 'Current trends continue')",
+    "factors": ["What drives this scenario", "Factor 2", "Factor 3"],
+    "cost_of_inaction": null,
+    "cta": "One specific thing to maintain this trajectory"
+  },
+  "optimistic": {
+    "collections": 104000,
+    "confidence": 55,
+    "label": "Optimistic",
+    "driver": "Short phrase: what has to go right (e.g. 'Acceptance rate hits 78%+')",
+    "factors": ["What needs to happen", "Action 2 to reach this", "Action 3"],
+    "cost_of_inaction": null,
+    "cta": "One specific action to take THIS WEEK to reach this scenario"
+  },
+  "questions": [
+    {"icon":"💼","text":"What happens to my forecast if I hire a hygienist next month?"},
+    {"icon":"📉","text":"If no-shows drop by 3%, how much more do I collect?"},
+    {"icon":"📆","text":"Which week of ${nextMonth} should I push hardest on scheduling?"},
+    {"icon":"🎯","text":"What's my single highest-impact action for ${nextMonth}?"}
+  ]
+}
+
+Use real numbers from the data. The collections values should be realistic based on the historical average of $${Math.round(ALL.reduce((s,r)=>s+r.collections,0)/ALL.length).toLocaleString()}/month. Make pessimistic ~10-18% below average, base ~0-8% above/below trend, optimistic ~8-18% above average. Adjust for ${nextMonth} seasonality.`;
+
+  try{
+    const resp=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,messages:[{role:'user',content:prompt}]})});
+    const json=await resp.json();
+    const raw=json.content.map(b=>b.text||'').join('');
+    const r=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    FC_RESULT=r;
+    renderForecast(r);
+  }catch(e){
+    alert('Forecast error: '+e.message);
+  }
+  btn.disabled=false;
+  btn.innerHTML='<svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Regenerate';
+}
+
+function renderForecast(r){
+  // Show legend items
+  ['fc-leg-bad','fc-leg-base','fc-leg-opt'].forEach(id=>document.getElementById(id).style.display='flex');
+
+  // Chart
+  const data=ALL;
+  const months=data.map(d=>new Date(d.month+'-02').toLocaleDateString('en-US',{month:'short',year:'2-digit'}));
+  const historical=data.map(d=>d.collections);
+  const lastVal=historical[historical.length-1];
+  // Forecast points: last historical + 3 scenarios as the next point
+  const fLabel=r.next_month.split(' ')[0].slice(0,3)+' '+r.next_month.split(' ')[1].slice(2);
+  const allLabels=[...months,fLabel];
+
+  if(FC_CHART){FC_CHART.destroy();}
+  document.getElementById('fc-chart-empty').style.display='none';
+  const canvas=document.getElementById('fc-chart');
+  canvas.style.display='block';
+
+  FC_CHART=new Chart(canvas,{
+    type:'line',
+    data:{
+      labels:allLabels,
+      datasets:[
+        {
+          label:'Historical',
+          data:[...historical,null],
+          borderColor:'#00D4AA',backgroundColor:'rgba(0,212,170,0.07)',
+          tension:0.35,fill:true,pointRadius:3,pointBackgroundColor:'#00D4AA',borderWidth:2
+        },
+        {
+          label:'Pessimistic',
+          data:[...Array(historical.length-1).fill(null),lastVal,r.pessimistic.collections],
+          borderColor:'#F85149',backgroundColor:'transparent',
+          borderDash:[5,4],tension:0.2,pointRadius:[...Array(historical.length-1).fill(0),3,5],
+          pointBackgroundColor:'#F85149',borderWidth:2
+        },
+        {
+          label:'Base',
+          data:[...Array(historical.length-1).fill(null),lastVal,r.base.collections],
+          borderColor:'#E3B341',backgroundColor:'transparent',
+          borderDash:[5,4],tension:0.2,pointRadius:[...Array(historical.length-1).fill(0),3,5],
+          pointBackgroundColor:'#E3B341',borderWidth:2
+        },
+        {
+          label:'Optimistic',
+          data:[...Array(historical.length-1).fill(null),lastVal,r.optimistic.collections],
+          borderColor:'#3FB950',backgroundColor:'transparent',
+          borderDash:[5,4],tension:0.2,pointRadius:[...Array(historical.length-1).fill(0),3,5],
+          pointBackgroundColor:'#3FB950',borderWidth:2
+        }
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: $${Math.round(ctx.raw||0).toLocaleString()}`}}},
+      scales:{
+        x:{ticks:{font:{size:10}},grid:{color:'#21262D'}},
+        y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1000)+'k'},grid:{color:'#21262D'}}
+      }
+    }
+  });
+
+  // Scenario cards
+  const scContainer=document.getElementById('fc-scenarios');
+  scContainer.style.display='grid';
+  const scenarios=[
+    {key:'sc-bad',data:r.pessimistic},
+    {key:'sc-base',data:r.base},
+    {key:'sc-opt',data:r.optimistic}
+  ];
+  scContainer.innerHTML=scenarios.map(({key,data:s})=>`
+    <div class="fc-scenario ${key}">
+      <div class="fc-sc-top">
+        <span class="fc-sc-label">${s.label}</span>
+        <div class="fc-sc-conf">
+          <div class="fc-sc-conf-bar"><div class="fc-sc-conf-fill" style="width:${s.confidence}%"></div></div>
+          ${s.confidence}%
+        </div>
+      </div>
+      <div>
+        <div class="fc-sc-amount">$${Math.round(s.collections/1000)}k</div>
+        <div class="fc-sc-period">${r.next_month} projection</div>
+      </div>
+      <div style="font-size:11px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.06em">${s.driver}</div>
+      ${s.cost_of_inaction?`<div class="fc-sc-cost">⚠ ${s.cost_of_inaction}</div>`:''}
+      <div class="fc-sc-factors">${s.factors.map(f=>`<div class="fc-sc-factor">${f}</div>`).join('')}</div>
+      <button class="fc-sc-btn" onclick="askForecastQuestion('${s.cta.replace(/'/g,"\\'")}','${s.label} action')">
+        <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        ${s.cta}
+      </button>
+    </div>`).join('');
+
+  // Decision context note
+  if(r.decision_context){
+    const note=document.createElement('div');
+    note.style.cssText='background:rgba(56,139,253,.07);border:1px solid rgba(56,139,253,.2);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px';
+    note.innerHTML=`<span style="color:var(--blue);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.06em">Decision context · ${FC_DECISION_LABELS[document.getElementById('fc-decision').value]||''}</span><br>${r.decision_context}`;
+    scContainer.insertAdjacentElement('afterend',note);
+  }
+
+  // Questions
+  const qCard=document.getElementById('fc-questions-card');
+  qCard.style.display='block';
+  document.getElementById('fc-q-grid').innerHTML=r.questions.map(q=>`
+    <button class="fc-q-btn" onclick="askForecastQuestion('${q.text.replace(/'/g,"\\'")}','${q.text.replace(/'/g,"\\'")}')">
+      <span class="fc-q-icon">${q.icon}</span>
+      <span class="fc-q-text">${q.text}</span>
+    </button>`).join('');
+}
+
+async function askForecastQuestion(question,label){
+  if(!FC_RESULT||!ALL.length)return;
+  const card=document.getElementById('fc-answer-card');
+  const body=document.getElementById('fc-answer-body');
+  const qEl=document.getElementById('fc-answer-q');
+  card.classList.add('visible');
+  qEl.textContent=label||question;
+  body.innerHTML=`<div class="fc-answer-ld"><div class="ld"><span></span><span></span><span></span></div><span style="font-size:13px;color:var(--muted)">Analyzing...</span></div>`;
+  card.scrollIntoView({behavior:'smooth',block:'nearest'});
+
+  const dataCtx=buildForecastDataContext();
+  const prompt=`You are a dental practice financial advisor. The owner has these forecast projections for ${FC_RESULT.next_month}:
+- Pessimistic: $${FC_RESULT.pessimistic.collections.toLocaleString()} (${FC_RESULT.pessimistic.driver})
+- Base: $${FC_RESULT.base.collections.toLocaleString()} (${FC_RESULT.base.driver})
+- Optimistic: $${FC_RESULT.optimistic.collections.toLocaleString()} (${FC_RESULT.optimistic.driver})
+
+${dataCtx}
+
+Answer this question directly and specifically, with real numbers from the data: "${question}"
+
+Be direct, specific, and concise. Use numbers. Max 150 words. Respond in the same language as the question. Format with **bold** for key numbers or actions.`;
+
+  try{
+    const resp=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:400,messages:[{role:'user',content:prompt}]})});
+    const json=await resp.json();
+    const raw=json.content.map(b=>b.text||'').join('');
+    body.innerHTML=`<div class="fc-answer-txt">${renderMarkdown(raw)}</div>`;
+  }catch(e){
+    body.innerHTML=`<div class="fc-answer-txt">⚠️ ${e.message}</div>`;
+  }
+}
+
+function closeFcAnswer(){
+  document.getElementById('fc-answer-card').classList.remove('visible');
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
