@@ -83,11 +83,11 @@ function render(data){
   const acceptanceRate=Math.round(m.acceptanceRate);
   const noShowRate=Math.round(m.noShowRate);
 
-  document.getElementById('kCollections').textContent='$'+Math.round(m.totalCollections/1000)+'k';
+  document.getElementById('kCollections').textContent='$'+(m.totalCollections/1e6).toFixed(1)+'M';
   document.getElementById('kCollectionsSub').textContent=data.length+' meses registrados';
-  document.getElementById('kProduction').textContent='$'+Math.round(m.totalProduction/1000)+'k';
-  document.getElementById('kProductionSub').textContent='$'+Math.round(m.avgProduction/1000)+'k prom/mes';
-  document.getElementById('kNetIncome').textContent='$'+Math.round(m.totalNetIncome/1000)+'k';
+  document.getElementById('kProduction').textContent='$'+(m.totalProduction/1e6).toFixed(1)+'M';
+  document.getElementById('kProductionSub').textContent='$'+(m.avgProduction/1e6).toFixed(1)+'M prom/mes';
+  document.getElementById('kNetIncome').textContent='$'+(m.totalNetIncome/1e6).toFixed(1)+'M';
   document.getElementById('kNetIncomeSub').textContent=m.totalCollections?Math.round(m.totalNetIncome/m.totalCollections*100)+'% margen':'—';
   document.getElementById('kOverhead').textContent=overheadRate+'%';
 
@@ -117,7 +117,7 @@ function render(data){
         borderColor:'#388BFD',backgroundColor:'rgba(56,139,253,0.04)',tension:0.35,fill:true,pointRadius:3,pointBackgroundColor:'#388BFD',borderWidth:2,borderDash:[4,3]
       }]
     },
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:10}}},scales:{x:{ticks:{font:{size:10}},grid:{color:'#21262D'}},y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1000)+'k'},grid:{color:'#21262D'}}}}
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:10}}},scales:{x:{ticks:{font:{size:10}},grid:{color:'#21262D'}},y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1e6)+'M'},grid:{color:'#21262D'}}}}
   });
 
   // Service mix donut
@@ -165,6 +165,6 @@ function render(data){
         {label:'Recaudación',data:months.map(mo=>byMonth.get(mo)?.collections||0),backgroundColor:'rgba(0,212,170,0.7)',borderRadius:4,borderSkipped:false}
       ]
     },
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:10}}},scales:{x:{ticks:{font:{size:10}},grid:{color:'#21262D'}},y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1000)+'k'},grid:{color:'#21262D'}}}}
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:10}}},scales:{x:{ticks:{font:{size:10}},grid:{color:'#21262D'}},y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1e6)+'M'},grid:{color:'#21262D'}}}}
   });
 }

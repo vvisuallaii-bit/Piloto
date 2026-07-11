@@ -151,7 +151,7 @@ function renderForecast(r){
       plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: $${Math.round(ctx.raw||0).toLocaleString('es-CO')}`}}},
       scales:{
         x:{ticks:{font:{size:10}},grid:{color:'#21262D'}},
-        y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1000)+'k'},grid:{color:'#21262D'}}
+        y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1e6)+'M'},grid:{color:'#21262D'}}
       }
     }
   });
@@ -174,7 +174,7 @@ function renderForecast(r){
         </div>
       </div>
       <div>
-        <div class="fc-sc-amount">$${Math.round(s.collections/1000)}k</div>
+        <div class="fc-sc-amount">$${(s.collections/1e6).toFixed(1)}M</div>
         <div class="fc-sc-period">${escapeHtml(r.next_month)} proyección</div>
       </div>
       <div style="font-size:11px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.06em">${escapeHtml(s.driver)}</div>

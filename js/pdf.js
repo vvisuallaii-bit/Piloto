@@ -63,9 +63,9 @@ function exportPDF(){
   const noShowRate=Math.round(m.noShowRate);
 
   const kpis=[
-    {label:'Recaudación Total',val:'$'+Math.round(m.totalCollections/1000)+'k',sub:'Total del período'},
-    {label:'Producción Bruta',val:'$'+Math.round(m.totalProduction/1000)+'k',sub:'Total del período'},
-    {label:'Ingreso Neto',val:'$'+Math.round(m.totalNetIncome/1000)+'k',sub:m.totalCollections?Math.round(m.totalNetIncome/m.totalCollections*100)+'% margen':'-'},
+    {label:'Recaudación Total',val:'$'+(m.totalCollections/1e6).toFixed(1)+'M',sub:'Total del período'},
+    {label:'Producción Bruta',val:'$'+(m.totalProduction/1e6).toFixed(1)+'M',sub:'Total del período'},
+    {label:'Ingreso Neto',val:'$'+(m.totalNetIncome/1e6).toFixed(1)+'M',sub:m.totalCollections?Math.round(m.totalNetIncome/m.totalCollections*100)+'% margen':'-'},
     {label:'Tasa de Gastos',val:overheadRate+'%',sub:'Meta: <65%',warn:overheadRate>=65},
     {label:'Pacientes Nuevos',val:String(m.totalNewPat),sub:data.length?Math.round(m.avgNewPatPerMonth)+'/mes prom':'-'},
     {label:'Citas Completadas',val:String(m.totalCompleted),sub:m.totalScheduled?Math.round(m.totalCompleted/m.totalScheduled*100)+'% de lo agendado':'-'},

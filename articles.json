@@ -1,39 +1,38 @@
 [
   {
     "id": 1,
-    "category": "Competitor Move",
-    "company": "Starbucks",
-    "title": "Starbucks está reconstruyendo la experiencia física para aumentar frecuencia",
-    "summary": "No están intentando vender más café. Están intentando que el cliente vuelva más veces por semana. Rediseño de tiendas, IA en filas y fidelización por niveles son los tres motores.",
-    "tag": "Estrategia",
-    "tag_color": "amber",
+    "category": "Industry Trend",
+    "company": "Teleodontología",
+    "title": "La teleodontología deja de ser un experimento y se vuelve parte del flujo normal",
+    "summary": "Cada vez más clínicas usan videoconsulta para triage inicial, seguimiento post-tratamiento y control de ortodoncia — sin reemplazar la consulta presencial, pero reduciendo visitas innecesarias y mejorando la retención entre citas.",
+    "tag": "Innovación",
+    "tag_color": "green",
     "source": "Análisis interno",
-    "date": "2025-06-01",
-    "insight": "¿Tu negocio depende de vender… o de que la gente regrese?",
+    "date": "2025-04-14",
+    "insight": "La pregunta ya no es si ofrecer teleodontología, sino en qué punto del recorrido del paciente agrega más valor.",
     "sections": [
       {
-        "title": "A. Rediseño de tiendas",
+        "title": "A. Triage y primera consulta",
         "bullets": [
-          "Más sillas y ambientes más cálidos para recuperar permanencia en el local",
-          "Nuevo modelo de cafeterías con menor costo de construcción",
-          "Meta: agregar más de 25.000 asientos en EE. UU.",
-          "Objetivo: abrir más de 2.000 tiendas netas globales hacia 2028"
+          "Una videollamada corta permite descartar urgencias y agendar el tipo de cita correcto desde el primer contacto",
+          "Reduce tiempo de silla ocupado en consultas que terminan siendo solo orientación",
+          "Mejora la experiencia del paciente que solo necesita una opinión rápida"
         ]
       },
       {
-        "title": "B. Smart Queue — IA en el flujo de pedidos",
+        "title": "B. Seguimiento y control",
         "bullets": [
-          "Antes: mobile order, delivery, drive-thru y cliente presencial competían entre sí",
-          "Ahora: IA prioriza el flujo de pedidos entre canales automáticamente",
-          "Resultado: menos congestión, más pedidos por hora"
+          "Controles de ortodoncia y post-operatorios simples se resuelven por video en muchos casos",
+          "Libera espacio en agenda para procedimientos que sí requieren silla",
+          "El paciente valora no tener que desplazarse para un control rutinario"
         ]
       },
       {
-        "title": "C. Rediseño del programa de fidelización",
+        "title": "C. Dónde no reemplaza la consulta presencial",
         "bullets": [
-          "Rewards por niveles con beneficios crecientes",
-          "Mayor personalización por historial de compra",
-          "Casi el 60% del ingreso en EE. UU. ya proviene de miembros del programa"
+          "Cualquier procedimiento clínico sigue requiriendo la visita física",
+          "Funciona mejor como complemento del calendario, no como canal aparte",
+          "El reto es integrarlo a la agenda sin fragmentar la experiencia del paciente"
         ]
       }
     ]
@@ -41,37 +40,37 @@
   {
     "id": 2,
     "category": "Industry Trend",
-    "company": "Chipotle",
-    "title": "Chipotle está convirtiendo cada restaurante en una máquina repetible",
-    "summary": "Chipotle está obsesionado con una palabra: throughput — cuántos clientes pasan sin bajar calidad. Chipotlane, eficiencia operativa y menú como herramienta de frecuencia son su fórmula.",
-    "tag": "Operaciones",
+    "company": "Ortodoncia Invisible",
+    "title": "Los alineadores transparentes están presionando el mercado de ortodoncia tradicional",
+    "summary": "La demanda por ortodoncia estética sigue creciendo, y cada vez hay más laboratorios locales y marcas ofreciendo alineadores a precios más accesibles — lo que obliga a las clínicas a definir si compiten en precio, en marca o en experiencia clínica.",
+    "tag": "Crecimiento",
     "tag_color": "green",
     "source": "Análisis interno",
-    "date": "2025-06-01",
-    "insight": "No están creciendo porque abren. Están creciendo porque cada local produce más.",
+    "date": "2025-05-20",
+    "insight": "Cuando el producto se empieza a comoditizar, la clínica que gana es la que vende el diagnóstico, no el alineador.",
     "sections": [
       {
-        "title": "A. Nuevos locales con Chipotlane",
+        "title": "A. Presión de precio desde nuevos jugadores",
         "bullets": [
-          "No es drive-thru tradicional: el cliente compra online y recoge sin bajarse",
-          "Resultado: menos filas, más capacidad por hora",
-          "Reduce fricción en el proceso de recogida"
+          "Más laboratorios ofreciendo planeación digital y alineadores a costos competitivos",
+          "El paciente compara precio entre clínicas con más facilidad que antes",
+          "El margen se defiende con diagnóstico y seguimiento, no solo con el producto"
         ]
       },
       {
-        "title": "B. Paquetes operativos de alta eficiencia (HEAP)",
+        "title": "B. El paciente llega mejor informado",
         "bullets": [
-          "Equipos más rápidos y flujo de cocina optimizado",
-          "Menos movimientos del personal por pedido",
-          "Objetivo: reducir tiempo por pedido y mejorar consistencia"
+          "Investiga opciones y precios antes de la primera cita",
+          "Espera ver simulaciones digitales del resultado desde la consulta inicial",
+          "Valora la transparencia sobre tiempos y número de alineadores necesarios"
         ]
       },
       {
-        "title": "C. Menú como herramienta de crecimiento",
+        "title": "C. Dónde está la oportunidad real",
         "bullets": [
-          "No agregan productos por emoción sino por datos",
-          "Lanzan productos temporales, nuevas salsas y pruebas pequeñas",
-          "Objetivo: subir frecuencia de visita y aumentar ticket promedio"
+          "Diagnósticos correctos evitan retrabajos costosos y quejas",
+          "El seguimiento cercano es lo que diferencia una clínica de un servicio genérico",
+          "Casos complejos (que el paciente no puede resolver por su cuenta) siguen siendo el terreno de mayor margen"
         ]
       }
     ]
@@ -79,37 +78,37 @@
   {
     "id": 3,
     "category": "Competitor Move",
-    "company": "Wendy's",
-    "title": "Wendy's está operando como empresa tecnológica con restaurantes",
-    "summary": "Su estrategia tiene tres motores: rediseño del menú core, digitalización completa del recorrido del cliente y expansión con fórmula financiera definida. Meta: ~1.000 aperturas netas globales hacia 2028.",
-    "tag": "Digital",
-    "tag_color": "red",
+    "company": "Grupos Dentales (DSO)",
+    "title": "Las redes de clínicas están estandarizando procesos para crecer más rápido",
+    "summary": "Los grupos y cadenas dentales multi-sede están invirtiendo en protocolos clínicos estandarizados, compras centralizadas y agenda unificada — un modelo que les da ventajas de costo frente a la clínica independiente tradicional.",
+    "tag": "Consolidación",
+    "tag_color": "amber",
     "source": "Análisis interno",
-    "date": "2025-06-01",
-    "insight": "Crecer ya no es abrir tiendas. Es abrir tiendas que nacen optimizadas.",
+    "date": "2025-06-11",
+    "insight": "La clínica independiente no compite en volumen — compite en la relación directa con el paciente que un grupo grande no siempre puede replicar.",
     "sections": [
       {
-        "title": "A. Rediseño del menú core",
+        "title": "A. Estandarización de protocolos clínicos",
         "bullets": [
-          "Mejora de hamburguesas principales antes de agregar variedad",
-          "Simplificación de ejecución en cocina",
-          "Objetivo: que el producto estrella gane, no que el menú crezca"
+          "Mismos procesos y checklist en cada sede reduce variabilidad en la calidad",
+          "Facilita entrenar personal nuevo más rápido",
+          "El paciente sabe qué esperar sin importar en qué sede lo atienden"
         ]
       },
       {
-        "title": "B. Digitalización del recorrido completo",
+        "title": "B. Compras y costos centralizados",
         "bullets": [
-          "Inversión en pedidos digitales y personalización",
-          "Experiencia omnicanal integrada",
-          "Objetivo: capturar comportamiento del cliente para retroalimentar operación"
+          "Mayor volumen de compra de insumos baja el costo por unidad",
+          "Presión de precio que la clínica independiente no siempre puede igualar",
+          "La eficiencia operativa se vuelve una ventaja competitiva, no solo un ahorro interno"
         ]
       },
       {
-        "title": "C. Expansión con fórmula financiera definida",
+        "title": "C. Dónde compite la clínica independiente",
         "bullets": [
-          "No abrir por abrir: definen retornos mínimos antes de cada apertura",
-          "Velocidad de recuperación y estructura de capital pre-definidas",
-          "Meta anunciada: ~1.000 aperturas netas globales hacia 2028"
+          "Relación de confianza y continuidad con el mismo odontólogo",
+          "Agilidad para tomar decisiones sin pasar por una estructura corporativa",
+          "Cercanía con la comunidad local como diferenciador real"
         ]
       }
     ]
@@ -117,75 +116,75 @@
   {
     "id": 4,
     "category": "Market Intelligence",
-    "company": "Darden Restaurants",
-    "title": "Darden está profesionalizando la ejecución cuando el mercado madura",
-    "summary": "Este grupo entendió algo clave: cuando el mercado madura, gana quien falla menos. Estandarización extrema, datos para decisiones diarias y consistencia sobre innovación son su ventaja competitiva.",
-    "tag": "Ejecución",
+    "company": "Membresías Dentales",
+    "title": "Más clínicas están lanzando planes propios para reducir la dependencia de aseguradoras",
+    "summary": "Ante ciclos de pago lentos y tarifas negociadas a la baja con algunos convenios, un número creciente de clínicas está ofreciendo membresías propias — pago mensual o anual directo del paciente a cambio de limpieza, revisiones y descuentos en tratamiento.",
+    "tag": "Modelo de negocio",
     "tag_color": "amber",
     "source": "Análisis interno",
-    "date": "2025-06-01",
-    "insight": "Muchas empresas creen que tienen problema de ventas. Y realmente tienen problema de operación.",
+    "date": "2025-07-02",
+    "insight": "Un plan de membresía bien diseñado no reemplaza el seguro — le da a la clínica un flujo de caja predecible que no depende de la aseguradora.",
     "sections": [
       {
-        "title": "A. Menos improvisación operativa",
+        "title": "A. Por qué están apareciendo estos planes",
         "bullets": [
-          "Estandarización extrema de procesos en todos los locales",
-          "Entrenamiento sistemático del personal",
-          "Planeación central con ejecución local"
+          "El flujo de caja mejora cuando el pago no depende de que un tercero apruebe y desembolse",
+          "Menos fricción administrativa que gestionar múltiples convenios",
+          "El paciente sin seguro también encuentra una opción accesible y predecible"
         ]
       },
       {
-        "title": "B. Datos para decisiones diarias",
+        "title": "B. Qué suelen incluir",
         "bullets": [
-          "Monitoreo constante de tráfico, ocupación y productividad",
-          "Margen por unidad como métrica de gestión diaria",
-          "Las decisiones operativas se toman con datos, no con intuición"
+          "Limpiezas y revisiones periódicas incluidas en la cuota",
+          "Descuento fijo en tratamientos adicionales (restaurativa, ortodoncia, estética)",
+          "Renovación automática que ayuda a la retención del paciente en el tiempo"
         ]
       },
       {
-        "title": "C. Consistencia sobre innovación",
+        "title": "C. El riesgo si no se calcula bien",
         "bullets": [
-          "No necesitan sorprender: necesitan que el cliente tenga la misma experiencia siempre",
-          "Menos lanzamientos de producto, más calidad en lo que ya funciona",
-          "La experiencia predecible es la ventaja competitiva"
+          "La cuota tiene que cubrir el costo real de las limpiezas incluidas más margen",
+          "Sin seguimiento, el plan se vuelve un descuento disfrazado en vez de un ingreso recurrente sano",
+          "Requiere comunicación clara para que el paciente entienda qué cubre y qué no"
         ]
       }
     ]
   },
   {
     "id": 5,
-    "category": "Industry Trend",
-    "company": "CAVA",
-    "title": "CAVA está construyendo una categoría antes de que se sature",
-    "summary": "Uno de los movimientos más inteligentes del sector: entran por clúster geográfico, mantienen percepción premium sin romper precio y construyen el sistema de escala antes de crecer.",
-    "tag": "Expansión",
+    "category": "Market Intelligence",
+    "company": "Agenda Inteligente",
+    "title": "Recordatorios automáticos y agenda asistida están bajando el ausentismo en clínicas que los adoptan",
+    "summary": "Clínicas que combinan recordatorios por WhatsApp/SMS con reglas simples de sobre-agendamiento en horarios de alto riesgo están reportando menos citas perdidas — una mejora operativa de bajo costo con impacto directo en la recaudación.",
+    "tag": "Retención",
     "tag_color": "green",
     "source": "Análisis interno",
-    "date": "2025-06-01",
-    "insight": "El objetivo es que el local #500 funcione exactamente como el #50.",
+    "date": "2025-05-30",
+    "insight": "El ausentismo casi nunca se resuelve con un recordatorio más agresivo — se resuelve entendiendo en qué franjas horarias y con qué tipo de cita ocurre más.",
     "sections": [
       {
-        "title": "A. Apertura acelerada pero geográfica",
+        "title": "A. Recordatorios por el canal correcto",
         "bullets": [
-          "No dispersan: entran a una ciudad, la densifican y luego expanden",
-          "Estrategia de clúster para maximizar reconocimiento de marca local",
-          "Evitan el error de crecer antes de tener masa crítica en cada mercado"
+          "WhatsApp tiene mejor tasa de respuesta que la llamada telefónica para confirmar citas",
+          "Confirmar 48 y 24 horas antes reduce las cancelaciones de último momento",
+          "Dar la opción de reagendar en el mismo mensaje evita que el paciente simplemente no llegue"
         ]
       },
       {
-        "title": "B. Percepción premium sin romper precio",
+        "title": "B. Identificar patrones de inasistencia",
         "bullets": [
-          "No compiten por barato: compiten por conveniencia, salud y diseño",
-          "El posicionamiento premium justifica el ticket sin necesidad de descuentos",
-          "La categoría mediterránea rápida aún tiene baja competencia directa"
+          "Ciertos horarios (primeras citas del día, tarde-noche) suelen concentrar más inasistencias",
+          "Pacientes nuevos sin historial fallan más que pacientes recurrentes",
+          "Con ese patrón identificado, se puede ajustar la agenda en vez de solo insistir con recordatorios"
         ]
       },
       {
-        "title": "C. Sistema diseñado para escalar desde el inicio",
+        "title": "C. Sobre-agendamiento como herramienta, no como parche",
         "bullets": [
-          "Procesos, entrenamiento y logística definidos antes de la expansión",
-          "La infraestructura precede al crecimiento, no al revés",
-          "Objetivo: que el local #500 funcione exactamente como el #50"
+          "Solo tiene sentido en las franjas horarias donde el histórico de inasistencia lo justifica",
+          "Usado sin criterio genera sobrecarga de sala de espera y mala experiencia",
+          "El objetivo es proteger la silla ocupada, no llenar la agenda a cualquier costo"
         ]
       }
     ]
