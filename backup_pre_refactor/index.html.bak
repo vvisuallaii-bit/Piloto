@@ -1,0 +1,2013 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Smile Dental — Intelligence Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0D1117;--surface:#161B22;--surface2:#1C2128;
+  --border:#21262D;--border2:#30363D;
+  --text:#E6EDF3;--muted:#7D8590;--faint:#484F58;
+  --accent:#00D4AA;--accent2:#00B894;
+  --blue:#388BFD;--purple:#A371F7;--amber:#E3B341;--red:#F85149;--green:#3FB950;
+  --radius:10px;--radius-sm:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+.header{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:50}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse-dot 2.5s ease-in-out infinite;flex-shrink:0}
+@keyframes pulse-dot{0%,100%{box-shadow:0 0 6px var(--accent)}50%{box-shadow:0 0 16px var(--accent),0 0 28px rgba(0,212,170,.25)}}
+.brand-name{font-size:16px;font-weight:700;color:var(--text);letter-spacing:-.02em}
+.brand-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.header-badge{font-size:10px;font-weight:600;background:rgba(0,212,170,.1);color:var(--accent);padding:3px 10px;border-radius:20px;border:1px solid rgba(0,212,170,.2);letter-spacing:.04em}
+
+.tab-nav{display:flex;border-bottom:1px solid var(--border);padding:0 28px;background:var(--surface)}
+.tab-btn{display:flex;align-items:center;gap:7px;padding:12px 18px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:-1px}
+.tab-btn:hover{color:var(--text);background:rgba(255,255,255,.03)}
+.tab-btn.active{color:var(--text);border-bottom-color:var(--accent)}
+.tab-btn svg{opacity:.6;transition:opacity .15s}
+.tab-btn.active svg,.tab-btn:hover svg{opacity:1}
+
+.page{padding:24px 28px 48px}
+.tab-pane{display:none}.tab-pane.active{display:block}
+
+.filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;margin-bottom:18px}
+.filter-label{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.07em;margin-right:4px;white-space:nowrap}
+.filter-divider{width:1px;height:18px;background:var(--border2);margin:0 4px}
+select{font-family:'Inter',sans-serif;font-size:12px;font-weight:500;padding:5px 24px 5px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);cursor:pointer;outline:none;transition:border-color .15s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237D8590' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+select:hover,select:focus{border-color:var(--accent)}
+.filter-reset{font-size:11px;color:var(--faint);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:4px;transition:color .15s;margin-left:auto;white-space:nowrap}
+.filter-reset:hover{color:var(--accent)}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;position:relative;overflow:hidden;transition:border-color .2s}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi.c-teal::before{background:var(--accent)}.kpi.c-blue::before{background:var(--blue)}.kpi.c-amber::before{background:var(--amber)}.kpi.c-purple::before{background:var(--purple)}.kpi.c-green::before{background:var(--green)}.kpi.c-red::before{background:var(--red)}
+.kpi:hover{border-color:var(--border2)}
+.kpi-icon{font-size:16px;margin-bottom:10px;opacity:.7}
+.kpi-label{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.kpi-val{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:600;color:var(--text);line-height:1.1;letter-spacing:-.02em}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:5px}
+
+.kpis-2{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px}
+.card-title{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px}
+.grid-main{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+
+.rank-row{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:6px;margin-bottom:2px}
+.rank-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--faint);width:14px;flex-shrink:0}
+.rank-name{font-size:12px;font-weight:500;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rank-bar-wrap{flex:2;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden}
+.rank-bar{height:100%;border-radius:2px}
+.rank-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);min-width:56px;text-align:right}
+
+.leg{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+.leg span{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.leg-sq{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+#loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:100}
+#loading p{font-size:13px;color:var(--muted)}
+.spinner{width:28px;height:28px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.ai-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px}
+.ai-panel-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.ai-panel-title{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:var(--text)}
+.ai-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:aipulse 2s ease-in-out infinite}
+@keyframes aipulse{0%,100%{box-shadow:0 0 0 0 rgba(0,212,170,.4)}50%{box-shadow:0 0 0 5px rgba(0,212,170,0)}}
+.ai-badge{font-size:10px;font-weight:700;background:rgba(0,212,170,.12);color:var(--accent);padding:2px 8px;border-radius:20px;border:1px solid rgba(0,212,170,.25);letter-spacing:.04em}
+.ai-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--accent);color:#0D1117;border:none;border-radius:var(--radius-sm);font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .18s}
+.ai-btn:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,212,170,.3)}
+.ai-btn:disabled{opacity:.4;cursor:default;transform:none;box-shadow:none}
+.pdf-btn{display:none;align-items:center;gap:6px;padding:8px 16px;background:transparent;color:var(--accent);border:1px solid rgba(0,212,170,.35);border-radius:var(--radius-sm);font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .18s}
+.pdf-btn:hover{background:rgba(0,212,170,.08);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,212,170,.15)}
+.pdf-btn.visible{display:flex}
+.ai-body{padding:20px}
+.ai-empty{text-align:center;padding:32px;color:var(--faint);font-size:13px;line-height:1.6}
+.ai-empty-icon{font-size:26px;margin-bottom:8px;opacity:.4}
+.ai-loading{display:none;align-items:center;gap:12px;padding:24px;justify-content:center;color:var(--muted);font-size:13px}
+.ld{display:flex;gap:5px}
+.ld span{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:ldbc .7s ease-in-out infinite}
+.ld span:nth-child(2){animation-delay:.12s}.ld span:nth-child(3){animation-delay:.24s}
+@keyframes ldbc{0%,100%{transform:translateY(0);opacity:.6}50%{transform:translateY(-6px);opacity:1}}
+.ai-result{display:none}
+.ai-lead{font-size:15px;font-weight:600;line-height:1.55;color:var(--text);border-left:3px solid var(--accent);padding-left:14px;margin-bottom:18px}
+.ai-blocks{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:16px}
+.ai-block{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:13px 15px}
+.ai-block-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.ai-block-txt{font-size:12px;line-height:1.65;color:var(--text);opacity:.85}
+.ai-actions-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:9px;padding-top:14px;border-top:1px solid var(--border)}
+.ai-action{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;font-size:12px;line-height:1.55;color:var(--text)}
+.abadge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;flex-shrink:0;margin-top:1px;letter-spacing:.04em}
+.ab-u{background:rgba(248,81,73,.15);color:#F85149;border:1px solid rgba(248,81,73,.25)}
+.ab-m{background:rgba(227,179,65,.15);color:#E3B341;border:1px solid rgba(227,179,65,.25)}
+.ab-b{background:rgba(63,185,80,.15);color:#3FB950;border:1px solid rgba(63,185,80,.25)}
+.ai-conf{display:flex;align-items:center;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.ai-conf-lbl{font-size:11px;color:var(--muted);white-space:nowrap}
+.ai-conf-track{flex:1;height:3px;background:var(--border2);border-radius:2px}
+.ai-conf-fill{height:3px;border-radius:2px;background:linear-gradient(90deg,var(--accent2),var(--accent))}
+.ai-conf-pct{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--accent)}
+
+.mi-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.mi-title-block h2{font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.02em}
+.mi-title-block p{font-size:12px;color:var(--muted);margin-top:4px}
+.mi-filter-bar{display:flex;gap:6px;flex-wrap:wrap}
+.mi-filter-btn{padding:5px 14px;background:var(--surface);border:1px solid var(--border2);border-radius:20px;color:var(--muted);font-family:'Inter',sans-serif;font-size:11px;font-weight:500;cursor:pointer;transition:all .15s}
+.mi-filter-btn:hover{border-color:var(--accent);color:var(--text)}
+.mi-filter-btn.active{background:rgba(0,212,170,.1);border-color:var(--accent);color:var(--accent)}
+.mi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+.mi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;display:flex;flex-direction:column;gap:10px;transition:border-color .2s,transform .2s;cursor:pointer}
+.mi-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.mi-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.mi-category{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.mi-tag{font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;letter-spacing:.04em;white-space:nowrap}
+.mi-tag.green{background:rgba(63,185,80,.12);color:#3FB950;border:1px solid rgba(63,185,80,.25)}
+.mi-tag.red{background:rgba(248,81,73,.12);color:#F85149;border:1px solid rgba(248,81,73,.25)}
+.mi-tag.amber{background:rgba(227,179,65,.12);color:#E3B341;border:1px solid rgba(227,179,65,.25)}
+.mi-card h3{font-size:14px;font-weight:600;color:var(--text);line-height:1.45;letter-spacing:-.01em}
+.mi-card p{font-size:12px;line-height:1.7;color:var(--muted)}
+.mi-card-footer{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border);margin-top:auto}
+.mi-source{font-size:11px;color:var(--faint)}
+.mi-date{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--faint)}
+.mi-empty{text-align:center;padding:60px 20px;color:var(--faint);font-size:13px}
+.mi-empty-icon{font-size:32px;margin-bottom:12px;opacity:.3}
+.mi-card-read{font-size:10px;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:4px;margin-top:auto;padding-top:10px}
+
+.art-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:none;align-items:flex-start;justify-content:center;padding:40px 20px;backdrop-filter:blur(2px)}
+.art-overlay.open{display:flex}
+.art-modal{background:var(--surface);border:1px solid var(--border2);border-radius:14px;width:100%;max-width:720px;max-height:85vh;overflow-y:auto;position:relative;animation:modalIn .2s ease}
+@keyframes modalIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.art-modal-header{padding:24px 28px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:10}
+.art-modal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.art-company-badge{font-size:11px;font-weight:700;color:var(--accent);background:rgba(0,212,170,.1);padding:3px 10px;border-radius:20px;border:1px solid rgba(0,212,170,.2);letter-spacing:.04em}
+.art-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1;padding:4px 8px;border-radius:6px;transition:all .15s}
+.art-close:hover{color:var(--text);background:var(--surface2)}
+.art-modal-title{font-size:18px;font-weight:700;color:var(--text);line-height:1.4;letter-spacing:-.02em;margin-bottom:8px}
+.art-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.art-tag{font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;letter-spacing:.04em}
+.art-tag.green{background:rgba(63,185,80,.12);color:#3FB950;border:1px solid rgba(63,185,80,.25)}
+.art-tag.red{background:rgba(248,81,73,.12);color:#F85149;border:1px solid rgba(248,81,73,.25)}
+.art-tag.amber{background:rgba(227,179,65,.12);color:#E3B341;border:1px solid rgba(227,179,65,.25)}
+.art-cat{font-size:11px;color:var(--muted)}
+.art-date{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--faint)}
+.art-modal-body{padding:24px 28px 28px}
+.art-summary{font-size:14px;line-height:1.7;color:var(--muted);margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.art-section{margin-bottom:20px}
+.art-section-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.art-section-title::before{content:'';display:inline-block;width:3px;height:14px;background:var(--accent);border-radius:2px;flex-shrink:0}
+.art-bullets{display:flex;flex-direction:column;gap:6px}
+.art-bullet{display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.6;color:var(--text);opacity:.85}
+.art-bullet::before{content:'›';color:var(--accent);font-weight:700;flex-shrink:0;margin-top:1px}
+.art-insight{margin-top:24px;padding:16px 20px;background:rgba(0,212,170,.06);border:1px solid rgba(0,212,170,.2);border-radius:var(--radius)}
+.art-insight-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin-bottom:6px}
+.art-insight-txt{font-size:14px;font-weight:600;color:var(--text);line-height:1.5;font-style:italic}
+
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 160px);min-height:500px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.chat-header{padding:16px 20px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.chat-header-left{display:flex;align-items:center;gap:10px}
+.chat-avatar{width:36px;height:36px;border-radius:50%;background:rgba(0,212,170,.12);border:1px solid rgba(0,212,170,.25);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.chat-header-name{font-size:14px;font-weight:600;color:var(--text)}
+.chat-header-status{font-size:11px;color:var(--accent);display:flex;align-items:center;gap:5px;margin-top:1px}
+.chat-status-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:aipulse 2s ease-in-out infinite}
+.chat-clear{font-size:11px;color:var(--faint);background:none;border:1px solid var(--border2);border-radius:6px;padding:4px 10px;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
+.chat-clear:hover{color:var(--red);border-color:var(--red)}
+.chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth}
+.chat-messages::-webkit-scrollbar{width:4px}
+.chat-messages::-webkit-scrollbar-track{background:transparent}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.chat-welcome{text-align:center;padding:32px 20px;color:var(--muted)}
+.chat-welcome-icon{font-size:36px;margin-bottom:12px;opacity:.6}
+.chat-welcome h3{font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px}
+.chat-welcome p{font-size:13px;line-height:1.6;max-width:420px;margin:0 auto 20px}
+.chat-suggestions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.chat-suggestion{font-size:12px;padding:7px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;color:var(--muted);cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
+.chat-suggestion:hover{border-color:var(--accent);color:var(--accent)}
+.msg{display:flex;gap:10px;align-items:flex-start;max-width:85%}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.msg-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;margin-top:2px}
+.msg.ai .msg-avatar{background:rgba(0,212,170,.12);border:1px solid rgba(0,212,170,.2)}
+.msg.user .msg-avatar{background:rgba(56,139,253,.12);border:1px solid rgba(56,139,253,.2)}
+.msg-bubble{padding:11px 15px;border-radius:12px;font-size:13px;line-height:1.65;max-width:100%}
+.msg.ai .msg-bubble{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-top-left-radius:3px}
+.msg.user .msg-bubble{background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.2);color:var(--text);border-top-right-radius:3px}
+.msg-bubble strong{color:var(--accent);font-weight:600}
+.msg-bubble ul{padding-left:16px;margin:6px 0}
+.msg-bubble li{margin-bottom:3px}
+.msg-bubble p{margin-bottom:6px}
+.msg-bubble p:last-child{margin-bottom:0}
+.msg-thinking{display:flex;gap:5px;align-items:center;padding:11px 15px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;border-top-left-radius:3px}
+.msg-thinking span{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:ldbc .7s ease-in-out infinite}
+.msg-thinking span:nth-child(2){animation-delay:.12s}.msg-thinking span:nth-child(3){animation-delay:.24s}
+.chat-input-wrap{padding:14px 16px;border-top:1px solid var(--border);background:var(--surface2);flex-shrink:0}
+.chat-input-row{display:flex;gap:10px;align-items:flex-end}
+.chat-input{flex:1;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;resize:none;outline:none;transition:border-color .15s;min-height:44px;max-height:120px;line-height:1.5}
+.chat-input:focus{border-color:var(--accent)}
+.chat-input::placeholder{color:var(--faint)}
+.chat-send{width:40px;height:40px;background:var(--accent);border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s;flex-shrink:0}
+.chat-send:hover{background:var(--accent2);transform:translateY(-1px)}
+.chat-send:disabled{opacity:.4;cursor:default;transform:none}
+.chat-context-bar{font-size:10px;color:var(--faint);text-align:center;margin-top:8px;letter-spacing:.03em}
+
+/* PRACTICE PROFILE MODAL */
+.pp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:none;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px)}
+.pp-overlay.open{display:flex}
+.pp-modal{background:var(--surface);border:1px solid var(--border2);border-radius:14px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;animation:modalIn .22s ease}
+.pp-modal-header{padding:24px 28px 0}
+.pp-modal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.pp-modal-title{font-size:18px;font-weight:700;color:var(--text);letter-spacing:-.02em}
+.pp-modal-sub{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:20px}
+.pp-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px 8px;border-radius:6px;transition:all .15s}
+.pp-close:hover{color:var(--text);background:var(--surface2)}
+.pp-body{padding:0 28px 28px;display:flex;flex-direction:column;gap:16px}
+.pp-field{display:flex;flex-direction:column;gap:6px}
+.pp-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.pp-label span{color:var(--accent);margin-left:2px}
+.pp-input{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;outline:none;transition:border-color .15s;width:100%}
+.pp-input:focus{border-color:var(--accent)}
+.pp-input::placeholder{color:var(--faint)}
+.pp-select{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;outline:none;cursor:pointer;width:100%;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237D8590' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;transition:border-color .15s}
+.pp-select:focus{border-color:var(--accent)}
+.pp-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pp-chips{display:flex;flex-wrap:wrap;gap:7px}
+.pp-chip{padding:5px 13px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;user-select:none}
+.pp-chip:hover{border-color:var(--accent);color:var(--text)}
+.pp-chip.selected{background:rgba(0,212,170,.1);border-color:var(--accent);color:var(--accent)}
+.pp-footer{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-top:1px solid var(--border);margin-top:4px}
+.pp-skip{font-size:12px;color:var(--faint);background:none;border:none;cursor:pointer;font-family:'Inter',sans-serif;transition:color .15s}
+.pp-skip:hover{color:var(--muted)}
+.pp-save{display:flex;align-items:center;gap:7px;padding:9px 20px;background:var(--accent);color:#0D1117;border:none;border-radius:var(--radius-sm);font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .18s}
+.pp-save:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,212,170,.3)}
+.pp-divider{height:1px;background:var(--border);margin:4px 0}
+/* Profile pill in header */
+.profile-pill{display:flex;align-items:center;gap:7px;padding:5px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;cursor:pointer;transition:all .15s;font-size:12px;color:var(--muted)}
+.profile-pill:hover{border-color:var(--accent);color:var(--accent)}
+.profile-pill.complete{border-color:rgba(0,212,170,.3);color:var(--accent)}
+.profile-dot{width:6px;height:6px;border-radius:50%;background:var(--faint);flex-shrink:0}
+.profile-pill.complete .profile-dot{background:var(--accent)}
+
+/* HEALTH SCORE */
+.hs-wrap{display:grid;grid-template-columns:auto 1fr;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px}
+.hs-left{padding:24px 28px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:180px;border-right:1px solid var(--border);position:relative}
+.hs-ring-wrap{position:relative;width:110px;height:110px;margin-bottom:12px}
+.hs-ring-wrap svg{transform:rotate(-90deg)}
+.hs-score-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.hs-score-num{font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:600;line-height:1;color:var(--text)}
+.hs-score-max{font-size:11px;color:var(--muted);margin-top:2px}
+.hs-label{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.hs-label.excellent{color:#3FB950}.hs-label.good{color:#00D4AA}.hs-label.fair{color:#E3B341}.hs-label.poor{color:#F85149}
+.hs-right{padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:10px;align-content:center}
+.hs-item{display:flex;flex-direction:column;gap:5px}
+.hs-item-head{display:flex;align-items:center;justify-content:space-between}
+.hs-item-name{font-size:11px;color:var(--muted);font-weight:500}
+.hs-item-val{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600}
+.hs-item-val.green{color:#3FB950}.hs-item-val.amber{color:#E3B341}.hs-item-val.red{color:#F85149}
+.hs-bar-track{height:4px;background:var(--border2);border-radius:2px;overflow:hidden}
+.hs-bar-fill{height:4px;border-radius:2px;transition:width .6s ease}
+.hs-bar-fill.green{background:#3FB950}.hs-bar-fill.amber{background:#E3B341}.hs-bar-fill.red{background:#F85149}
+.hs-item-bench{font-size:9px;color:var(--faint);margin-top:1px}
+@media(max-width:700px){.hs-wrap{grid-template-columns:1fr}.hs-left{border-right:none;border-bottom:1px solid var(--border)}.hs-right{grid-template-columns:1fr 1fr}}
+
+@media(max-width:900px){
+  .kpis,.kpis-2{grid-template-columns:1fr 1fr}
+  .grid-main,.grid-3,.grid-2{grid-template-columns:1fr}
+  .mi-grid{grid-template-columns:1fr}
+  .page{padding:16px 16px 40px}
+  .tab-nav,.header{padding-left:16px;padding-right:16px}
+}
+@media(max-width:480px){
+  .kpi-val{font-size:20px}
+  .tab-btn{font-size:12px;padding:10px 12px}
+}
+
+/* ── REVENUE FORECAST ── */
+.fc-hero{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.fc-hero-left h2{font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.02em;margin-bottom:4px}
+.fc-hero-left p{font-size:12px;color:var(--muted);line-height:1.5;max-width:480px}
+.fc-hero-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0}
+.fc-decision-label{font-size:11px;color:var(--faint);white-space:nowrap}
+.fc-decision-select{font-family:'Inter',sans-serif;font-size:12px;font-weight:500;padding:7px 28px 7px 12px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);cursor:pointer;outline:none;transition:border-color .15s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237D8590' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+.fc-decision-select:focus{border-color:var(--accent)}
+.fc-gen-btn{display:flex;align-items:center;gap:7px;padding:9px 20px;background:var(--accent);color:#0D1117;border:none;border-radius:var(--radius-sm);font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .18s;white-space:nowrap}
+.fc-gen-btn:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,212,170,.3)}
+.fc-gen-btn:disabled{opacity:.4;cursor:default;transform:none;box-shadow:none}
+.fc-chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:16px}
+.fc-chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.fc-chart-title{font-size:13px;font-weight:600;color:var(--text)}
+.fc-chart-legend{display:flex;gap:14px;flex-wrap:wrap}
+.fc-leg-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.fc-leg-line{width:20px;height:2px;border-radius:2px}
+.fc-empty{text-align:center;padding:56px 20px;color:var(--faint);font-size:13px;line-height:1.7}
+.fc-empty-icon{font-size:36px;margin-bottom:12px;opacity:.3}
+.fc-scenarios{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.fc-scenario{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden;transition:border-color .2s}
+.fc-scenario::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.fc-scenario.sc-bad::before{background:var(--red)}.fc-scenario.sc-base::before{background:var(--amber)}.fc-scenario.sc-opt::before{background:var(--green)}
+.fc-scenario:hover{border-color:var(--border2)}
+.fc-sc-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.fc-sc-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.fc-scenario.sc-bad .fc-sc-label{color:var(--red)}.fc-scenario.sc-base .fc-sc-label{color:var(--amber)}.fc-scenario.sc-opt .fc-sc-label{color:var(--green)}
+.fc-sc-conf{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--faint)}
+.fc-sc-conf-bar{width:36px;height:3px;background:var(--border2);border-radius:2px;overflow:hidden}
+.fc-sc-conf-fill{height:3px;border-radius:2px}
+.fc-scenario.sc-bad .fc-sc-conf-fill{background:var(--red)}.fc-scenario.sc-base .fc-sc-conf-fill{background:var(--amber)}.fc-scenario.sc-opt .fc-sc-conf-fill{background:var(--green)}
+.fc-sc-amount{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:600;color:var(--text);letter-spacing:-.02em;line-height:1}
+.fc-sc-period{font-size:11px;color:var(--muted);margin-top:3px}
+.fc-sc-cost{font-size:11px;color:var(--red);font-weight:600;padding:7px 10px;background:rgba(248,81,73,.07);border-radius:6px;border:1px solid rgba(248,81,73,.15);line-height:1.4}
+.fc-sc-factors{display:flex;flex-direction:column;gap:5px}
+.fc-sc-factor{font-size:11px;color:var(--muted);line-height:1.5;display:flex;align-items:flex-start;gap:6px}
+.fc-sc-factor::before{content:'›';color:var(--faint);flex-shrink:0}
+.fc-sc-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 14px;border-radius:var(--radius-sm);font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .18s;margin-top:4px;border:1px solid}
+.fc-scenario.sc-bad .fc-sc-btn{background:rgba(248,81,73,.08);color:var(--red);border-color:rgba(248,81,73,.2)}
+.fc-scenario.sc-base .fc-sc-btn{background:rgba(227,179,65,.08);color:var(--amber);border-color:rgba(227,179,65,.2)}
+.fc-scenario.sc-opt .fc-sc-btn{background:rgba(63,185,80,.08);color:var(--green);border-color:rgba(63,185,80,.2)}
+.fc-sc-btn:hover{transform:translateY(-1px);filter:brightness(1.2)}
+.fc-questions-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:16px}
+.fc-q-header{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.fc-q-title{font-size:13px;font-weight:600;color:var(--text)}
+.fc-q-badge{font-size:9px;font-weight:700;background:rgba(0,212,170,.1);color:var(--accent);padding:2px 8px;border-radius:20px;border:1px solid rgba(0,212,170,.2);letter-spacing:.04em}
+.fc-q-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fc-q-btn{display:flex;align-items:flex-start;gap:9px;padding:12px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);cursor:pointer;text-align:left;transition:all .18s;font-family:'Inter',sans-serif;width:100%}
+.fc-q-btn:hover{border-color:var(--accent);background:rgba(0,212,170,.04)}
+.fc-q-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+.fc-q-text{font-size:12px;color:var(--muted);line-height:1.5}
+.fc-q-btn:hover .fc-q-text{color:var(--text)}
+.fc-answer-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px;display:none}
+.fc-answer-card.visible{display:block}
+.fc-answer-head{display:flex;align-items:center;gap:10px;padding:13px 20px;background:var(--surface2);border-bottom:1px solid var(--border)}
+.fc-answer-q{font-size:12px;font-weight:600;color:var(--text);flex:1}
+.fc-answer-x{background:none;border:none;color:var(--faint);cursor:pointer;font-size:16px;padding:2px 6px;border-radius:4px;transition:color .15s}
+.fc-answer-x:hover{color:var(--text)}
+.fc-answer-body{padding:18px 20px}
+.fc-answer-ld{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
+.fc-answer-txt{font-size:13px;color:var(--text);line-height:1.75;opacity:.9}
+.fc-answer-txt strong{color:var(--accent)}
+.fc-answer-txt ul{margin:8px 0 8px 16px;display:flex;flex-direction:column;gap:4px}
+.fc-accuracy-bar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:none;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.fc-accuracy-bar.visible{display:flex}
+.fc-acc-icon{font-size:18px}
+.fc-acc-txt{font-size:12px;color:var(--muted);flex:1;line-height:1.5}
+.fc-acc-txt strong{color:var(--text)}
+.fc-acc-pill{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px}
+.fc-acc-pill.great{background:rgba(63,185,80,.12);color:var(--green);border:1px solid rgba(63,185,80,.25)}
+.fc-acc-pill.good{background:rgba(0,212,170,.12);color:var(--accent);border:1px solid rgba(0,212,170,.25)}
+.fc-acc-pill.fair{background:rgba(227,179,65,.12);color:var(--amber);border:1px solid rgba(227,179,65,.25)}
+@media(max-width:900px){.fc-scenarios{grid-template-columns:1fr}.fc-q-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.fc-hero{flex-direction:column;align-items:flex-start}.fc-hero-right{width:100%}.fc-decision-select{flex:1}}
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="spinner"></div><p>Loading practice data...</p></div>
+
+<div id="app" style="display:none">
+
+<header class="header">
+  <div class="brand">
+    <div class="brand-dot"></div>
+    <div>
+      <div class="brand-name">Smile Dental</div>
+      <div class="brand-sub">Dashboard de Inteligencia Dental</div>
+    </div>
+  </div>
+  <span class="header-badge">Desarrollado con Claude IA</span>
+  <button class="profile-pill" id="profile-pill" onclick="openProfile()">
+    <span class="profile-dot"></span>
+    <span id="profile-pill-label">Configurar perfil de clínica</span>
+  </button>
+</header>
+
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('sales',this)">
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+    Rendimiento de la Clínica
+  </button>
+  <button class="tab-btn" onclick="switchTab('market',this)">
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    Tendencias
+  </button>
+  <button class="tab-btn" onclick="switchTab('partner',this)">
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+    Asesor IA
+  </button>
+  <button class="tab-btn" onclick="switchTab('forecast',this)">
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+    Proyección
+  </button>
+</nav>
+
+<div class="page">
+
+<!-- PRACTICE PERFORMANCE -->
+<div class="tab-pane active" id="tab-sales">
+
+  <div class="filter-bar">
+    <span class="filter-label">Filter by</span>
+    <div class="filter-divider"></div>
+    <select id="fMonth" onchange="go()"><option value="">All months</option></select>
+    <button class="filter-reset" onclick="resetFilters()">✕ Reset</button>
+  </div>
+
+  <!-- PRACTICE HEALTH SCORE -->
+  <div class="hs-wrap" id="hs-wrap">
+    <div class="hs-left">
+      <div class="hs-ring-wrap">
+        <svg width="110" height="110" viewBox="0 0 110 110">
+          <circle cx="55" cy="55" r="46" fill="none" stroke="#21262D" stroke-width="8"/>
+          <circle cx="55" cy="55" r="46" fill="none" stroke="#00D4AA" stroke-width="8"
+            stroke-dasharray="289" stroke-dashoffset="289"
+            stroke-linecap="round" id="hs-ring" style="transition:stroke-dashoffset .8s ease,stroke .4s"/>
+        </svg>
+        <div class="hs-score-center">
+          <div class="hs-score-num" id="hs-num">—</div>
+          <div class="hs-score-max">/100</div>
+        </div>
+      </div>
+      <div class="hs-label" id="hs-label">Loading...</div>
+    </div>
+    <div class="hs-right" id="hs-items"></div>
+  </div>
+
+  <!-- Row 1 KPIs: Financial -->
+  <div class="kpis" style="margin-bottom:10px">
+    <div class="kpi c-teal"><div class="kpi-icon">💰</div><div class="kpi-label">Recaudación Total</div><div class="kpi-val" id="kCollections">—</div><div class="kpi-sub" id="kCollectionsSub">—</div></div>
+    <div class="kpi c-blue"><div class="kpi-icon">🦷</div><div class="kpi-label">Producción Bruta</div><div class="kpi-val" id="kProduction">—</div><div class="kpi-sub" id="kProductionSub">avg/month</div></div>
+    <div class="kpi c-green"><div class="kpi-icon">📈</div><div class="kpi-label">Ingreso Neto</div><div class="kpi-val" id="kNetIncome">—</div><div class="kpi-sub" id="kNetIncomeSub">after overhead</div></div>
+    <div class="kpi c-red"><div class="kpi-icon">🏢</div><div class="kpi-label">Tasa de Gastos</div><div class="kpi-val" id="kOverhead">—</div><div class="kpi-sub">target: &lt;60%</div></div>
+  </div>
+
+  <!-- Row 2 KPIs: Patient -->
+  <div class="kpis" style="margin-bottom:16px">
+    <div class="kpi c-purple"><div class="kpi-icon">👥</div><div class="kpi-label">Pacientes Nuevos</div><div class="kpi-val" id="kNewPat">—</div><div class="kpi-sub" id="kNewPatSub">total period</div></div>
+    <div class="kpi c-amber"><div class="kpi-icon">📅</div><div class="kpi-label">Appointments</div><div class="kpi-val" id="kAppts">—</div><div class="kpi-sub" id="kApptsSub">completed</div></div>
+    <div class="kpi c-teal"><div class="kpi-icon">✅</div><div class="kpi-label">Aceptación de Tratamientos</div><div class="kpi-val" id="kAcceptance">—</div><div class="kpi-sub">industry avg: 65–80%</div></div>
+    <div class="kpi c-blue"><div class="kpi-icon">⚠️</div><div class="kpi-label">Tasa de Ausentismo</div><div class="kpi-val" id="kNoShow">—</div><div class="kpi-sub">target: &lt;8%</div></div>
+  </div>
+
+  <div class="ai-panel">
+    <div class="ai-panel-header">
+      <div class="ai-panel-title"><div class="ai-dot"></div>Análisis Ejecutivo IA<span class="ai-badge">Claude</span></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="pdf-btn" id="pdf-btn" onclick="exportPDF()">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Exportar PDF
+        </button>
+        <button class="ai-btn" id="ai-btn" onclick="runAnalysis()">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          Analizar con IA
+        </button>
+      </div>
+    </div>
+    <div class="ai-body">
+      <div class="ai-empty" id="ai-empty"><div class="ai-empty-icon">◈</div>Haz clic en <strong style="color:var(--accent)">Analizar con IA</strong> para generar un análisis ejecutivo de Smile Dental. Los filtros activos aplican.</div>
+      <div class="ai-loading" id="ai-loading"><div class="ld"><span></span><span></span><span></span></div><span id="ai-loading-txt">Analyzing practice data...</span></div>
+      <div class="ai-result" id="ai-result"></div>
+    </div>
+  </div>
+
+  <div class="grid-main">
+    <div class="card"><div class="card-title">Monthly collections trend</div><div style="position:relative;height:200px"><canvas id="cTime"></canvas></div></div>
+    <div class="card"><div class="card-title">Revenue mix by service</div><div id="lServ" class="leg"></div><div style="position:relative;height:160px"><canvas id="cServ"></canvas></div></div>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">Revenue by service line</div>
+      <div id="rServ"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Patient flow by month</div>
+      <div id="rPat"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Appointment outcomes</div>
+      <div id="rAppt"></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card"><div class="card-title">Overhead breakdown</div><div style="position:relative;height:180px"><canvas id="cOverhead"></canvas></div></div>
+    <div class="card"><div class="card-title">Production vs collections (monthly)</div><div style="position:relative;height:180px"><canvas id="cProdCol"></canvas></div></div>
+  </div>
+
+</div><!-- /tab-sales -->
+
+<!-- MARKET INTELLIGENCE -->
+<div class="tab-pane" id="tab-market">
+  <div class="mi-header">
+    <div class="mi-title-block">
+      <h2>Tendencias del Sector</h2>
+      <p>Dental industry trends and insights — curated for Smile Dental</p>
+    </div>
+    <div class="mi-filter-bar">
+      <button class="mi-filter-btn active" onclick="filterArticles('all',this)">All</button>
+      <button class="mi-filter-btn" onclick="filterArticles('Industry Trend',this)">Industry Trends</button>
+      <button class="mi-filter-btn" onclick="filterArticles('Competitor Move',this)">Competitor Moves</button>
+      <button class="mi-filter-btn" onclick="filterArticles('Tendencias del Sector',this)">Market Data</button>
+    </div>
+  </div>
+  <div class="mi-grid" id="mi-grid"><div class="mi-empty"><div class="mi-empty-icon">📡</div><p>Loading intelligence feed...</p></div></div>
+</div>
+
+<!-- AI PARTNER -->
+<div class="tab-pane" id="tab-partner">
+  <div class="chat-wrap">
+    <div class="chat-header">
+      <div class="chat-header-left">
+        <div class="chat-avatar">🦷</div>
+        <div>
+          <div class="chat-header-name">Asesor IA — Smile Dental</div>
+          <div class="chat-header-status"><div class="chat-status-dot"></div>Connected to your practice data</div>
+        </div>
+      </div>
+      <button class="chat-clear" onclick="clearChat()">↺ New conversation</button>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="chat-welcome" id="chat-welcome">
+        <div class="chat-welcome-icon">🦷</div>
+        <h3>Tu asesor de clínica dental está listo</h3>
+        <p id="chat-welcome-p">I have full access to your practice data. Ask me anything — I validate ideas, analyze trends, and give you direct strategic advice.</p>
+        <div class="chat-suggestions">
+          <button class="chat-suggestion" onclick="sendSuggestion(this)">¿Cuál servicio es el más rentable?</button>
+          <button class="chat-suggestion" onclick="sendSuggestion(this)">¿Por qué mi tasa de ausentismo es alta?</button>
+          <button class="chat-suggestion" onclick="sendSuggestion(this)">¿Cómo mejoro la aceptación de tratamientos?</button>
+          <button class="chat-suggestion" onclick="sendSuggestion(this)">¿Qué está elevando mis gastos operativos?</button>
+          <button class="chat-suggestion" onclick="sendSuggestion(this)">¿En qué meses tengo mayor oportunidad de ingresos?</button>
+        </div>
+      </div>
+    </div>
+    <div class="chat-input-wrap">
+      <div class="chat-input-row">
+        <textarea class="chat-input" id="chat-input" placeholder="Ask about your practice performance..." rows="1"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+        <button class="chat-send" id="chat-send" onclick="sendChat()">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+          </svg>
+        </button>
+      </div>
+      <div class="chat-context-bar" id="chat-context-bar">Loading practice context...</div>
+    </div>
+  </div>
+</div>
+
+<!-- REVENUE FORECAST -->
+<div class="tab-pane" id="tab-forecast">
+
+  <!-- Hero / Controls -->
+  <div class="fc-hero">
+    <div class="fc-hero-left">
+      <h2>📈 Proyección de Ingresos</h2>
+      <p>Con base en tus datos históricos, la IA proyecta tu próximo mes en 3 escenarios — para tomar decisiones de contratación, compras y agenda con confianza.</p>
+    </div>
+    <div class="fc-hero-right">
+      <span class="fc-decision-label">Estoy decidiendo sobre:</span>
+      <select class="fc-decision-select" id="fc-decision">
+        <option value="general">Panorama general</option>
+        <option value="hiring">Contratar un higienista</option>
+        <option value="equipment">Comprar equipo</option>
+        <option value="saturday">Abrir los sábados</option>
+        <option value="promotion">Lanzar una promoción</option>
+        <option value="insurance">Salir de un seguro</option>
+        <option value="expansion">Expandir la clínica</option>
+      </select>
+      <button class="fc-gen-btn" id="fc-gen-btn" onclick="generateForecast()">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        Generar Proyección
+      </button>
+    </div>
+  </div>
+
+  <!-- Accuracy tracker (shown after first forecast) -->
+  <div class="fc-accuracy-bar" id="fc-accuracy-bar">
+    <span class="fc-acc-icon">🎯</span>
+    <div class="fc-acc-txt" id="fc-acc-txt">Last month we projected <strong>$87,400</strong> (base scenario). You ended at <strong>$91,200</strong> — 4.3% above forecast.</div>
+    <span class="fc-acc-pill good" id="fc-acc-pill">+4.3% vs forecast</span>
+  </div>
+
+  <!-- Chart -->
+  <div class="fc-chart-card">
+    <div class="fc-chart-header">
+      <span class="fc-chart-title">Recaudación — histórico + proyección</span>
+      <div class="fc-chart-legend" id="fc-legend">
+        <div class="fc-leg-item"><div class="fc-leg-line" style="background:var(--accent)"></div>Histórico</div>
+        <div class="fc-leg-item" id="fc-leg-bad" style="display:none"><div class="fc-leg-line" style="background:var(--red)"></div>Pesimista</div>
+        <div class="fc-leg-item" id="fc-leg-base" style="display:none"><div class="fc-leg-line" style="background:var(--amber)"></div>Base</div>
+        <div class="fc-leg-item" id="fc-leg-opt" style="display:none"><div class="fc-leg-line" style="background:var(--green)"></div>Optimista</div>
+      </div>
+    </div>
+    <div id="fc-chart-area" style="position:relative;height:240px">
+      <div class="fc-empty" id="fc-chart-empty">
+        <div class="fc-empty-icon">📊</div>
+        Generate your forecast to see the proyección chart
+      </div>
+      <canvas id="fc-chart" style="display:none"></canvas>
+    </div>
+  </div>
+
+  <!-- Scenario cards (hidden until forecast) -->
+  <div class="fc-scenarios" id="fc-scenarios" style="display:none">
+    <!-- Populated by JS -->
+  </div>
+
+  <!-- Quick questions (hidden until forecast) -->
+  <div class="fc-questions-card" id="fc-questions-card" style="display:none">
+    <div class="fc-q-header">
+      <div class="fc-ai-dot" style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:aipulse 2s ease-in-out infinite"></div>
+      <span class="fc-q-title">Pregunta sobre tu proyección</span>
+      <span class="fc-q-badge">Respuestas rápidas</span>
+    </div>
+    <div class="fc-q-grid" id="fc-q-grid">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <!-- Answer panel -->
+  <div class="fc-answer-card" id="fc-answer-card">
+    <div class="fc-answer-head">
+      <div class="fc-ai-dot" style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:aipulse 2s ease-in-out infinite;flex-shrink:0"></div>
+      <span class="fc-answer-q" id="fc-answer-q"></span>
+      <button class="fc-answer-x" onclick="closeFcAnswer()">✕</button>
+    </div>
+    <div class="fc-answer-body" id="fc-answer-body"></div>
+  </div>
+
+</div><!-- /tab-forecast -->
+
+</div><!-- /page -->
+
+<!-- ARTICLE MODAL -->
+<div class="art-overlay" id="art-overlay" onclick="closeArticle(event)">
+  <div class="art-modal" id="art-modal">
+    <div class="art-modal-header">
+      <div class="art-modal-top">
+        <span class="art-company-badge" id="art-company">Source</span>
+        <button class="art-close" onclick="closeArticle()">✕</button>
+      </div>
+      <div class="art-modal-title" id="art-title"></div>
+      <div class="art-meta">
+        <span class="art-tag" id="art-tag"></span>
+        <span class="art-cat" id="art-cat"></span>
+        <span class="art-date" id="art-date"></span>
+      </div>
+    </div>
+    <div class="art-modal-body">
+      <div class="art-summary" id="art-summary"></div>
+      <div id="art-sections"></div>
+      <div class="art-insight">
+        <div class="art-insight-lbl">Key insight</div>
+        <div class="art-insight-txt" id="art-insight"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<!-- PRACTICE PROFILE MODAL -->
+<div class="pp-overlay" id="pp-overlay" onclick="ppOverlayClick(event)">
+  <div class="pp-modal" id="pp-modal">
+    <div class="pp-modal-header">
+      <div class="pp-modal-top">
+        <div class="pp-modal-title">🦷 Perfil de la Clínica</div>
+        <button class="pp-close" onclick="closeProfile()">✕</button>
+      </div>
+      <div class="pp-modal-sub">This context stays saved locally and makes your Asesor IA dramatically more precise — it'll answer specific to your situation, not generic advice.</div>
+    </div>
+    <div class="pp-body">
+
+      <div class="pp-row">
+        <div class="pp-field">
+          <label class="pp-label">Nombre de la clínica <span>*</span></label>
+          <input class="pp-input" id="pp-name" placeholder="ej. Clínica Dental Sonrisa" maxlength="60"/>
+        </div>
+        <div class="pp-field">
+          <label class="pp-label">Ciudad / Departamento</label>
+          <input class="pp-input" id="pp-location" placeholder="ej. Bogotá, Cundinamarca" maxlength="60"/>
+        </div>
+      </div>
+
+      <div class="pp-row">
+        <div class="pp-field">
+          <label class="pp-label">Número de consultorios</label>
+          <select class="pp-select" id="pp-chairs">
+            <option value="">Seleccionar...</option>
+            <option value="1-2">1–2 consultorios</option>
+            <option value="3-4">3–4 consultorios</option>
+            <option value="5-6">5–6 consultorios</option>
+            <option value="7+">7+ consultorios</option>
+          </select>
+        </div>
+        <div class="pp-field">
+          <label class="pp-label">Odontólogos en la clínica</label>
+          <select class="pp-select" id="pp-doctors">
+            <option value="">Seleccionar...</option>
+            <option value="solo">Odontólogo solo</option>
+            <option value="2">2 odontólogos</option>
+            <option value="3+">3+ odontólogos</option>
+            <option value="group">Grupo / Red de clínicas</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="pp-field">
+        <label class="pp-label">Convenios y pagadores</label>
+        <div class="pp-chips" id="pp-insurance">
+          <div class="pp-chip" data-val="ppo" onclick="toggleChip(this,'pp-insurance')">PPO</div>
+          <div class="pp-chip" data-val="hmo" onclick="toggleChip(this,'pp-insurance')">HMO / Medicaid</div>
+          <div class="pp-chip" data-val="ffs" onclick="toggleChip(this,'pp-insurance')">Particular (sin convenio)</div>
+          <div class="pp-chip" data-val="membership" onclick="toggleChip(this,'pp-insurance')">Plan propio de membresía</div>
+          <div class="pp-chip" data-val="mixed" onclick="toggleChip(this,'pp-insurance')">Mixto</div>
+        </div>
+      </div>
+
+      <div class="pp-field">
+        <label class="pp-label">Zona de la clínica</label>
+        <div class="pp-chips" id="pp-area">
+          <div class="pp-chip" data-val="urban" onclick="toggleChip(this,'pp-area',true)">Urbana</div>
+          <div class="pp-chip" data-val="suburban" onclick="toggleChip(this,'pp-area',true)">Zona residencial</div>
+          <div class="pp-chip" data-val="rural" onclick="toggleChip(this,'pp-area',true)">Rural</div>
+        </div>
+      </div>
+
+      <div class="pp-field">
+        <label class="pp-label">Meta de ingresos anuales</label>
+        <select class="pp-select" id="pp-goal">
+          <option value="">Seleccionar...</option>
+          <option value="under500k">Under $500k</option>
+          <option value="500k-750k">$500k – $750k</option>
+          <option value="750k-1m">$750k – $1M</option>
+          <option value="1m-1.5m">$1M – $1.5M</option>
+          <option value="1.5m+">$1Más de 00M COP</option>
+        </select>
+      </div>
+
+      <div class="pp-divider"></div>
+
+      <div class="pp-field">
+        <label class="pp-label">Principal reto ahora mismo</label>
+        <div class="pp-chips" id="pp-challenge">
+          <div class="pp-chip" data-val="new_patients" onclick="toggleChip(this,'pp-challenge',true)">Atraer pacientes nuevos</div>
+          <div class="pp-chip" data-val="retention" onclick="toggleChip(this,'pp-challenge',true)">Retención de pacientes</div>
+          <div class="pp-chip" data-val="overhead" onclick="toggleChip(this,'pp-challenge',true)">Reducir gastos operativos</div>
+          <div class="pp-chip" data-val="acceptance" onclick="toggleChip(this,'pp-challenge',true)">Aceptación de tratamientos</div>
+          <div class="pp-chip" data-val="noshows" onclick="toggleChip(this,'pp-challenge',true)">Ausentismo / cancelaciones</div>
+          <div class="pp-chip" data-val="staff" onclick="toggleChip(this,'pp-challenge',true)">Personal / contratación</div>
+          <div class="pp-chip" data-val="growth" onclick="toggleChip(this,'pp-challenge',true)">Escalar / crecer</div>
+          <div class="pp-chip" data-val="cashflow" onclick="toggleChip(this,'pp-challenge',true)">Flujo de caja</div>
+        </div>
+      </div>
+
+      <div class="pp-field">
+        <label class="pp-label">¿Algo más que el IA debería saber? <span style="color:var(--faint);font-weight:400;text-transform:none">(opcional)</span></label>
+        <textarea class="pp-input" id="pp-notes" placeholder="ej. Estamos pensando en abrir una segunda sede. Recientemente agregamos ortodoncia invisible..." rows="3" style="resize:vertical;min-height:70px"></textarea>
+      </div>
+
+    </div>
+    <div class="pp-footer">
+      <button class="pp-skip" onclick="closeProfile()">Omitir por ahora</button>
+      <button class="pp-save" onclick="saveProfile()">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        Guardar perfil
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PALETTE=['#00D4AA','#388BFD','#E3B341','#A371F7','#F85149','#3FB950'];
+const WORKER_URL='https://claude-proxy.vvisuall-aii.workers.dev';
+Chart.defaults.color='#7D8590';Chart.defaults.borderColor='#21262D';Chart.defaults.font.family="'Inter',system-ui,sans-serif";
+
+let ALL=[],charts={},CURRENT_DATA=[];
+let ARTICLES=[];
+let chatHistory=[],chatDataContext='',chatReady=false;
+let LAST_RESULT=null;
+let FC_RESULT=null;
+let FC_CHART=null;
+
+/* ── WHITE LABEL — reads ?practice=&city=&doctor= from URL ── */
+const URL_PARAMS=(()=>{
+  const p=new URLSearchParams(window.location.search);
+  const name=(p.get('practice')||'').trim().replace(/\+/g,' ');
+  const city=(p.get('city')||'').trim().replace(/\+/g,' ');
+  const doctor=(p.get('doctor')||'').trim().replace(/\+/g,' ');
+  return{name,city,doctor,active:!!name};
+})();
+
+function getWhiteLabel(){
+  // Priority: URL param > Perfil de la Clínica > default
+  if(URL_PARAMS.active) return URL_PARAMS.name;
+  if(PRACTICE_PROFILE?.name) return PRACTICE_PROFILE.name;
+  return 'Smile Dental';
+}
+
+function applyWhiteLabel(){
+  const name=getWhiteLabel();
+  const city=URL_PARAMS.city||(PRACTICE_PROFILE?.location||'');
+  const doctor=URL_PARAMS.doctor||'';
+
+  // Page title
+  document.title=`${name} — Intelligence Dashboard`;
+
+  // Header brand name
+  const brandEl=document.querySelector('.brand-name');
+  if(brandEl) brandEl.textContent=name;
+
+  // Brand subtitle
+  const subEl=document.querySelector('.brand-sub');
+  if(subEl) subEl.textContent=city?`${city} · Practice Intelligence`:'Dashboard de Inteligencia Dental';
+
+  // AI panel empty state
+  const aiEmpty=document.getElementById('ai-empty');
+  if(aiEmpty) aiEmpty.innerHTML=`<div class="ai-empty-icon">◈</div>Haz clic en <strong style="color:var(--accent)">Analizar con IA</strong> para generar un análisis ejecutivo de ${name}. Los filtros activos aplican.`;
+
+  // Tendencias del Sector subtitle
+  const miSub=document.querySelector('.mi-header p');
+  if(miSub) miSub.textContent=`Dental industry trends and insights — curated for ${name}`;
+
+  // Chat header
+  const chatNameEl=document.querySelector('.chat-header-name');
+  if(chatNameEl) chatNameEl.textContent=`Asesor IA — ${name}`;
+
+  // Chat welcome message
+  const chatWelcomeP=document.getElementById('chat-welcome-p')||document.querySelector('#chat-welcome p');
+  if(chatWelcomeP) chatWelcomeP.textContent=`I have full access to ${name}'s performance data. Ask me anything — I validate ideas, analyze trends, and give you direct strategic advice.`;
+
+  // Profile pill
+  const pill=document.getElementById('profile-pill');
+  const pillLbl=document.getElementById('profile-pill-label');
+  if(URL_PARAMS.active && pill && pillLbl){
+    pill.classList.add('complete');
+    pillLbl.textContent=`${name}${doctor?' · '+doctor:''}${city?' · '+city:''}`;
+  }
+
+  // If URL params present, pre-fill profile modal fields
+  if(URL_PARAMS.active){
+    const nameInput=document.getElementById('pp-name');
+    const locInput=document.getElementById('pp-location');
+    if(nameInput && !nameInput.value) nameInput.value=name;
+    if(locInput && !locInput.value && city) locInput.value=city;
+  }
+}
+
+
+
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ── CSV ── */
+async function loadCSV(){
+  try{
+    const res=await fetch('smile_dental_demo.csv');
+    const text=await res.text();
+    const lines=text.trim().split('\n');
+    const headers=lines[0].split(',').map(h=>h.trim());
+    ALL=lines.slice(1).map(line=>{
+      const cols=line.split(',');
+      const r={};
+      headers.forEach((h,i)=>{r[h]=cols[i]?cols[i].trim():'';});
+      // parse numeric fields
+      ['gross_production','collections','new_patients','active_patients',
+       'appointments_scheduled','appointments_completed','cancellations','no_shows',
+       'treatment_plans_presented','treatment_plans_accepted',
+       'hygiene_revenue','restorative_revenue','cosmetic_revenue','orthodontic_revenue',
+       'overhead_costs','staff_costs','supplies_costs','net_income'].forEach(k=>{
+        r[k]=parseFloat(r[k])||0;
+      });
+      return r;
+    }).filter(r=>r.month);
+    document.getElementById('loading').style.display='none';
+    document.getElementById('app').style.display='block';
+    popFilters();render(ALL);initChat();
+  }catch(e){
+    document.getElementById('loading').innerHTML='<p style="color:#F85149">Error loading smile_dental_demo.csv — '+e.message+'</p>';
+  }
+}
+
+function popFilters(){
+  const sel=document.getElementById('fMonth');
+  [...new Set(ALL.map(r=>r.month))].sort().forEach(v=>{
+    const o=document.createElement('option');o.value=v;
+    o.textContent=new Date(v+'-02').toLocaleDateString('en-US',{month:'long',year:'numeric'});
+    sel.appendChild(o);
+  });
+}
+
+function go(){
+  const m=document.getElementById('fMonth').value;
+  let d=ALL;
+  if(m)d=d.filter(r=>r.month===m);
+  render(d);
+}
+function resetFilters(){document.getElementById('fMonth').value='';render(ALL);}
+
+function kill(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+function mkLeg(id,entries){
+  const tot=entries.reduce((s,e)=>s+e[1],0);
+  document.getElementById(id).innerHTML=entries.map((e,i)=>
+    `<span><span class="leg-sq" style="background:${PALETTE[i%PALETTE.length]}"></span>${e[0]} <strong style="color:var(--text);font-weight:500">${Math.round(e[1]/tot*100)}%</strong></span>`
+  ).join('');
+}
+function mkRank(id,entries,fmt){
+  const max=entries[0]?entries[0][1]:1;
+  document.getElementById(id).innerHTML=entries.map((e,i)=>`
+    <div class="rank-row">
+      <div class="rank-num">${i+1}</div>
+      <div class="rank-name">${e[0]}</div>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(e[1]/max*100)}%;background:${PALETTE[i%PALETTE.length]}"></div></div>
+      <div class="rank-val">${fmt?fmt(e[1]):Math.round(e[1]).toLocaleString()}</div>
+    </div>`).join('');
+}
+function fmtUSD(v){return '$'+Math.round(v).toLocaleString();}
+function fmtDate(s){return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
+
+/* ── PRACTICE HEALTH SCORE ── */
+function computeHealthScore(data){
+  const sum=k=>data.reduce((s,r)=>s+r[k],0);
+  const totalCollections=sum('collections');
+  const totalOverhead=sum('overhead_costs');
+  const totalScheduled=sum('appointments_scheduled');
+  const totalNoShows=sum('no_shows');
+  const totalCompleted=sum('appointments_completed');
+  const totalPresented=sum('treatment_plans_presented');
+  const totalAccepted=sum('treatment_plans_accepted');
+  const totalNewPat=sum('new_patients');
+  const totalProduction=sum('gross_production');
+  const months=data.length||1;
+
+  // 1. Tasa de gastos — meta <65% Colombia (costos operativos más altos relativamente)
+  const overheadRate=totalCollections?totalOverhead/totalCollections*100:100;
+  const overheadScore=overheadRate<55?100:overheadRate<65?75:overheadRate<75?45:20;
+  const overheadColor=overheadRate<55?'green':overheadRate<65?'amber':'red';
+
+  // 2. Aceptación de tratamientos — meta >65% Colombia
+  const acceptRate=totalPresented?totalAccepted/totalPresented*100:0;
+  const acceptScore=acceptRate>65?100:acceptRate>55?78:acceptRate>45?50:25;
+  const acceptColor=acceptRate>65?'green':acceptRate>55?'amber':'red';
+
+  // 3. Ausentismo — meta <12% Colombia (cultura local más flexible)
+  const noShowRate=totalScheduled?totalNoShows/totalScheduled*100:100;
+  const noShowScore=noShowRate<8?100:noShowRate<12?72:noShowRate<18?44:15;
+  const noShowColor=noShowRate<8?'green':noShowRate<12?'amber':'red';
+
+  // 4. Pacientes nuevos — meta >20/mes clínica mediana Colombia
+  const avgNewPat=totalNewPat/months;
+  const newPatScore=avgNewPat>25?100:avgNewPat>15?75:avgNewPat>8?48:22;
+  const newPatColor=avgNewPat>25?'green':avgNewPat>15?'amber':'red';
+
+  // 5. Tasa de cobro — meta >95% Colombia
+  const colRate=totalProduction?totalCollections/totalProduction*100:0;
+  const colScore=colRate>95?100:colRate>90?80:colRate>85?55:30;
+  const colColor=colRate>95?'green':colRate>90?'amber':'red';
+
+  // Ponderado total
+  const total=Math.round(
+    overheadScore*0.25 +
+    acceptScore*0.25 +
+    noShowScore*0.20 +
+    newPatScore*0.15 +
+    colScore*0.15
+  );
+
+  const label=total>=85?'Excelente':total>=70?'Bueno':total>=50?'Regular':'Requiere atención';
+  const labelClass=total>=85?'excellent':total>=70?'good':total>=50?'fair':'poor';
+  const ringColor=total>=85?'#3FB950':total>=70?'#00D4AA':total>=50?'#E3B341':'#F85149';
+
+  return{
+    total,label,labelClass,ringColor,
+    items:[
+      {name:'Tasa de gastos',val:overheadRate.toFixed(1)+'%',bench:'Meta: <65%',score:overheadScore,color:overheadColor},
+      {name:'Aceptación tratamientos',val:acceptRate.toFixed(0)+'%',bench:'Meta: >65%',score:acceptScore,color:acceptColor},
+      {name:'Tasa de ausentismo',val:noShowRate.toFixed(1)+'%',bench:'Meta: <12%',score:noShowScore,color:noShowColor},
+      {name:'Pacientes nuevos/mes',val:avgNewPat.toFixed(0),bench:'Meta: >20/mes',score:newPatScore,color:newPatColor},
+      {name:'Tasa de cobro',val:colRate.toFixed(1)+'%',bench:'Meta: >95%',score:colScore,color:colColor},
+    ]
+  };
+}
+
+function renderHealthScore(data){
+  const hs=computeHealthScore(data);
+  // ring — circumference 2π×46 ≈ 289
+  const circ=289;
+  const offset=circ-(circ*hs.total/100);
+  const ring=document.getElementById('hs-ring');
+  ring.style.strokeDashoffset=offset;
+  ring.style.stroke=hs.ringColor;
+  document.getElementById('hs-num').textContent=hs.total;
+  const lbl=document.getElementById('hs-label');
+  lbl.textContent=hs.label;
+  lbl.className='hs-label '+hs.labelClass;
+  document.getElementById('hs-items').innerHTML=hs.items.map(it=>`
+    <div class="hs-item">
+      <div class="hs-item-head">
+        <span class="hs-item-name">${it.name}</span>
+        <span class="hs-item-val ${it.color}">${it.val}</span>
+      </div>
+      <div class="hs-bar-track"><div class="hs-bar-fill ${it.color}" style="width:${it.score}%"></div></div>
+      <div class="hs-item-bench">${it.bench}</div>
+    </div>`).join('');
+}
+
+/* ── RENDER ── */
+function render(data){
+  CURRENT_DATA=data;
+  renderHealthScore(data);
+  document.getElementById('ai-empty').style.display='block';
+  document.getElementById('ai-loading').style.display='none';
+  document.getElementById('ai-result').style.display='none';
+  document.getElementById('ai-btn').disabled=false;
+
+  const sum=k=>data.reduce((s,r)=>s+r[k],0);
+  const avg=k=>data.length?sum(k)/data.length:0;
+
+  const totalCollections=sum('collections');
+  const totalProduction=sum('gross_production');
+  const totalNetIncome=sum('net_income');
+  const totalOverhead=sum('overhead_costs');
+  const totalNewPat=sum('new_patients');
+  const totalCompleted=sum('appointments_completed');
+  const totalScheduled=sum('appointments_scheduled');
+  const totalNoShows=sum('no_shows');
+  const totalPlansPresented=sum('treatment_plans_presented');
+  const totalPlansAccepted=sum('treatment_plans_accepted');
+
+  const overheadRate=totalCollections?Math.round(totalOverhead/totalCollections*100):0;
+  const acceptanceRate=totalPlansPresented?Math.round(totalPlansAccepted/totalPlansPresented*100):0;
+  const noShowRate=totalScheduled?Math.round(totalNoShows/totalScheduled*100):0;
+
+  document.getElementById('kCollections').textContent='$'+Math.round(totalCollections/1000)+'k';
+  document.getElementById('kCollectionsSub').textContent=data.length+' months tracked';
+  document.getElementById('kProduction').textContent='$'+Math.round(totalProduction/1000)+'k';
+  document.getElementById('kProductionSub').textContent='$'+Math.round(avg('gross_production')/1000)+'k avg/month';
+  document.getElementById('kNetIncome').textContent='$'+Math.round(totalNetIncome/1000)+'k';
+  document.getElementById('kNetIncomeSub').textContent=totalCollections?Math.round(totalNetIncome/totalCollections*100)+'% margin':'—';
+  document.getElementById('kOverhead').textContent=overheadRate+'%';
+
+  document.getElementById('kNewPat').textContent=totalNewPat;
+  document.getElementById('kNewPatSub').textContent=data.length?Math.round(totalNewPat/data.length)+' avg/month':'—';
+  document.getElementById('kAppts').textContent=totalCompleted;
+  document.getElementById('kApptsSub').textContent=totalScheduled?Math.round(totalCompleted/totalScheduled*100)+'% completion rate':'—';
+  document.getElementById('kAcceptance').textContent=acceptanceRate+'%';
+  document.getElementById('kNoShow').textContent=noShowRate+'%';
+
+  // Monthly collections trend
+  const months=data.map(r=>r.month).sort();
+  const monthLabel=m=>new Date(m+'-02').toLocaleDateString('en-US',{month:'short',year:'2-digit'});
+  kill('cTime');
+  charts['cTime']=new Chart(document.getElementById('cTime'),{
+    type:'line',
+    data:{
+      labels:months.map(monthLabel),
+      datasets:[{
+        label:'Collections',
+        data:months.map(m=>{const r=data.find(d=>d.month===m);return r?r.collections:0;}),
+        borderColor:'#00D4AA',backgroundColor:'rgba(0,212,170,0.07)',tension:0.35,fill:true,pointRadius:3,pointBackgroundColor:'#00D4AA',borderWidth:2
+      },{
+        label:'Production',
+        data:months.map(m=>{const r=data.find(d=>d.month===m);return r?r.gross_production:0;}),
+        borderColor:'#388BFD',backgroundColor:'rgba(56,139,253,0.04)',tension:0.35,fill:true,pointRadius:3,pointBackgroundColor:'#388BFD',borderWidth:2,borderDash:[4,3]
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:10}}},scales:{x:{ticks:{font:{size:10}},grid:{color:'#21262D'}},y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1000)+'k'},grid:{color:'#21262D'}}}}
+  });
+
+  // Service mix donut
+  const hygiene=sum('hygiene_revenue');
+  const restorative=sum('restorative_revenue');
+  const cosmetic=sum('cosmetic_revenue');
+  const ortho=sum('orthodontic_revenue');
+  const services=[['Hygiene',hygiene],['Restorative',restorative],['Cosmetic',cosmetic],['Orthodontic',ortho]];
+  mkLeg('lServ',services);
+  kill('cServ');
+  charts['cServ']=new Chart(document.getElementById('cServ'),{
+    type:'doughnut',
+    data:{labels:services.map(e=>e[0]),datasets:[{data:services.map(e=>e[1]),backgroundColor:PALETTE,borderWidth:0,hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false}}}
+  });
+
+  // Revenue by service rank
+  mkRank('rServ',services.sort((a,b)=>b[1]-a[1]),fmtUSD);
+
+  // Patient flow rank
+  const patFlow=data.map(r=>[monthLabel(r.month),r.new_patients]).sort((a,b)=>b[1]-a[1]);
+  mkRank('rPat',patFlow,v=>v+' new');
+
+  // Appointment outcomes rank
+  const apptData=[
+    ['Completed',totalCompleted],
+    ['Cancellations',sum('cancellations')],
+    ['No-shows',totalNoShows]
+  ];
+  mkRank('rAppt',apptData);
+
+  // Overhead breakdown donut
+  const staffCosts=sum('staff_costs');
+  const suppliesCosts=sum('supplies_costs');
+  const otherCosts=totalOverhead-staffCosts-suppliesCosts;
+  kill('cOverhead');
+  charts['cOverhead']=new Chart(document.getElementById('cOverhead'),{
+    type:'doughnut',
+    data:{labels:['Staff','Supplies','Other overhead'],datasets:[{data:[staffCosts,suppliesCosts,otherCosts>0?otherCosts:0],backgroundColor:['#388BFD','#E3B341','#A371F7'],borderWidth:0,hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:10}}}}
+  });
+
+  // Production vs Collections bar
+  kill('cProdCol');
+  charts['cProdCol']=new Chart(document.getElementById('cProdCol'),{
+    type:'bar',
+    data:{
+      labels:months.map(monthLabel),
+      datasets:[
+        {label:'Production',data:months.map(m=>{const r=data.find(d=>d.month===m);return r?r.gross_production:0;}),backgroundColor:'rgba(56,139,253,0.7)',borderRadius:4,borderSkipped:false},
+        {label:'Collections',data:months.map(m=>{const r=data.find(d=>d.month===m);return r?r.collections:0;}),backgroundColor:'rgba(0,212,170,0.7)',borderRadius:4,borderSkipped:false}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:10}}},scales:{x:{ticks:{font:{size:10}},grid:{color:'#21262D'}},y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1000)+'k'},grid:{color:'#21262D'}}}}
+  });
+}
+
+/* ── ARTICLES ── */
+async function loadArticles(){
+  try{
+    ARTICLES=await(await fetch('articles.json')).json();renderArticles(ARTICLES);
+  }catch(e){
+    document.getElementById('mi-grid').innerHTML='<div class="mi-empty"><div class="mi-empty-icon">⚠️</div><p>Could not load articles.json</p></div>';
+  }
+}
+function renderArticles(list){
+  const grid=document.getElementById('mi-grid');
+  if(!list.length){grid.innerHTML='<div class="mi-empty"><div class="mi-empty-icon">📭</div><p>No articles yet.</p></div>';return;}
+  const order={red:0,amber:1,green:2};
+  const sorted=[...list].sort((a,b)=>{const d=(order[a.tag_color]??3)-(order[b.tag_color]??3);return d!==0?d:new Date(b.date)-new Date(a.date);});
+  grid.innerHTML=sorted.map(a=>`
+    <div class="mi-card" onclick="openArticle(${a.id})">
+      <div class="mi-card-top"><span class="mi-category">${a.category}</span><span class="mi-tag ${a.tag_color}">${a.tag}</span></div>
+      <h3>${a.title}</h3>
+      <p>${a.summary}</p>
+      <div class="mi-card-footer">
+        <span class="mi-source">📰 ${a.source}</span>
+        <span class="mi-date">${fmtDate(a.date)}</span>
+      </div>
+      <div class="mi-card-read">Read full analysis ›</div>
+    </div>`).join('');
+}
+function filterArticles(cat,btn){
+  document.querySelectorAll('.mi-filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  renderArticles(cat==='all'?ARTICLES:ARTICLES.filter(a=>a.category===cat));
+}
+function openArticle(id){
+  const a=ARTICLES.find(x=>x.id===id);if(!a)return;
+  document.getElementById('art-company').textContent=a.company;
+  document.getElementById('art-title').textContent=a.title;
+  document.getElementById('art-summary').textContent=a.summary;
+  document.getElementById('art-insight').textContent=a.insight;
+  document.getElementById('art-cat').textContent=a.category;
+  document.getElementById('art-date').textContent=fmtDate(a.date);
+  const tagEl=document.getElementById('art-tag');
+  tagEl.textContent=a.tag;tagEl.className='art-tag '+a.tag_color;
+  document.getElementById('art-sections').innerHTML=a.sections.map(s=>`
+    <div class="art-section">
+      <div class="art-section-title">${s.title}</div>
+      <div class="art-bullets">${s.bullets.map(b=>`<div class="art-bullet">${b}</div>`).join('')}</div>
+    </div>`).join('');
+  document.getElementById('art-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeArticle(e){
+  if(e&&e.target!==document.getElementById('art-overlay'))return;
+  document.getElementById('art-overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+/* ── AI ANALYSIS ── */
+const MSGS=['Analyzing practice data...','Reviewing patient metrics...','Identifying revenue opportunities...','Generating recommendations...'];
+async function runAnalysis(){
+  const btn=document.getElementById('ai-btn');btn.disabled=true;
+  document.getElementById('ai-empty').style.display='none';
+  document.getElementById('ai-result').style.display='none';
+  document.getElementById('ai-loading').style.display='flex';
+  let mi=0;const ticker=setInterval(()=>{mi=(mi+1)%MSGS.length;document.getElementById('ai-loading-txt').textContent=MSGS[mi];},1500);
+
+  const data=CURRENT_DATA;
+  const sum=k=>data.reduce((s,r)=>s+r[k],0);
+  const totalCollections=sum('collections');
+  const totalProduction=sum('gross_production');
+  const totalNetIncome=sum('net_income');
+  const totalOverhead=sum('overhead_costs');
+  const totalNewPat=sum('new_patients');
+  const totalCompleted=sum('appointments_completed');
+  const totalScheduled=sum('appointments_scheduled');
+  const totalNoShows=sum('no_shows');
+  const totalPlansPresented=sum('treatment_plans_presented');
+  const totalPlansAccepted=sum('treatment_plans_accepted');
+  const overheadRate=totalCollections?Math.round(totalOverhead/totalCollections*100):0;
+  const acceptanceRate=totalPlansPresented?Math.round(totalPlansAccepted/totalPlansPresented*100):0;
+  const noShowRate=totalScheduled?Math.round(totalNoShows/totalScheduled*100):0;
+  const months=data.length;
+  const fmtMonth=m=>new Date(m+'-02').toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  const period=data.length?`${fmtMonth(data[0].month)} – ${fmtMonth(data[data.length-1].month)}`:'unknown';
+
+  const summary=`Practice: ${getWhiteLabel()}
+Period: ${period} (${months} months)
+Producción Bruta: $${Math.round(totalProduction).toLocaleString()}
+Recaudación Total: $${Math.round(totalCollections).toLocaleString()}
+Ingreso Neto: $${Math.round(totalNetIncome).toLocaleString()}
+Tasa de Gastos: ${overheadRate}% (industry benchmark: <60%)
+Pacientes Nuevos: ${totalNewPat} (avg ${data.length?Math.round(totalNewPat/data.length):0}/month)
+Active Patients: ${data.length?data[data.length-1].active_patients:0}
+Appointments Scheduled: ${totalScheduled} | Completed: ${totalCompleted} | No-shows: ${totalNoShows}
+Tasa de Ausentismo: ${noShowRate}% (target: <8%)
+Treatment Plans Presented: ${totalPlansPresented} | Accepted: ${totalPlansAccepted}
+Aceptación de Tratamientos Rate: ${acceptanceRate}% (industry avg: 65-80%)
+Hygiene Revenue: $${Math.round(sum('hygiene_revenue')).toLocaleString()}
+Restorative Revenue: $${Math.round(sum('restorative_revenue')).toLocaleString()}
+Cosmetic Revenue: $${Math.round(sum('cosmetic_revenue')).toLocaleString()}
+Orthodontic Revenue: $${Math.round(sum('orthodontic_revenue')).toLocaleString()}`;
+
+  const prompt=`You are a sharp dental practice business analyst with deep knowledge of U.S. dental industry benchmarks. Analyze this practice data and produce an executive narrative in English.
+
+PRACTICE DATA:
+${summary}
+
+INDUSTRY BENCHMARKS (for context):
+- Average annual collections: $942,290 for general dentists
+- Healthy overhead: below 60% of collections
+- Aceptación de tratamientos rate: 65-85% is good, above 80% is excellent
+- New patients: 20-50/month is healthy for a growing practice
+- No-show rate: below 8% is target
+
+Reply ONLY with a valid JSON object (no markdown, no extra text):
+{"headline":"One punchy sentence with the single most important finding and real numbers.","what_happened":"2-3 sentences describing what the practice data shows vs benchmarks.","why_it_matters":"2-3 sentences on the business implication for the dentist.","opportunity":"1-2 sentences on the biggest revenue opportunity or risk.","actions":[{"priority":"URGENT","text":"Specific action the practice owner should take this week."},{"priority":"MEDIUM","text":"Action for the next 30 days."},{"priority":"LOW","text":"Strategic action for the next quarter."}],"confidence":82}
+
+Be direct. Reference actual numbers. Compare against benchmarks. Think like a dental practice CFO.`;
+
+  try{
+    const resp=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const json=await resp.json();
+    const raw=json.content.map(b=>b.text||'').join('');
+    const r=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    clearInterval(ticker);showResult(r);LAST_RESULT=r;
+  }catch(e){
+    clearInterval(ticker);
+    document.getElementById('ai-loading').style.display='none';
+    document.getElementById('ai-empty').style.display='block';
+    document.getElementById('ai-empty').innerHTML=`<div class="ai-empty-icon">⚠</div>Error: ${e.message}`;
+    btn.disabled=false;
+  }
+}
+
+function showResult(r){
+  document.getElementById('ai-loading').style.display='none';
+  const pc={'URGENT':'ab-u','MEDIUM':'ab-m','LOW':'ab-b'};
+  document.getElementById('ai-result').innerHTML=`
+    <div class="ai-lead">${r.headline}</div>
+    <div class="ai-blocks">
+      <div class="ai-block"><div class="ai-block-lbl">What happened</div><div class="ai-block-txt">${r.what_happened}</div></div>
+      <div class="ai-block"><div class="ai-block-lbl">Why it matters</div><div class="ai-block-txt">${r.why_it_matters}</div></div>
+      <div class="ai-block"><div class="ai-block-lbl">Opportunity / Risk</div><div class="ai-block-txt">${r.opportunity}</div></div>
+    </div>
+    <div class="ai-actions-title">Recommended actions</div>
+    ${r.actions.map(a=>`<div class="ai-action"><span class="abadge ${pc[a.priority]||'ab-b'}">${a.priority}</span><span>${a.text}</span></div>`).join('')}
+    <div class="ai-conf"><span class="ai-conf-lbl">Analysis confidence</span><div class="ai-conf-track"><div class="ai-conf-fill" style="width:${r.confidence}%"></div></div><span class="ai-conf-pct">${r.confidence}%</span></div>`;
+  document.getElementById('ai-result').style.display='block';
+  document.getElementById('ai-btn').disabled=false;
+  document.getElementById('pdf-btn').classList.add('visible');
+}
+
+/* ── PDF EXPORT ── */
+function exportPDF(){
+  if(!LAST_RESULT||!CURRENT_DATA.length)return;
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210,M=18;
+  let y=0;
+
+  // helpers
+  const C={teal:[0,212,170],dark:[13,17,23],surface:[22,27,34],text:[230,237,243],muted:[125,133,144],white:[255,255,255],amber:[227,179,65],red:[248,81,73],green:[63,185,80],blue:[56,139,253]};
+  const rgb=(c)=>{doc.setTextColor(c[0],c[1],c[2]);};
+  const fill=(c)=>{doc.setFillColor(c[0],c[1],c[2]);};
+  const draw=(c)=>{doc.setDrawColor(c[0],c[1],c[2]);};
+
+  const addPage=()=>{doc.addPage();y=18;};
+  const checkY=(need=20)=>{if(y+need>280)addPage();};
+
+  // ── HEADER BLOCK ──
+  fill(C.dark);doc.rect(0,0,W,38,'F');
+  // accent bar
+  fill(C.teal);doc.rect(0,0,W,2.5,'F');
+  const pracName=getWhiteLabel();
+  // logo dot
+  fill(C.teal);doc.circle(M,19,3,'F');
+  rgb(C.white);doc.setFont('helvetica','bold');doc.setFontSize(16);
+  doc.text(pracName,M+7,16);
+  rgb(C.muted);doc.setFont('helvetica','normal');doc.setFontSize(9);
+  doc.text('Dashboard de Inteligencia Dental',M+7,22);
+  // right side
+  const now=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  rgb(C.muted);doc.setFontSize(8);
+  doc.text('Generated '+now,W-M,22,{align:'right'});
+  rgb(C.teal);doc.setFont('helvetica','bold');doc.setFontSize(8);
+  doc.text('Desarrollado con Claude IA',W-M,16,{align:'right'});
+
+  y=46;
+
+  // ── ANALYSIS PERIOD ──
+  const data=CURRENT_DATA;
+  const fmtM=m=>new Date(m+'-02').toLocaleDateString('en-US',{month:'short',year:'numeric'});
+  const period=data.length?`${fmtM(data[0].month)} – ${fmtM(data[data.length-1].month)}`:'-';
+  rgb(C.muted);doc.setFont('helvetica','normal');doc.setFontSize(8.5);
+  doc.text(`Analysis period: ${period}  ·  ${data.length} meses de datos`,M,y);
+  y+=8;
+
+  // ── HEADLINE ──
+  fill(C.surface);doc.roundedRect(M,y,W-M*2,18,2,2,'F');
+  fill(C.teal);doc.rect(M,y,3,18,'F');
+  rgb(C.teal);doc.setFont('helvetica','bold');doc.setFontSize(7.5);
+  doc.text('AI EXECUTIVE FINDING',M+7,y+5.5);
+  rgb(C.text);doc.setFont('helvetica','bold');doc.setFontSize(10.5);
+  const headLines=doc.splitTextToSize(LAST_RESULT.headline,W-M*2-14);
+  doc.text(headLines,M+7,y+12);
+  y+=18+(headLines.length-1)*5+6;
+
+  // ── KPI GRID (2×4) ──
+  const sum=k=>data.reduce((s,r)=>s+r[k],0);
+  const totalCol=sum('collections'),totalProd=sum('gross_production'),totalNet=sum('net_income'),totalOverh=sum('overhead_costs');
+  const totalNewPat=sum('new_patients'),totalSched=sum('appointments_scheduled'),totalComp=sum('appointments_completed'),totalNoShow=sum('no_shows');
+  const totalPP=sum('treatment_plans_presented'),totalPA=sum('treatment_plans_accepted');
+  const overheadRate=totalCol?Math.round(totalOverh/totalCol*100):0;
+  const acceptRate=totalPP?Math.round(totalPA/totalPP*100):0;
+  const noShowRate=totalSched?Math.round(totalNoShow/totalSched*100):0;
+
+  const kpis=[
+    {label:'Recaudación Total',val:'$'+Math.round(totalCol/1000)+'k',sub:'Total del período'},
+    {label:'Producción Bruta',val:'$'+Math.round(totalProd/1000)+'k',sub:'Total del período'},
+    {label:'Ingreso Neto',val:'$'+Math.round(totalNet/1000)+'k',sub:totalCol?Math.round(totalNet/totalCol*100)+'% margin':'-'},
+    {label:'Tasa de Gastos',val:overheadRate+'%',sub:'Target: <60%',warn:overheadRate>=60},
+    {label:'Pacientes Nuevos',val:String(totalNewPat),sub:data.length?Math.round(totalNewPat/data.length)+'/mo avg':'-'},
+    {label:'Appts Completed',val:String(totalComp),sub:totalSched?Math.round(totalComp/totalSched*100)+'% of scheduled':'-'},
+    {label:'Aceptación de Tratamientos',val:acceptRate+'%',sub:'Target: 65–80%',warn:acceptRate<65},
+    {label:'Tasa de Ausentismo',val:noShowRate+'%',sub:'Target: <8%',warn:noShowRate>=8},
+  ];
+
+  checkY(30);
+  const kW=(W-M*2-9)/4,kH=22;
+  kpis.forEach((k,i)=>{
+    const col=i%4,row=Math.floor(i/4);
+    const kx=M+col*(kW+3),ky=y+row*(kH+4);
+    fill(C.surface);doc.roundedRect(kx,ky,kW,kH,1.5,1.5,'F');
+    // color top bar
+    const barC=k.warn?C.red:C.teal;
+    fill(barC);doc.rect(kx,ky,kW,1.5,'F');
+    rgb(C.muted);doc.setFont('helvetica','normal');doc.setFontSize(6.5);
+    doc.text(k.label.toUpperCase(),kx+4,ky+7);
+    rgb(C.warn?C.red:C.white);doc.setFont('helvetica','bold');doc.setFontSize(12);
+    rgb(k.warn?C.amber:C.white);
+    doc.text(k.val,kx+4,ky+15);
+    rgb(C.muted);doc.setFont('helvetica','normal');doc.setFontSize(6);
+    doc.text(k.sub,kx+4,ky+20);
+  });
+  y+=kH*2+4*3+10;
+
+  // ── AI NARRATIVE BLOCKS ──
+  checkY(12);
+  rgb(C.muted);doc.setFont('helvetica','bold');doc.setFontSize(7.5);
+  doc.text('EXECUTIVE ANALYSIS',M,y);
+  y+=5;
+  draw(C.surface);doc.setLineWidth(0.2);doc.line(M,y,W-M,y);y+=5;
+
+  const blocks=[
+    {label:'What happened',txt:LAST_RESULT.what_happened},
+    {label:'Why it matters',txt:LAST_RESULT.why_it_matters},
+    {label:'Opportunity / Risk',txt:LAST_RESULT.opportunity},
+  ];
+  const bW=(W-M*2-8)/3;
+  let maxBH=0;
+  const blockLayouts=blocks.map((b,i)=>{
+    const lines=doc.splitTextToSize(b.txt,bW-8);
+    const bH=14+lines.length*4.2;
+    if(bH>maxBH)maxBH=bH;
+    return{...b,lines,bH,bx:M+i*(bW+4)};
+  });
+  checkY(maxBH+4);
+  blockLayouts.forEach(b=>{
+    fill(C.surface);doc.roundedRect(b.bx,y,bW,maxBH,1.5,1.5,'F');
+    fill(C.teal);doc.rect(b.bx,y,bW,1.5,'F');
+    rgb(C.teal);doc.setFont('helvetica','bold');doc.setFontSize(6.5);
+    doc.text(b.label.toUpperCase(),b.bx+4,y+8);
+    rgb(C.text);doc.setFont('helvetica','normal');doc.setFontSize(8);
+    doc.text(b.lines,b.bx+4,y+14);
+  });
+  y+=maxBH+8;
+
+  // ── RECOMMENDED ACTIONS ──
+  checkY(14);
+  rgb(C.muted);doc.setFont('helvetica','bold');doc.setFontSize(7.5);
+  doc.text('RECOMMENDED ACTIONS',M,y);y+=5;
+  draw(C.surface);doc.setLineWidth(0.2);doc.line(M,y,W-M,y);y+=5;
+
+  const prioColors={URGENT:C.red,MEDIUM:C.amber,LOW:C.green};
+  LAST_RESULT.actions.forEach(a=>{
+    const lines=doc.splitTextToSize(a.text,W-M*2-28);
+    const aH=Math.max(12,8+lines.length*4.5);
+    checkY(aH+3);
+    fill(C.surface);doc.roundedRect(M,y,W-M*2,aH,1.5,1.5,'F');
+    const pc=prioColors[a.priority]||C.green;
+    fill(pc);doc.roundedRect(M+3,y+aH/2-4,18,8,1,1,'F');
+    rgb(C.dark);doc.setFont('helvetica','bold');doc.setFontSize(6);
+    doc.text(a.priority,M+12,y+aH/2+1,{align:'center'});
+    rgb(C.text);doc.setFont('helvetica','normal');doc.setFontSize(8.5);
+    doc.text(lines,M+25,y+7);
+    y+=aH+4;
+  });
+
+  // ── CONFIDENCE BAR ──
+  y+=4;checkY(14);
+  fill(C.surface);doc.roundedRect(M,y,W-M*2,12,1.5,1.5,'F');
+  rgb(C.muted);doc.setFont('helvetica','normal');doc.setFontSize(7.5);
+  doc.text('Analysis confidence',M+4,y+8);
+  const barW=W-M*2-70;
+  fill([30,38,48]);doc.roundedRect(M+48,y+4.5,barW,3,1,1,'F');
+  fill(C.teal);doc.roundedRect(M+48,y+4.5,barW*(LAST_RESULT.confidence/100),3,1,1,'F');
+  rgb(C.teal);doc.setFont('helvetica','bold');doc.setFontSize(8);
+  doc.text(LAST_RESULT.confidence+'%',W-M-4,y+8,{align:'right'});
+  y+=16;
+
+  // ── FOOTER ──
+  const pages=doc.getNumberOfPages();
+  for(let p=1;p<=pages;p++){
+    doc.setPage(p);
+    fill(C.dark);doc.rect(0,285,W,12,'F');
+    fill(C.teal);doc.rect(0,285,W,0.8,'F');
+    rgb(C.muted);doc.setFont('helvetica','normal');doc.setFontSize(7);
+    doc.text(`${pracName} — Practice Intelligence Report`,M,291);
+    doc.text(`Page ${p} of ${pages}`,W-M,291,{align:'right'});
+    rgb(C.teal);doc.text('Desarrollado con Claude IA',W/2,291,{align:'center'});
+  }
+
+  doc.save(`SmileDental_Analysis_${new Date().toISOString().slice(0,10)}.pdf`);
+}
+
+
+/* ── PRACTICE PROFILE ── */
+const PP_KEY='smile_dental_practice_profile';
+let PRACTICE_PROFILE=null;
+
+function loadProfile(){
+  try{
+    const raw=localStorage.getItem(PP_KEY);
+    if(raw){PRACTICE_PROFILE=JSON.parse(raw);applyProfile();}
+    else{
+      // auto-open on first visit after 1.5s
+      setTimeout(()=>openProfile(),1500);
+    }
+  }catch(e){PRACTICE_PROFILE=null;}
+}
+
+function applyProfile(){
+  if(!PRACTICE_PROFILE)return;
+  applyWhiteLabel();
+  if(chatReady)initChat();
+}
+
+function openProfile(){
+  // populate fields if profile exists
+  if(PRACTICE_PROFILE){
+    const p=PRACTICE_PROFILE;
+    if(p.name)document.getElementById('pp-name').value=p.name;
+    if(p.location)document.getElementById('pp-location').value=p.location;
+    if(p.chairs)document.getElementById('pp-chairs').value=p.chairs;
+    if(p.doctors)document.getElementById('pp-doctors').value=p.doctors;
+    if(p.goal)document.getElementById('pp-goal').value=p.goal;
+    if(p.notes)document.getElementById('pp-notes').value=p.notes;
+    if(p.insurance)p.insurance.forEach(v=>{const c=document.querySelector(`#pp-insurance [data-val="${v}"]`);if(c)c.classList.add('selected');});
+    if(p.area){const c=document.querySelector(`#pp-area [data-val="${p.area}"]`);if(c)c.classList.add('selected');}
+    if(p.challenge)p.challenge.forEach(v=>{const c=document.querySelector(`#pp-challenge [data-val="${v}"]`);if(c)c.classList.add('selected');});
+  }
+  document.getElementById('pp-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function closeProfile(){
+  document.getElementById('pp-overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+function ppOverlayClick(e){if(e.target===document.getElementById('pp-overlay'))closeProfile();}
+
+function toggleChip(el,groupId,single=false){
+  if(single){
+    document.querySelectorAll(`#${groupId} .pp-chip`).forEach(c=>c.classList.remove('selected'));
+  }
+  el.classList.toggle('selected');
+}
+
+function getChipVals(groupId){
+  return [...document.querySelectorAll(`#${groupId} .pp-chip.selected`)].map(c=>c.dataset.val);
+}
+
+function saveProfile(){
+  const name=document.getElementById('pp-name').value.trim();
+  if(!name){document.getElementById('pp-name').focus();document.getElementById('pp-name').style.borderColor='var(--red)';return;}
+  document.getElementById('pp-name').style.borderColor='';
+
+  const profile={
+    name,
+    location:document.getElementById('pp-location').value.trim(),
+    chairs:document.getElementById('pp-chairs').value,
+    doctors:document.getElementById('pp-doctors').value,
+    goal:document.getElementById('pp-goal').value,
+    notes:document.getElementById('pp-notes').value.trim(),
+    insurance:getChipVals('pp-insurance'),
+    area:getChipVals('pp-area')[0]||'',
+    challenge:getChipVals('pp-challenge'),
+    savedAt:new Date().toISOString(),
+  };
+
+  localStorage.setItem(PP_KEY,JSON.stringify(profile));
+  PRACTICE_PROFILE=profile;
+  applyProfile();
+  // rebuild chat context with new profile
+  if(ALL.length)initChat();
+  closeProfile();
+}
+
+function fmtCOP(val){
+  return '$'+Math.round(val).toLocaleString('es-CO');
+}
+
+function fmtPct(val){return val.toFixed(1)+'%';}
+
+function buildProfileContext(){
+  if(!PRACTICE_PROFILE)return'';
+  const p=PRACTICE_PROFILE;
+  const insuranceLabels={'ppo':'PPO','hmo':'HMO/Medicaid','ffs':'Particular (sin convenio)','membership':'Plan propio de membresía','mixed':'Mixto'};
+  const challengeLabels={'new_patients':'Atraer pacientes nuevos','retention':'Retención de pacientes','overhead':'Reducir gastos operativos','acceptance':'Aceptación de tratamientos','noshows':'Ausentismo/cancelaciones','staff':'Personal/contratación','growth':'Escalar/crecer','cashflow':'Flujo de caja'};
+  const goalLabels={'under500k':'Menos de $150M COP','500k-750k':'$150M–$250M COP','750k-1m':'$250M–$400M COP','1m-1.5m':'$400M–$600M COP','1.5m+':'Más de $600M COP'};
+
+  let ctx=`\n=== PRACTICE PROFILE (owner-provided context) ===\n`;
+  ctx+=`Nombre de la clínica: ${p.name}\n`;
+  if(p.location)ctx+=`Location: ${p.location}\n`;
+  if(p.chairs)ctx+=`Operatories: ${p.chairs}\n`;
+  if(p.doctors)ctx+=`Providers: ${p.doctors}\n`;
+  if(p.area)ctx+=`Area type: ${p.area}\n`;
+  if(p.insurance&&p.insurance.length)ctx+=`Convenios y pagadores: ${p.insurance.map(v=>insuranceLabels[v]||v).join(', ')}\n`;
+  if(p.goal)ctx+=`Revenue goal: ${goalLabels[p.goal]||p.goal} annually\n`;
+  if(p.challenge&&p.challenge.length)ctx+=`Key challenges: ${p.challenge.map(v=>challengeLabels[v]||v).join(', ')}\n`;
+  if(p.notes)ctx+=`Additional context: ${p.notes}\n`;
+  ctx+=`=== END PROFILE ===\n`;
+  return ctx;
+}
+
+
+function buildDataContext(){
+  if(!ALL.length)return'';
+  const data=ALL;
+  const sum=k=>data.reduce((s,r)=>s+r[k],0);
+  const totalCollections=sum('collections');
+  const totalProduction=sum('gross_production');
+  const totalNetIncome=sum('net_income');
+  const overheadRate=totalCollections?Math.round(sum('overhead_costs')/totalCollections*100):0;
+  const acceptanceRate=sum('treatment_plans_presented')?Math.round(sum('treatment_plans_accepted')/sum('treatment_plans_presented')*100):0;
+  const noShowRate=sum('appointments_scheduled')?Math.round(sum('no_shows')/sum('appointments_scheduled')*100):0;
+  const fmtMonth=m=>new Date(m+'-02').toLocaleDateString('en-US',{month:'long',year:'numeric'});
+
+  return `=== SMILE DENTAL — PRACTICE DATA ===
+Period: ${fmtMonth(data[0].month)} to ${fmtMonth(data[data.length-1].month)}
+Months tracked: ${data.length}
+
+FINANCIAL:
+  Producción Bruta: $${Math.round(totalProduction).toLocaleString()}
+  Collections: $${Math.round(totalCollections).toLocaleString()}
+  Ingreso Neto: $${Math.round(totalNetIncome).toLocaleString()}
+  Tasa de Gastos: ${overheadRate}% (benchmark: <60%)
+
+PATIENTS:
+  Pacientes Nuevos: ${sum('new_patients')} total (${Math.round(sum('new_patients')/data.length)}/month avg)
+  Active Patients: ${data[data.length-1].active_patients}
+
+APPOINTMENTS:
+  Scheduled: ${sum('appointments_scheduled')} | Completed: ${sum('appointments_completed')}
+  Tasa de Ausentismo: ${noShowRate}% (target: <8%)
+
+TREATMENT:
+  Aceptación de Tratamientos Rate: ${acceptanceRate}% (industry avg: 65-80%)
+  Plans Presented: ${sum('treatment_plans_presented')} | Accepted: ${sum('treatment_plans_accepted')}
+
+SERVICE MIX:
+  Hygiene: $${Math.round(sum('hygiene_revenue')).toLocaleString()}
+  Restorative: $${Math.round(sum('restorative_revenue')).toLocaleString()}
+  Cosmetic: $${Math.round(sum('cosmetic_revenue')).toLocaleString()}
+  Orthodontic: $${Math.round(sum('orthodontic_revenue')).toLocaleString()}
+=== END DATA ===`;
+}
+
+function buildSystemPrompt(dataCtx){
+  const profileCtx=buildProfileContext();
+  const practiceName=PRACTICE_PROFILE?.name||getWhiteLabel()||'esta clínica dental';
+  return `Eres el socio estratégico y asesor de negocios on-demand de ${practiceName}, una clínica dental en Colombia. Tienes acceso completo a sus datos de rendimiento y actúas como un asesor financiero de nivel directivo disponible en cualquier momento — a las 11pm, temprano en la mañana, cuando el dueño necesite tomar una decisión.
+
+${dataCtx}
+${profileCtx}
+
+TU ALCANCE — solo responde sobre estos temas:
+1. Análisis de los datos de rendimiento de ${practiceName} (recaudación, producción, pacientes, aceptación de tratamientos, ausentismo, mezcla de servicios, gastos)
+2. Estrategia de negocio y decisiones operativas directamente relacionadas con sus datos y perfil
+3. Comparación con referencias del sector odontológico colombiano
+4. Decisiones específicas: contratación, equipos, expansión, agenda, tarifas, convenios con aseguradoras
+
+FUERA DE ALCANCE — si te preguntan algo no relacionado con la clínica o sus datos, responde: "Eso está fuera de lo que puedo ayudarte aquí. Estoy enfocado en los datos y la estrategia de ${practiceName}."
+
+CÓMO OPERAS:
+- Siempre basa tus respuestas en los datos reales y el perfil. Cita números específicos.
+- Usa el contexto del perfil para hacer respuestas específicas — si tienen 3 consultorios en área urbana, considera eso. Si su reto es el ausentismo, prioriza esa perspectiva.
+- Cuando el dueño proponga una idea, valídala o cuestiónala con datos — no solo digas "excelente idea."
+- Da opiniones directas: si algo no cuadra, dilo.
+- Conciso y ejecutivo. Sin relleno. Sin consejos genéricos.
+- Responde siempre en español colombiano, tono directo y cercano.
+- Usa pesos colombianos (COP) en todos los valores monetarios.
+- Si el perfil está incompleto, aún así da la mejor respuesta posible con los datos disponibles.
+
+ESTILO: Asesor de confianza que conoce profundamente el negocio. Directo, honesto, basado en los números específicos de esta clínica. Como un socio financiero que siempre está disponible.`;
+}
+
+function initChat(){
+  if(!ALL.length)return;
+  chatDataContext=buildDataContext();
+  chatReady=true;
+  const bar=document.getElementById('chat-context-bar');
+  const tot=ALL.reduce((s,r)=>s+r.collections,0);
+  const profileTag=PRACTICE_PROFILE?` · Profile: ${PRACTICE_PROFILE.name}`:'';
+  bar.textContent=`✓ Context loaded — ${ALL.length} months · $${Math.round(tot).toLocaleString()} in collections · ${ALL.reduce((s,r)=>s+r.new_patients,0)} new patients${profileTag}`;
+  bar.style.color='var(--accent)';
+}
+
+function renderMarkdown(text){
+  return text
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^### (.+)$/gm,'<strong style="font-size:13px;color:var(--accent)">$1</strong>')
+    .replace(/^## (.+)$/gm,'<strong style="font-size:14px;color:var(--text)">$1</strong>')
+    .replace(/^- (.+)$/gm,'<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g,m=>`<ul>${m}</ul>`)
+    .replace(/\n\n/g,'</p><p>')
+    .replace(/^(?!<)(.+)$/gm,(m,p)=>p.startsWith('<')?m:`<p>${m}</p>`)
+    .replace(/<p><\/p>/g,'');
+}
+
+function appendMsg(role,text,isThinking=false){
+  const welcome=document.getElementById('chat-welcome');
+  if(welcome)welcome.remove();
+  const wrap=document.getElementById('chat-messages');
+  const div=document.createElement('div');
+  div.className=`msg ${role}`;
+  const avatar=role==='ai'?`<div class="msg-avatar">🦷</div>`:`<div class="msg-avatar">👤</div>`;
+  if(isThinking){
+    div.innerHTML=`${avatar}<div class="msg-thinking"><span></span><span></span><span></span></div>`;
+  }else{
+    const html=role==='ai'?renderMarkdown(text):text.replace(/\n/g,'<br>');
+    div.innerHTML=`${avatar}<div class="msg-bubble">${html}</div>`;
+  }
+  wrap.appendChild(div);
+  wrap.scrollTop=wrap.scrollHeight;
+  return div;
+}
+
+function sendSuggestion(btn){document.getElementById('chat-input').value=btn.textContent;sendChat();}
+
+async function sendChat(){
+  const input=document.getElementById('chat-input');
+  const sendBtn=document.getElementById('chat-send');
+  const text=input.value.trim();
+  if(!text||!chatReady)return;
+  input.value='';input.style.height='auto';sendBtn.disabled=true;
+  appendMsg('user',text);
+  chatHistory.push({role:'user',content:text});
+  const thinking=appendMsg('ai','',true);
+  try{
+    const messages=[
+      {role:'user',content:buildSystemPrompt(chatDataContext)+'\n\n[System ready. You are now live with the practice owner.]'},
+      {role:'assistant',content:`Ready. I have ${getWhiteLabel()}'s data loaded and I'm here as your strategic advisor. What do you need to analyze?`},
+      ...chatHistory.slice(0,-1).map(m=>({role:m.role==='ai'?'assistant':'user',content:m.content})),
+      {role:'user',content:text}
+    ];
+    const resp=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1024,messages})});
+    const json=await resp.json();
+    const reply=json.content.map(b=>b.text||'').join('');
+    thinking.remove();appendMsg('ai',reply);
+    chatHistory.push({role:'ai',content:reply});
+  }catch(e){
+    thinking.remove();appendMsg('ai',`⚠️ Connection error: ${e.message}`);
+  }
+  sendBtn.disabled=false;input.focus();
+}
+
+function clearChat(){
+  chatHistory=[];
+  document.getElementById('chat-messages').innerHTML=`
+    <div class="chat-welcome" id="chat-welcome">
+      <div class="chat-welcome-icon">🦷</div>
+      <h3>Tu asesor de clínica dental está listo</h3>
+      <p>I have full access to ${getWhiteLabel()}'s performance data. Ask me anything — I validate ideas, analyze trends, and give you direct strategic advice.</p>
+      <div class="chat-suggestions">
+        <button class="chat-suggestion" onclick="sendSuggestion(this)">¿Cuál servicio es el más rentable?</button>
+        <button class="chat-suggestion" onclick="sendSuggestion(this)">¿Por qué mi tasa de ausentismo es alta?</button>
+        <button class="chat-suggestion" onclick="sendSuggestion(this)">¿Cómo mejoro la aceptación de tratamientos?</button>
+        <button class="chat-suggestion" onclick="sendSuggestion(this)">¿Qué está elevando mis gastos operativos?</button>
+        <button class="chat-suggestion" onclick="sendSuggestion(this)">¿En qué meses tengo mayor oportunidad de ingresos?</button>
+      </div>
+    </div>`;
+}
+
+
+/* ── REVENUE FORECAST ── */
+
+function buildForecastDataContext(){
+  if(!ALL.length)return'';
+  const data=ALL;
+  const sum=k=>data.reduce((s,r)=>s+r[k],0);
+  const fmtM=m=>new Date(m+'-02').toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  const monthRows=data.map(r=>`  ${r.month}: collections=$${Math.round(r.collections).toLocaleString()}, production=$${Math.round(r.gross_production).toLocaleString()}, new_patients=${r.new_patients}, no_show_rate=${r.appointments_scheduled?Math.round(r.no_shows/r.appointments_scheduled*100):0}%, overhead_rate=${r.collections?Math.round(r.overhead_costs/r.collections*100):0}%`).join('\n');
+  const totalCol=sum('collections');
+  const months=data.length||1;
+  const avgCol=totalCol/months;
+  const lastThree=data.slice(-3);
+  const avgLast3=lastThree.reduce((s,r)=>s+r.collections,0)/lastThree.length;
+  const trend=avgLast3>avgCol?'upward':'downward';
+  const profileCtx=buildProfileContext();
+  return`HISTORICAL DATA (month by month):
+${monthRows}
+
+SUMMARY:
+  Period: ${fmtM(data[0].month)} to ${fmtM(data[data.length-1].month)}
+  Average monthly collections: $${Math.round(avgCol).toLocaleString()}
+  Last 3-month average: $${Math.round(avgLast3).toLocaleString()}
+  Trend: ${trend}
+  Avg new patients/mo: ${Math.round(sum('new_patients')/months)}
+  Avg overhead rate: ${Math.round(sum('overhead_costs')/totalCol*100)}%
+  Aceptación de tratamientos: ${sum('treatment_plans_presented')?Math.round(sum('treatment_plans_accepted')/sum('treatment_plans_presented')*100):0}%
+  No-show rate: ${sum('appointments_scheduled')?Math.round(sum('no_shows')/sum('appointments_scheduled')*100):0}%
+${profileCtx}`;
+}
+
+const FC_DECISION_LABELS={
+  general:'Panorama general',
+  hiring:'Contratar un higienista',
+  equipment:'Comprar equipo',
+  saturday:'Abrir los sábados',
+  promotion:'Lanzar una promoción',
+  insurance:'Salir de un seguro',
+  expansion:'Expandir la clínica'
+};
+
+async function generateForecast(){
+  if(!ALL.length)return;
+  const btn=document.getElementById('fc-gen-btn');
+  btn.disabled=true;btn.innerHTML='<svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Analyzing...';
+
+  const decision=document.getElementById('fc-decision').value;
+  const decisionLabel=FC_DECISION_LABELS[decision]||'Panorama general';
+  const dataCtx=buildForecastDataContext();
+  const nextMonthDate=new Date();
+  nextMonthDate.setMonth(nextMonthDate.getMonth()+1);
+  const nextMonth=nextMonthDate.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+
+  const prompt=`Eres un analista financiero especializado en clínicas dentales colombianas. Analiza los datos históricos y genera una proyección para el próximo mes (${nextMonth}).
+
+El dueño evalúa esta decisión: "${decisionLabel}"
+
+${dataCtx}
+
+ESTACIONALIDAD DENTAL COLOMBIA:
+- Enero/Febrero: lentos (inicio de año, ajuste presupuestal familias)
+- Marzo-Mayo: recuperación (rutinas, primas de servicios)
+- Junio-Julio: moderado (vacaciones mitad de año)
+- Agosto-Octubre: fuerte (regreso a clases, primas de mitad de año)
+- Noviembre-Diciembre: fuerte (primas fin de año, bonos)
+
+Aplica estacionalidad de ${nextMonth}. Usa COP para todos los valores.
+
+Responde ÚNICAMENTE con JSON válido, sin markdown:
+{
+  "next_month": "${nextMonth}",
+  "decision_context": "1-2 oraciones sobre como la decision afecta estas proyecciones",
+  "pessimistic": {
+    "collections": 45000000,
+    "confidence": 72,
+    "label": "Pesimista",
+    "driver": "Frase corta del riesgo principal",
+    "factors": ["Por que podria ocurrir", "Factor 2", "Factor 3"],
+    "cost_of_inaction": "ej: $8.2M COP por debajo de tu promedio mensual",
+    "cta": "Una accion especifica para evitar este escenario"
+  },
+  "base": {
+    "collections": 52000000,
+    "confidence": 68,
+    "label": "Caso Base",
+    "driver": "Frase corta del supuesto principal",
+    "factors": ["Que impulsa este escenario", "Factor 2", "Factor 3"],
+    "cost_of_inaction": null,
+    "cta": "Una accion para mantener esta trayectoria"
+  },
+  "optimistic": {
+    "collections": 61000000,
+    "confidence": 55,
+    "label": "Optimista",
+    "driver": "Que tiene que salir bien",
+    "factors": ["Que necesita pasar", "Accion 2", "Accion 3"],
+    "cost_of_inaction": null,
+    "cta": "Una accion concreta para tomar ESTA SEMANA"
+  },
+  "questions": [
+    {"icon":"💼","text":"¿Que pasa si contrato un higienista el proximo mes?"},
+    {"icon":"📉","text":"Si reduzco el ausentismo un 5%, cuanto mas recaudo?"},
+    {"icon":"📆","text":"¿Que semana de ${nextMonth} debo presionar mas en agendamiento?"},
+    {"icon":"🎯","text":"¿Cual es mi accion de mayor impacto para ${nextMonth}?"}
+  ]
+}
+
+Promedio mensual: $${Math.round(ALL.reduce((s,r)=>s+r.collections,0)/ALL.length).toLocaleString('es-CO')} COP. Pesimista ~10-18% por debajo, base ~0-8% de la tendencia, optimista ~8-18% por encima. Ajusta por estacionalidad de ${nextMonth}.`;
+
+  try{
+    const resp=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,messages:[{role:'user',content:prompt}]})});
+    const json=await resp.json();
+    const raw=json.content.map(b=>b.text||'').join('');
+    const r=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    FC_RESULT=r;
+    renderForecast(r);
+  }catch(e){
+    alert('Forecast error: '+e.message);
+  }
+  btn.disabled=false;
+  btn.innerHTML='<svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Regenerate';
+}
+
+function renderForecast(r){
+  // Show legend items
+  ['fc-leg-bad','fc-leg-base','fc-leg-opt'].forEach(id=>document.getElementById(id).style.display='flex');
+
+  // Chart
+  const data=ALL;
+  const months=data.map(d=>new Date(d.month+'-02').toLocaleDateString('en-US',{month:'short',year:'2-digit'}));
+  const historical=data.map(d=>d.collections);
+  const lastVal=historical[historical.length-1];
+  // Forecast points: last historical + 3 scenarios as the next point
+  const fLabel=r.next_month.split(' ')[0].slice(0,3)+' '+r.next_month.split(' ')[1].slice(2);
+  const allLabels=[...months,fLabel];
+
+  if(FC_CHART){FC_CHART.destroy();}
+  document.getElementById('fc-chart-empty').style.display='none';
+  const canvas=document.getElementById('fc-chart');
+  canvas.style.display='block';
+
+  FC_CHART=new Chart(canvas,{
+    type:'line',
+    data:{
+      labels:allLabels,
+      datasets:[
+        {
+          label:'Histórico',
+          data:[...historical,null],
+          borderColor:'#00D4AA',backgroundColor:'rgba(0,212,170,0.07)',
+          tension:0.35,fill:true,pointRadius:3,pointBackgroundColor:'#00D4AA',borderWidth:2
+        },
+        {
+          label:'Pesimista',
+          data:[...Array(historical.length-1).fill(null),lastVal,r.pessimistic.collections],
+          borderColor:'#F85149',backgroundColor:'transparent',
+          borderDash:[5,4],tension:0.2,pointRadius:[...Array(historical.length-1).fill(0),3,5],
+          pointBackgroundColor:'#F85149',borderWidth:2
+        },
+        {
+          label:'Base',
+          data:[...Array(historical.length-1).fill(null),lastVal,r.base.collections],
+          borderColor:'#E3B341',backgroundColor:'transparent',
+          borderDash:[5,4],tension:0.2,pointRadius:[...Array(historical.length-1).fill(0),3,5],
+          pointBackgroundColor:'#E3B341',borderWidth:2
+        },
+        {
+          label:'Optimista',
+          data:[...Array(historical.length-1).fill(null),lastVal,r.optimistic.collections],
+          borderColor:'#3FB950',backgroundColor:'transparent',
+          borderDash:[5,4],tension:0.2,pointRadius:[...Array(historical.length-1).fill(0),3,5],
+          pointBackgroundColor:'#3FB950',borderWidth:2
+        }
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: $${Math.round(ctx.raw||0).toLocaleString()}`}}},
+      scales:{
+        x:{ticks:{font:{size:10}},grid:{color:'#21262D'}},
+        y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1000)+'k'},grid:{color:'#21262D'}}
+      }
+    }
+  });
+
+  // Scenario cards
+  const scContainer=document.getElementById('fc-scenarios');
+  scContainer.style.display='grid';
+  const scenarios=[
+    {key:'sc-bad',data:r.pessimistic},
+    {key:'sc-base',data:r.base},
+    {key:'sc-opt',data:r.optimistic}
+  ];
+  scContainer.innerHTML=scenarios.map(({key,data:s})=>`
+    <div class="fc-scenario ${key}">
+      <div class="fc-sc-top">
+        <span class="fc-sc-label">${s.label}</span>
+        <div class="fc-sc-conf">
+          <div class="fc-sc-conf-bar"><div class="fc-sc-conf-fill" style="width:${s.confidence}%"></div></div>
+          ${s.confidence}%
+        </div>
+      </div>
+      <div>
+        <div class="fc-sc-amount">$${Math.round(s.collections/1000)}k</div>
+        <div class="fc-sc-period">${r.next_month} proyección</div>
+      </div>
+      <div style="font-size:11px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.06em">${s.driver}</div>
+      ${s.cost_of_inaction?`<div class="fc-sc-cost">⚠ ${s.cost_of_inaction}</div>`:''}
+      <div class="fc-sc-factors">${s.factors.map(f=>`<div class="fc-sc-factor">${f}</div>`).join('')}</div>
+      <button class="fc-sc-btn" onclick="askForecastQuestion('${s.cta.replace(/'/g,"\\'")}','${s.label} action')">
+        <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        ${s.cta}
+      </button>
+    </div>`).join('');
+
+  // Decision context note
+  if(r.decision_context){
+    const note=document.createElement('div');
+    note.style.cssText='background:rgba(56,139,253,.07);border:1px solid rgba(56,139,253,.2);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px';
+    note.innerHTML=`<span style="color:var(--blue);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.06em">Decision context · ${FC_DECISION_LABELS[document.getElementById('fc-decision').value]||''}</span><br>${r.decision_context}`;
+    scContainer.insertAdjacentElement('afterend',note);
+  }
+
+  // Questions
+  const qCard=document.getElementById('fc-questions-card');
+  qCard.style.display='block';
+  document.getElementById('fc-q-grid').innerHTML=r.questions.map(q=>`
+    <button class="fc-q-btn" onclick="askForecastQuestion('${q.text.replace(/'/g,"\\'")}','${q.text.replace(/'/g,"\\'")}')">
+      <span class="fc-q-icon">${q.icon}</span>
+      <span class="fc-q-text">${q.text}</span>
+    </button>`).join('');
+}
+
+async function askForecastQuestion(question,label){
+  if(!FC_RESULT||!ALL.length)return;
+  const card=document.getElementById('fc-answer-card');
+  const body=document.getElementById('fc-answer-body');
+  const qEl=document.getElementById('fc-answer-q');
+  card.classList.add('visible');
+  qEl.textContent=label||question;
+  body.innerHTML=`<div class="fc-answer-ld"><div class="ld"><span></span><span></span><span></span></div><span style="font-size:13px;color:var(--muted)">Analyzing...</span></div>`;
+  card.scrollIntoView({behavior:'smooth',block:'nearest'});
+
+  const dataCtx=buildForecastDataContext();
+  const prompt=`You are a dental practice financial advisor. The owner has these forecast proyeccións for ${FC_RESULT.next_month}:
+- Pesimista: $${FC_RESULT.pessimistic.collections.toLocaleString()} (${FC_RESULT.pessimistic.driver})
+- Base: $${FC_RESULT.base.collections.toLocaleString()} (${FC_RESULT.base.driver})
+- Optimista: $${FC_RESULT.optimistic.collections.toLocaleString()} (${FC_RESULT.optimistic.driver})
+
+${dataCtx}
+
+Answer this question directly and specifically, with real numbers from the data: "${question}"
+
+Be direct, specific, and concise. Use numbers. Max 150 words. Respond in the same language as the question. Format with **bold** for key numbers or actions.`;
+
+  try{
+    const resp=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:400,messages:[{role:'user',content:prompt}]})});
+    const json=await resp.json();
+    const raw=json.content.map(b=>b.text||'').join('');
+    body.innerHTML=`<div class="fc-answer-txt">${renderMarkdown(raw)}</div>`;
+  }catch(e){
+    body.innerHTML=`<div class="fc-answer-txt">⚠️ ${e.message}</div>`;
+  }
+}
+
+function closeFcAnswer(){
+  document.getElementById('fc-answer-card').classList.remove('visible');
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const ta=document.getElementById('chat-input');
+  if(ta)ta.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';});
+});
+
+loadCSV();loadArticles();loadProfile();applyWhiteLabel();
+</script>
+</body>
+</html>
