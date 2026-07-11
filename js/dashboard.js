@@ -24,7 +24,7 @@ async function loadCSV(){
     document.getElementById('app').style.display='block';
     popFilters();render(ALL);initChat();
   }catch(e){
-    document.getElementById('loading').innerHTML='<p style="color:#F85149">Error loading smile_dental_demo.csv — '+e.message+'</p>';
+    document.getElementById('loading').innerHTML='<p style="color:#F85149">Error al cargar smile_dental_demo.csv — '+e.message+'</p>';
   }
 }
 
@@ -32,7 +32,7 @@ function popFilters(){
   const sel=document.getElementById('fMonth');
   [...new Set(ALL.map(r=>r.month))].sort().forEach(v=>{
     const o=document.createElement('option');o.value=v;
-    o.textContent=new Date(v+'-02').toLocaleDateString('en-US',{month:'long',year:'numeric'});
+    o.textContent=new Date(v+'-02').toLocaleDateString('es-CO',{month:'long',year:'numeric'});
     sel.appendChild(o);
   });
 }
@@ -84,35 +84,35 @@ function render(data){
   const noShowRate=Math.round(m.noShowRate);
 
   document.getElementById('kCollections').textContent='$'+Math.round(m.totalCollections/1000)+'k';
-  document.getElementById('kCollectionsSub').textContent=data.length+' months tracked';
+  document.getElementById('kCollectionsSub').textContent=data.length+' meses registrados';
   document.getElementById('kProduction').textContent='$'+Math.round(m.totalProduction/1000)+'k';
-  document.getElementById('kProductionSub').textContent='$'+Math.round(m.avgProduction/1000)+'k avg/month';
+  document.getElementById('kProductionSub').textContent='$'+Math.round(m.avgProduction/1000)+'k prom/mes';
   document.getElementById('kNetIncome').textContent='$'+Math.round(m.totalNetIncome/1000)+'k';
-  document.getElementById('kNetIncomeSub').textContent=m.totalCollections?Math.round(m.totalNetIncome/m.totalCollections*100)+'% margin':'—';
+  document.getElementById('kNetIncomeSub').textContent=m.totalCollections?Math.round(m.totalNetIncome/m.totalCollections*100)+'% margen':'—';
   document.getElementById('kOverhead').textContent=overheadRate+'%';
 
   document.getElementById('kNewPat').textContent=m.totalNewPat;
-  document.getElementById('kNewPatSub').textContent=data.length?Math.round(m.totalNewPat/data.length)+' avg/month':'—';
+  document.getElementById('kNewPatSub').textContent=data.length?Math.round(m.totalNewPat/data.length)+' prom/mes':'—';
   document.getElementById('kAppts').textContent=m.totalCompleted;
-  document.getElementById('kApptsSub').textContent=m.totalScheduled?Math.round(m.totalCompleted/m.totalScheduled*100)+'% completion rate':'—';
+  document.getElementById('kApptsSub').textContent=m.totalScheduled?Math.round(m.totalCompleted/m.totalScheduled*100)+'% tasa de finalización':'—';
   document.getElementById('kAcceptance').textContent=acceptanceRate+'%';
   document.getElementById('kNoShow').textContent=noShowRate+'%';
 
   // Monthly collections trend — byMonth avoids an O(n²) data.find() per month
   const months=data.map(r=>r.month).sort();
   const byMonth=new Map(data.map(r=>[r.month,r]));
-  const monthLabel=mo=>new Date(mo+'-02').toLocaleDateString('en-US',{month:'short',year:'2-digit'});
+  const monthLabel=mo=>new Date(mo+'-02').toLocaleDateString('es-CO',{month:'short',year:'2-digit'});
   kill('cTime');
   charts['cTime']=new Chart(document.getElementById('cTime'),{
     type:'line',
     data:{
       labels:months.map(monthLabel),
       datasets:[{
-        label:'Collections',
+        label:'Recaudación',
         data:months.map(mo=>byMonth.get(mo)?.collections||0),
         borderColor:'#00D4AA',backgroundColor:'rgba(0,212,170,0.07)',tension:0.35,fill:true,pointRadius:3,pointBackgroundColor:'#00D4AA',borderWidth:2
       },{
-        label:'Production',
+        label:'Producción',
         data:months.map(mo=>byMonth.get(mo)?.gross_production||0),
         borderColor:'#388BFD',backgroundColor:'rgba(56,139,253,0.04)',tension:0.35,fill:true,pointRadius:3,pointBackgroundColor:'#388BFD',borderWidth:2,borderDash:[4,3]
       }]
@@ -121,7 +121,7 @@ function render(data){
   });
 
   // Service mix donut
-  const services=[['Hygiene',m.hygieneRevenue],['Restorative',m.restorativeRevenue],['Cosmetic',m.cosmeticRevenue],['Orthodontic',m.orthoRevenue]];
+  const services=[['Higiene',m.hygieneRevenue],['Restaurativa',m.restorativeRevenue],['Estética',m.cosmeticRevenue],['Ortodoncia',m.orthoRevenue]];
   mkLeg('lServ',services);
   kill('cServ');
   charts['cServ']=new Chart(document.getElementById('cServ'),{
@@ -131,17 +131,17 @@ function render(data){
   });
 
   // Revenue by service rank
-  mkRank('rServ',services.sort((a,b)=>b[1]-a[1]),fmtUSD);
+  mkRank('rServ',services.sort((a,b)=>b[1]-a[1]),fmtCOP);
 
   // Patient flow rank
   const patFlow=data.map(r=>[monthLabel(r.month),r.new_patients]).sort((a,b)=>b[1]-a[1]);
-  mkRank('rPat',patFlow,v=>v+' new');
+  mkRank('rPat',patFlow,v=>v+' nuevos');
 
   // Appointment outcomes rank
   const apptData=[
-    ['Completed',m.totalCompleted],
-    ['Cancellations',m.totalCancellations],
-    ['No-shows',m.totalNoShows]
+    ['Completadas',m.totalCompleted],
+    ['Cancelaciones',m.totalCancellations],
+    ['Inasistencias',m.totalNoShows]
   ];
   mkRank('rAppt',apptData);
 
@@ -150,7 +150,7 @@ function render(data){
   kill('cOverhead');
   charts['cOverhead']=new Chart(document.getElementById('cOverhead'),{
     type:'doughnut',
-    data:{labels:['Staff','Supplies','Other overhead'],datasets:[{data:[m.staffCosts,m.suppliesCosts,otherCosts>0?otherCosts:0],backgroundColor:['#388BFD','#E3B341','#A371F7'],borderWidth:0,hoverOffset:4}]},
+    data:{labels:['Personal','Insumos','Otros gastos'],datasets:[{data:[m.staffCosts,m.suppliesCosts,otherCosts>0?otherCosts:0],backgroundColor:['#388BFD','#E3B341','#A371F7'],borderWidth:0,hoverOffset:4}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:10}}}}
   });
 
@@ -161,8 +161,8 @@ function render(data){
     data:{
       labels:months.map(monthLabel),
       datasets:[
-        {label:'Production',data:months.map(mo=>byMonth.get(mo)?.gross_production||0),backgroundColor:'rgba(56,139,253,0.7)',borderRadius:4,borderSkipped:false},
-        {label:'Collections',data:months.map(mo=>byMonth.get(mo)?.collections||0),backgroundColor:'rgba(0,212,170,0.7)',borderRadius:4,borderSkipped:false}
+        {label:'Producción',data:months.map(mo=>byMonth.get(mo)?.gross_production||0),backgroundColor:'rgba(56,139,253,0.7)',borderRadius:4,borderSkipped:false},
+        {label:'Recaudación',data:months.map(mo=>byMonth.get(mo)?.collections||0),backgroundColor:'rgba(0,212,170,0.7)',borderRadius:4,borderSkipped:false}
       ]
     },
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:10}}},scales:{x:{ticks:{font:{size:10}},grid:{color:'#21262D'}},y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1000)+'k'},grid:{color:'#21262D'}}}}

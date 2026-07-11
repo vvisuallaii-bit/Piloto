@@ -13,14 +13,14 @@ const FC_DECISION_LABELS={
 async function generateForecast(){
   if(!ALL.length)return;
   const btn=document.getElementById('fc-gen-btn');
-  btn.disabled=true;btn.innerHTML='<svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Analyzing...';
+  btn.disabled=true;btn.innerHTML='<svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Analizando...';
 
   const decision=document.getElementById('fc-decision').value;
   const decisionLabel=FC_DECISION_LABELS[decision]||'Panorama general';
   const dataCtx=buildForecastDataContext();
   const nextMonthDate=new Date();
   nextMonthDate.setMonth(nextMonthDate.getMonth()+1);
-  const nextMonth=nextMonthDate.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  const nextMonth=nextMonthDate.toLocaleDateString('es-CO',{month:'long',year:'numeric'});
 
   const prompt=`Eres un analista financiero especializado en clínicas dentales colombianas. Analiza los datos históricos y genera una proyección para el próximo mes (${nextMonth}).
 
@@ -83,14 +83,14 @@ Promedio mensual: $${Math.round(ALL.reduce((s,r)=>s+r.collections,0)/ALL.length)
     const json=await resp.json();
     const raw=json.content.map(b=>b.text||'').join('');
     const r=JSON.parse(raw.replace(/```json|```/g,'').trim());
-    if(!r.base||!r.pessimistic||!r.optimistic)throw new Error('Unexpected forecast response format');
+    if(!r.base||!r.pessimistic||!r.optimistic)throw new Error('Formato de respuesta de proyección inesperado');
     FC_RESULT=r;
     renderForecast(r);
   }catch(e){
-    alert('Forecast error: '+e.message);
+    alert('Error en la proyección: '+e.message);
   }
   btn.disabled=false;
-  btn.innerHTML='<svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Regenerate';
+  btn.innerHTML='<svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Regenerar';
 }
 
 function renderForecast(r){
@@ -99,7 +99,7 @@ function renderForecast(r){
 
   // Chart
   const data=ALL;
-  const months=data.map(d=>new Date(d.month+'-02').toLocaleDateString('en-US',{month:'short',year:'2-digit'}));
+  const months=data.map(d=>new Date(d.month+'-02').toLocaleDateString('es-CO',{month:'short',year:'2-digit'}));
   const historical=data.map(d=>d.collections);
   const lastVal=historical[historical.length-1];
   // Forecast points: last historical + 3 scenarios as the next point
@@ -148,7 +148,7 @@ function renderForecast(r){
     options:{
       responsive:true,maintainAspectRatio:false,
       interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: $${Math.round(ctx.raw||0).toLocaleString()}`}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: $${Math.round(ctx.raw||0).toLocaleString('es-CO')}`}}},
       scales:{
         x:{ticks:{font:{size:10}},grid:{color:'#21262D'}},
         y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1000)+'k'},grid:{color:'#21262D'}}
@@ -211,20 +211,20 @@ async function askForecastQuestion(question,label){
   const qEl=document.getElementById('fc-answer-q');
   card.classList.add('visible');
   qEl.textContent=label||question;
-  body.innerHTML=`<div class="fc-answer-ld"><div class="ld"><span></span><span></span><span></span></div><span style="font-size:13px;color:var(--muted)">Analyzing...</span></div>`;
+  body.innerHTML=`<div class="fc-answer-ld"><div class="ld"><span></span><span></span><span></span></div><span style="font-size:13px;color:var(--muted)">Analizando...</span></div>`;
   card.scrollIntoView({behavior:'smooth',block:'nearest'});
 
   const dataCtx=buildForecastDataContext();
-  const prompt=`You are a dental practice financial advisor. The owner has these forecast proyeccións for ${FC_RESULT.next_month}:
-- Pesimista: $${FC_RESULT.pessimistic.collections.toLocaleString()} (${FC_RESULT.pessimistic.driver})
-- Base: $${FC_RESULT.base.collections.toLocaleString()} (${FC_RESULT.base.driver})
-- Optimista: $${FC_RESULT.optimistic.collections.toLocaleString()} (${FC_RESULT.optimistic.driver})
+  const prompt=`Eres un asesor financiero de clínicas dentales colombianas. El dueño tiene estas proyecciones para ${FC_RESULT.next_month}:
+- Pesimista: $${FC_RESULT.pessimistic.collections.toLocaleString('es-CO')} COP (${FC_RESULT.pessimistic.driver})
+- Base: $${FC_RESULT.base.collections.toLocaleString('es-CO')} COP (${FC_RESULT.base.driver})
+- Optimista: $${FC_RESULT.optimistic.collections.toLocaleString('es-CO')} COP (${FC_RESULT.optimistic.driver})
 
 ${dataCtx}
 
-Answer this question directly and specifically, with real numbers from the data: "${question}"
+Responde esta pregunta de forma directa y específica, con números reales de los datos: "${question}"
 
-Be direct, specific, and concise. Use numbers. Max 150 words. Respond in the same language as the question. Format with **bold** for key numbers or actions.`;
+Sé directo, específico y conciso. Usa números. Máximo 150 palabras. Responde en el mismo idioma de la pregunta. Usa **negrita** para números o acciones clave.`;
 
   try{
     const resp=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:MODEL_ID,max_tokens:400,messages:[{role:'user',content:prompt}]})});

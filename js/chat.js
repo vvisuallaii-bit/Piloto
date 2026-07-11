@@ -35,8 +35,8 @@ function initChat(){
   chatReady=true;
   const bar=document.getElementById('chat-context-bar');
   const tot=ALL.reduce((s,r)=>s+r.collections,0);
-  const profileTag=PRACTICE_PROFILE?` · Profile: ${PRACTICE_PROFILE.name}`:'';
-  bar.textContent=`✓ Context loaded — ${ALL.length} months · $${Math.round(tot).toLocaleString()} in collections · ${ALL.reduce((s,r)=>s+r.new_patients,0)} new patients${profileTag}`;
+  const profileTag=PRACTICE_PROFILE?` · Perfil: ${PRACTICE_PROFILE.name}`:'';
+  bar.textContent=`✓ Contexto cargado — ${ALL.length} meses · $${Math.round(tot).toLocaleString('es-CO')} en recaudación · ${ALL.reduce((s,r)=>s+r.new_patients,0)} pacientes nuevos${profileTag}`;
   bar.style.color='var(--accent)';
 }
 
@@ -73,8 +73,8 @@ async function sendChat(){
   const thinking=appendMsg('ai','',true);
   try{
     const messages=[
-      {role:'user',content:buildSystemPrompt(chatDataContext)+'\n\n[System ready. You are now live with the practice owner.]'},
-      {role:'assistant',content:`Ready. I have ${getWhiteLabel()}'s data loaded and I'm here as your strategic advisor. What do you need to analyze?`},
+      {role:'user',content:buildSystemPrompt(chatDataContext)+'\n\n[Sistema listo. Ahora estás en línea con el dueño de la clínica.]'},
+      {role:'assistant',content:`Listo. Tengo los datos de ${getWhiteLabel()} cargados y estoy aquí como tu asesor estratégico. ¿Qué necesitas analizar?`},
       ...chatHistory.slice(0,-1).map(m=>({role:m.role==='ai'?'assistant':'user',content:m.content})),
       {role:'user',content:text}
     ];
@@ -84,7 +84,7 @@ async function sendChat(){
     thinking.remove();appendMsg('ai',reply);
     chatHistory.push({role:'ai',content:reply});
   }catch(e){
-    thinking.remove();appendMsg('ai',`⚠️ Connection error: ${e.message}`);
+    thinking.remove();appendMsg('ai',`⚠️ Error de conexión: ${e.message}`);
   }
   sendBtn.disabled=false;input.focus();
 }
@@ -95,7 +95,7 @@ function clearChat(){
     <div class="chat-welcome" id="chat-welcome">
       <div class="chat-welcome-icon">🦷</div>
       <h3>Tu asesor de clínica dental está listo</h3>
-      <p>I have full access to ${escapeHtml(getWhiteLabel())}'s performance data. Ask me anything — I validate ideas, analyze trends, and give you direct strategic advice.</p>
+      <p>Tengo acceso completo a los datos de rendimiento de ${escapeHtml(getWhiteLabel())}. Pregúntame lo que sea — valido ideas, analizo tendencias y te doy consejo estratégico directo.</p>
       <div class="chat-suggestions">
         <button class="chat-suggestion" onclick="sendSuggestion(this)">¿Cuál servicio es el más rentable?</button>
         <button class="chat-suggestion" onclick="sendSuggestion(this)">¿Por qué mi tasa de ausentismo es alta?</button>

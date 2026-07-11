@@ -1,4 +1,6 @@
-/* ── PDF EXPORT (jsPDF) — draws the last AI analysis result as a report ── */
+/* ── PDF EXPORT (jsPDF) — draws the last AI analysis result as a report ──
+   Benchmarks/warn thresholds match the Colombia numbers in metrics.js'
+   computeHealthScore(): overhead <65%, acceptance >65%, no-show <12%. */
 
 function exportPDF(){
   if(!LAST_RESULT||!CURRENT_DATA.length)return;
@@ -28,9 +30,9 @@ function exportPDF(){
   rgb(C.muted);doc.setFont('helvetica','normal');doc.setFontSize(9);
   doc.text('Dashboard de Inteligencia Dental',M+7,22);
   // right side
-  const now=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  const now=new Date().toLocaleDateString('es-CO',{month:'long',day:'numeric',year:'numeric'});
   rgb(C.muted);doc.setFontSize(8);
-  doc.text('Generated '+now,W-M,22,{align:'right'});
+  doc.text('Generado el '+now,W-M,22,{align:'right'});
   rgb(C.teal);doc.setFont('helvetica','bold');doc.setFontSize(8);
   doc.text('Desarrollado con Claude IA',W-M,16,{align:'right'});
 
@@ -38,17 +40,17 @@ function exportPDF(){
 
   // ── ANALYSIS PERIOD ──
   const data=CURRENT_DATA;
-  const fmtM=mo=>new Date(mo+'-02').toLocaleDateString('en-US',{month:'short',year:'numeric'});
+  const fmtM=mo=>new Date(mo+'-02').toLocaleDateString('es-CO',{month:'short',year:'numeric'});
   const period=data.length?`${fmtM(data[0].month)} – ${fmtM(data[data.length-1].month)}`:'-';
   rgb(C.muted);doc.setFont('helvetica','normal');doc.setFontSize(8.5);
-  doc.text(`Analysis period: ${period}  ·  ${data.length} meses de datos`,M,y);
+  doc.text(`Período de análisis: ${period}  ·  ${data.length} meses de datos`,M,y);
   y+=8;
 
   // ── HEADLINE ──
   fill(C.surface);doc.roundedRect(M,y,W-M*2,18,2,2,'F');
   fill(C.teal);doc.rect(M,y,3,18,'F');
   rgb(C.teal);doc.setFont('helvetica','bold');doc.setFontSize(7.5);
-  doc.text('AI EXECUTIVE FINDING',M+7,y+5.5);
+  doc.text('HALLAZGO EJECUTIVO IA',M+7,y+5.5);
   rgb(C.text);doc.setFont('helvetica','bold');doc.setFontSize(10.5);
   const headLines=doc.splitTextToSize(LAST_RESULT.headline,W-M*2-14);
   doc.text(headLines,M+7,y+12);
@@ -63,12 +65,12 @@ function exportPDF(){
   const kpis=[
     {label:'Recaudación Total',val:'$'+Math.round(m.totalCollections/1000)+'k',sub:'Total del período'},
     {label:'Producción Bruta',val:'$'+Math.round(m.totalProduction/1000)+'k',sub:'Total del período'},
-    {label:'Ingreso Neto',val:'$'+Math.round(m.totalNetIncome/1000)+'k',sub:m.totalCollections?Math.round(m.totalNetIncome/m.totalCollections*100)+'% margin':'-'},
-    {label:'Tasa de Gastos',val:overheadRate+'%',sub:'Target: <60%',warn:overheadRate>=60},
-    {label:'Pacientes Nuevos',val:String(m.totalNewPat),sub:data.length?Math.round(m.avgNewPatPerMonth)+'/mo avg':'-'},
-    {label:'Appts Completed',val:String(m.totalCompleted),sub:m.totalScheduled?Math.round(m.totalCompleted/m.totalScheduled*100)+'% of scheduled':'-'},
-    {label:'Aceptación de Tratamientos',val:acceptRate+'%',sub:'Target: 65–80%',warn:acceptRate<65},
-    {label:'Tasa de Ausentismo',val:noShowRate+'%',sub:'Target: <8%',warn:noShowRate>=8},
+    {label:'Ingreso Neto',val:'$'+Math.round(m.totalNetIncome/1000)+'k',sub:m.totalCollections?Math.round(m.totalNetIncome/m.totalCollections*100)+'% margen':'-'},
+    {label:'Tasa de Gastos',val:overheadRate+'%',sub:'Meta: <65%',warn:overheadRate>=65},
+    {label:'Pacientes Nuevos',val:String(m.totalNewPat),sub:data.length?Math.round(m.avgNewPatPerMonth)+'/mes prom':'-'},
+    {label:'Citas Completadas',val:String(m.totalCompleted),sub:m.totalScheduled?Math.round(m.totalCompleted/m.totalScheduled*100)+'% de lo agendado':'-'},
+    {label:'Aceptación de Tratamientos',val:acceptRate+'%',sub:'Meta: >65%',warn:acceptRate<65},
+    {label:'Tasa de Ausentismo',val:noShowRate+'%',sub:'Meta: <12%',warn:noShowRate>=12},
   ];
 
   checkY(30);
@@ -92,14 +94,14 @@ function exportPDF(){
   // ── AI NARRATIVE BLOCKS ──
   checkY(12);
   rgb(C.muted);doc.setFont('helvetica','bold');doc.setFontSize(7.5);
-  doc.text('EXECUTIVE ANALYSIS',M,y);
+  doc.text('ANÁLISIS EJECUTIVO',M,y);
   y+=5;
   draw(C.surface);doc.setLineWidth(0.2);doc.line(M,y,W-M,y);y+=5;
 
   const blocks=[
-    {label:'What happened',txt:LAST_RESULT.what_happened},
-    {label:'Why it matters',txt:LAST_RESULT.why_it_matters},
-    {label:'Opportunity / Risk',txt:LAST_RESULT.opportunity},
+    {label:'Qué pasó',txt:LAST_RESULT.what_happened},
+    {label:'Por qué importa',txt:LAST_RESULT.why_it_matters},
+    {label:'Oportunidad / Riesgo',txt:LAST_RESULT.opportunity},
   ];
   const bW=(W-M*2-8)/3;
   let maxBH=0;
@@ -123,7 +125,7 @@ function exportPDF(){
   // ── RECOMMENDED ACTIONS ──
   checkY(14);
   rgb(C.muted);doc.setFont('helvetica','bold');doc.setFontSize(7.5);
-  doc.text('RECOMMENDED ACTIONS',M,y);y+=5;
+  doc.text('ACCIONES RECOMENDADAS',M,y);y+=5;
   draw(C.surface);doc.setLineWidth(0.2);doc.line(M,y,W-M,y);y+=5;
 
   const prioColors={URGENT:C.red,MEDIUM:C.amber,LOW:C.green};
@@ -145,7 +147,7 @@ function exportPDF(){
   y+=4;checkY(14);
   fill(C.surface);doc.roundedRect(M,y,W-M*2,12,1.5,1.5,'F');
   rgb(C.muted);doc.setFont('helvetica','normal');doc.setFontSize(7.5);
-  doc.text('Analysis confidence',M+4,y+8);
+  doc.text('Confianza del análisis',M+4,y+8);
   const barW=W-M*2-70;
   fill([30,38,48]);doc.roundedRect(M+48,y+4.5,barW,3,1,1,'F');
   fill(C.teal);doc.roundedRect(M+48,y+4.5,barW*(LAST_RESULT.confidence/100),3,1,1,'F');
@@ -160,10 +162,10 @@ function exportPDF(){
     fill(C.dark);doc.rect(0,285,W,12,'F');
     fill(C.teal);doc.rect(0,285,W,0.8,'F');
     rgb(C.muted);doc.setFont('helvetica','normal');doc.setFontSize(7);
-    doc.text(`${pracName} — Practice Intelligence Report`,M,291);
-    doc.text(`Page ${p} of ${pages}`,W-M,291,{align:'right'});
+    doc.text(`${pracName} — Informe de Inteligencia de la Clínica`,M,291);
+    doc.text(`Página ${p} de ${pages}`,W-M,291,{align:'right'});
     rgb(C.teal);doc.text('Desarrollado con Claude IA',W/2,291,{align:'center'});
   }
 
-  doc.save(`SmileDental_Analysis_${new Date().toISOString().slice(0,10)}.pdf`);
+  doc.save(`SmileDental_Analisis_${new Date().toISOString().slice(0,10)}.pdf`);
 }

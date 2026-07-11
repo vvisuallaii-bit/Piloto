@@ -13,7 +13,7 @@
 </head>
 <body>
 
-<div id="loading"><div class="spinner"></div><p>Loading practice data...</p></div>
+<div id="loading"><div class="spinner"></div><p>Cargando datos de la clínica...</p></div>
 
 <div id="app" style="display:none">
 
@@ -57,10 +57,10 @@
 <div class="tab-pane active" id="tab-sales">
 
   <div class="filter-bar">
-    <span class="filter-label">Filter by</span>
+    <span class="filter-label">Filtrar por</span>
     <div class="filter-divider"></div>
-    <select id="fMonth" onchange="go()"><option value="">All months</option></select>
-    <button class="filter-reset" onclick="resetFilters()">✕ Reset</button>
+    <select id="fMonth" onchange="go()"><option value="">Todos los meses</option></select>
+    <button class="filter-reset" onclick="resetFilters()">✕ Restablecer</button>
   </div>
 
   <!-- PRACTICE HEALTH SCORE -->
@@ -78,7 +78,7 @@
           <div class="hs-score-max">/100</div>
         </div>
       </div>
-      <div class="hs-label" id="hs-label">Loading...</div>
+      <div class="hs-label" id="hs-label">Cargando...</div>
     </div>
     <div class="hs-right" id="hs-items"></div>
   </div>
@@ -86,17 +86,17 @@
   <!-- Row 1 KPIs: Financial -->
   <div class="kpis" style="margin-bottom:10px">
     <div class="kpi c-teal"><div class="kpi-icon">💰</div><div class="kpi-label">Recaudación Total</div><div class="kpi-val" id="kCollections">—</div><div class="kpi-sub" id="kCollectionsSub">—</div></div>
-    <div class="kpi c-blue"><div class="kpi-icon">🦷</div><div class="kpi-label">Producción Bruta</div><div class="kpi-val" id="kProduction">—</div><div class="kpi-sub" id="kProductionSub">avg/month</div></div>
-    <div class="kpi c-green"><div class="kpi-icon">📈</div><div class="kpi-label">Ingreso Neto</div><div class="kpi-val" id="kNetIncome">—</div><div class="kpi-sub" id="kNetIncomeSub">after overhead</div></div>
-    <div class="kpi c-red"><div class="kpi-icon">🏢</div><div class="kpi-label">Tasa de Gastos</div><div class="kpi-val" id="kOverhead">—</div><div class="kpi-sub">target: &lt;60%</div></div>
+    <div class="kpi c-blue"><div class="kpi-icon">🦷</div><div class="kpi-label">Producción Bruta</div><div class="kpi-val" id="kProduction">—</div><div class="kpi-sub" id="kProductionSub">prom/mes</div></div>
+    <div class="kpi c-green"><div class="kpi-icon">📈</div><div class="kpi-label">Ingreso Neto</div><div class="kpi-val" id="kNetIncome">—</div><div class="kpi-sub" id="kNetIncomeSub">después de gastos</div></div>
+    <div class="kpi c-red"><div class="kpi-icon">🏢</div><div class="kpi-label">Tasa de Gastos</div><div class="kpi-val" id="kOverhead">—</div><div class="kpi-sub">meta: &lt;65%</div></div>
   </div>
 
   <!-- Row 2 KPIs: Patient -->
   <div class="kpis" style="margin-bottom:16px">
-    <div class="kpi c-purple"><div class="kpi-icon">👥</div><div class="kpi-label">Pacientes Nuevos</div><div class="kpi-val" id="kNewPat">—</div><div class="kpi-sub" id="kNewPatSub">total period</div></div>
-    <div class="kpi c-amber"><div class="kpi-icon">📅</div><div class="kpi-label">Appointments</div><div class="kpi-val" id="kAppts">—</div><div class="kpi-sub" id="kApptsSub">completed</div></div>
-    <div class="kpi c-teal"><div class="kpi-icon">✅</div><div class="kpi-label">Aceptación de Tratamientos</div><div class="kpi-val" id="kAcceptance">—</div><div class="kpi-sub">industry avg: 65–80%</div></div>
-    <div class="kpi c-blue"><div class="kpi-icon">⚠️</div><div class="kpi-label">Tasa de Ausentismo</div><div class="kpi-val" id="kNoShow">—</div><div class="kpi-sub">target: &lt;8%</div></div>
+    <div class="kpi c-purple"><div class="kpi-icon">👥</div><div class="kpi-label">Pacientes Nuevos</div><div class="kpi-val" id="kNewPat">—</div><div class="kpi-sub" id="kNewPatSub">período total</div></div>
+    <div class="kpi c-amber"><div class="kpi-icon">📅</div><div class="kpi-label">Citas</div><div class="kpi-val" id="kAppts">—</div><div class="kpi-sub" id="kApptsSub">completadas</div></div>
+    <div class="kpi c-teal"><div class="kpi-icon">✅</div><div class="kpi-label">Aceptación de Tratamientos</div><div class="kpi-val" id="kAcceptance">—</div><div class="kpi-sub">meta: &gt;65%</div></div>
+    <div class="kpi c-blue"><div class="kpi-icon">⚠️</div><div class="kpi-label">Tasa de Ausentismo</div><div class="kpi-val" id="kNoShow">—</div><div class="kpi-sub">meta: &lt;12%</div></div>
   </div>
 
   <div class="ai-panel">
@@ -115,34 +115,34 @@
     </div>
     <div class="ai-body">
       <div class="ai-empty" id="ai-empty"><div class="ai-empty-icon">◈</div>Haz clic en <strong style="color:var(--accent)">Analizar con IA</strong> para generar un análisis ejecutivo de Smile Dental. Los filtros activos aplican.</div>
-      <div class="ai-loading" id="ai-loading"><div class="ld"><span></span><span></span><span></span></div><span id="ai-loading-txt">Analyzing practice data...</span></div>
+      <div class="ai-loading" id="ai-loading"><div class="ld"><span></span><span></span><span></span></div><span id="ai-loading-txt">Analizando datos de la clínica...</span></div>
       <div class="ai-result" id="ai-result"></div>
     </div>
   </div>
 
   <div class="grid-main">
-    <div class="card"><div class="card-title">Monthly collections trend</div><div style="position:relative;height:200px"><canvas id="cTime"></canvas></div></div>
-    <div class="card"><div class="card-title">Revenue mix by service</div><div id="lServ" class="leg"></div><div style="position:relative;height:160px"><canvas id="cServ"></canvas></div></div>
+    <div class="card"><div class="card-title">Tendencia mensual de recaudación</div><div style="position:relative;height:200px"><canvas id="cTime"></canvas></div></div>
+    <div class="card"><div class="card-title">Mezcla de ingresos por servicio</div><div id="lServ" class="leg"></div><div style="position:relative;height:160px"><canvas id="cServ"></canvas></div></div>
   </div>
 
   <div class="grid-3">
     <div class="card">
-      <div class="card-title">Revenue by service line</div>
+      <div class="card-title">Ingresos por línea de servicio</div>
       <div id="rServ"></div>
     </div>
     <div class="card">
-      <div class="card-title">Patient flow by month</div>
+      <div class="card-title">Flujo de pacientes por mes</div>
       <div id="rPat"></div>
     </div>
     <div class="card">
-      <div class="card-title">Appointment outcomes</div>
+      <div class="card-title">Resultados de citas</div>
       <div id="rAppt"></div>
     </div>
   </div>
 
   <div class="grid-2">
-    <div class="card"><div class="card-title">Overhead breakdown</div><div style="position:relative;height:180px"><canvas id="cOverhead"></canvas></div></div>
-    <div class="card"><div class="card-title">Production vs collections (monthly)</div><div style="position:relative;height:180px"><canvas id="cProdCol"></canvas></div></div>
+    <div class="card"><div class="card-title">Desglose de gastos operativos</div><div style="position:relative;height:180px"><canvas id="cOverhead"></canvas></div></div>
+    <div class="card"><div class="card-title">Producción vs. recaudación (mensual)</div><div style="position:relative;height:180px"><canvas id="cProdCol"></canvas></div></div>
   </div>
 
 </div><!-- /tab-sales -->
@@ -152,16 +152,16 @@
   <div class="mi-header">
     <div class="mi-title-block">
       <h2>Tendencias del Sector</h2>
-      <p>Dental industry trends and insights — curated for Smile Dental</p>
+      <p>Tendencias e insights del sector odontológico — curados para Smile Dental</p>
     </div>
     <div class="mi-filter-bar">
-      <button class="mi-filter-btn active" onclick="filterArticles('all',this)">All</button>
-      <button class="mi-filter-btn" onclick="filterArticles('Industry Trend',this)">Industry Trends</button>
-      <button class="mi-filter-btn" onclick="filterArticles('Competitor Move',this)">Competitor Moves</button>
-      <button class="mi-filter-btn" onclick="filterArticles('Tendencias del Sector',this)">Market Data</button>
+      <button class="mi-filter-btn active" onclick="filterArticles('all',this)">Todas</button>
+      <button class="mi-filter-btn" onclick="filterArticles('Industry Trend',this)">Tendencias del sector</button>
+      <button class="mi-filter-btn" onclick="filterArticles('Competitor Move',this)">Movimientos de la competencia</button>
+      <button class="mi-filter-btn" onclick="filterArticles('Market Intelligence',this)">Inteligencia de mercado</button>
     </div>
   </div>
-  <div class="mi-grid" id="mi-grid"><div class="mi-empty"><div class="mi-empty-icon">📡</div><p>Loading intelligence feed...</p></div></div>
+  <div class="mi-grid" id="mi-grid"><div class="mi-empty"><div class="mi-empty-icon">📡</div><p>Cargando feed de inteligencia...</p></div></div>
 </div>
 
 <!-- AI PARTNER -->
@@ -172,16 +172,16 @@
         <div class="chat-avatar">🦷</div>
         <div>
           <div class="chat-header-name">Asesor IA — Smile Dental</div>
-          <div class="chat-header-status"><div class="chat-status-dot"></div>Connected to your practice data</div>
+          <div class="chat-header-status"><div class="chat-status-dot"></div>Conectado a los datos de tu clínica</div>
         </div>
       </div>
-      <button class="chat-clear" onclick="clearChat()">↺ New conversation</button>
+      <button class="chat-clear" onclick="clearChat()">↺ Nueva conversación</button>
     </div>
     <div class="chat-messages" id="chat-messages">
       <div class="chat-welcome" id="chat-welcome">
         <div class="chat-welcome-icon">🦷</div>
         <h3>Tu asesor de clínica dental está listo</h3>
-        <p id="chat-welcome-p">I have full access to your practice data. Ask me anything — I validate ideas, analyze trends, and give you direct strategic advice.</p>
+        <p id="chat-welcome-p">Tengo acceso completo a los datos de tu clínica. Pregúntame lo que sea — valido ideas, analizo tendencias y te doy consejo estratégico directo.</p>
         <div class="chat-suggestions">
           <button class="chat-suggestion" onclick="sendSuggestion(this)">¿Cuál servicio es el más rentable?</button>
           <button class="chat-suggestion" onclick="sendSuggestion(this)">¿Por qué mi tasa de ausentismo es alta?</button>
@@ -193,7 +193,7 @@
     </div>
     <div class="chat-input-wrap">
       <div class="chat-input-row">
-        <textarea class="chat-input" id="chat-input" placeholder="Ask about your practice performance..." rows="1"
+        <textarea class="chat-input" id="chat-input" placeholder="Pregunta sobre el rendimiento de tu clínica..." rows="1"
           onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
         <button class="chat-send" id="chat-send" onclick="sendChat()">
           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2.5">
@@ -201,7 +201,7 @@
           </svg>
         </button>
       </div>
-      <div class="chat-context-bar" id="chat-context-bar">Loading practice context...</div>
+      <div class="chat-context-bar" id="chat-context-bar">Cargando contexto de la clínica...</div>
     </div>
   </div>
 </div>
@@ -233,13 +233,6 @@
     </div>
   </div>
 
-  <!-- Accuracy tracker (shown after first forecast) -->
-  <div class="fc-accuracy-bar" id="fc-accuracy-bar">
-    <span class="fc-acc-icon">🎯</span>
-    <div class="fc-acc-txt" id="fc-acc-txt">Last month we projected <strong>$87,400</strong> (base scenario). You ended at <strong>$91,200</strong> — 4.3% above forecast.</div>
-    <span class="fc-acc-pill good" id="fc-acc-pill">+4.3% vs forecast</span>
-  </div>
-
   <!-- Chart -->
   <div class="fc-chart-card">
     <div class="fc-chart-header">
@@ -254,7 +247,7 @@
     <div id="fc-chart-area" style="position:relative;height:240px">
       <div class="fc-empty" id="fc-chart-empty">
         <div class="fc-empty-icon">📊</div>
-        Generate your forecast to see the proyección chart
+        Genera tu proyección para ver el gráfico
       </div>
       <canvas id="fc-chart" style="display:none"></canvas>
     </div>
@@ -296,7 +289,7 @@
   <div class="art-modal" id="art-modal">
     <div class="art-modal-header">
       <div class="art-modal-top">
-        <span class="art-company-badge" id="art-company">Source</span>
+        <span class="art-company-badge" id="art-company">Fuente</span>
         <button class="art-close" onclick="closeArticle()">✕</button>
       </div>
       <div class="art-modal-title" id="art-title"></div>
@@ -310,7 +303,7 @@
       <div class="art-summary" id="art-summary"></div>
       <div id="art-sections"></div>
       <div class="art-insight">
-        <div class="art-insight-lbl">Key insight</div>
+        <div class="art-insight-lbl">Insight clave</div>
         <div class="art-insight-txt" id="art-insight"></div>
       </div>
     </div>
@@ -327,7 +320,7 @@
         <div class="pp-modal-title">🦷 Perfil de la Clínica</div>
         <button class="pp-close" onclick="closeProfile()">✕</button>
       </div>
-      <div class="pp-modal-sub">This context stays saved locally and makes your Asesor IA dramatically more precise — it'll answer specific to your situation, not generic advice.</div>
+      <div class="pp-modal-sub">Este contexto se guarda localmente y hace que tu Asesor IA sea muchísimo más preciso — responderá según tu situación específica, no con consejos genéricos.</div>
     </div>
     <div class="pp-body">
 
@@ -389,11 +382,11 @@
         <label class="pp-label">Meta de ingresos anuales</label>
         <select class="pp-select" id="pp-goal">
           <option value="">Seleccionar...</option>
-          <option value="under500k">Under $500k</option>
-          <option value="500k-750k">$500k – $750k</option>
-          <option value="750k-1m">$750k – $1M</option>
-          <option value="1m-1.5m">$1M – $1.5M</option>
-          <option value="1.5m+">$1Más de 00M COP</option>
+          <option value="under500k">Menos de $150M COP</option>
+          <option value="500k-750k">$150M – $250M COP</option>
+          <option value="750k-1m">$250M – $400M COP</option>
+          <option value="1m-1.5m">$400M – $600M COP</option>
+          <option value="1.5m+">Más de $600M COP</option>
         </select>
       </div>
 

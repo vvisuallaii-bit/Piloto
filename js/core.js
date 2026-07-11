@@ -52,7 +52,7 @@ function applyWhiteLabel(){
 
   // Tendencias del Sector subtitle
   const miSub=document.querySelector('.mi-header p');
-  if(miSub) miSub.textContent=`Dental industry trends and insights — curated for ${name}`;
+  if(miSub) miSub.textContent=`Tendencias e insights del sector odontológico — curados para ${name}`;
 
   // Chat header
   const chatNameEl=document.querySelector('.chat-header-name');
@@ -60,7 +60,7 @@ function applyWhiteLabel(){
 
   // Chat welcome message
   const chatWelcomeP=document.getElementById('chat-welcome-p')||document.querySelector('#chat-welcome p');
-  if(chatWelcomeP) chatWelcomeP.textContent=`I have full access to ${name}'s performance data. Ask me anything — I validate ideas, analyze trends, and give you direct strategic advice.`;
+  if(chatWelcomeP) chatWelcomeP.textContent=`Tengo acceso completo a los datos de rendimiento de ${name}. Pregúntame lo que sea — valido ideas, analizo tendencias y te doy consejo estratégico directo.`;
 
   // Profile pill
   const pill=document.getElementById('profile-pill');
@@ -86,8 +86,8 @@ function switchTab(name,btn){
   btn.classList.add('active');
 }
 
-function fmtUSD(v){return '$'+Math.round(v).toLocaleString();}
-function fmtDate(s){return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
+function fmtCOP(v){return '$'+Math.round(v).toLocaleString('es-CO');}
+function fmtDate(s){return new Date(s+'T00:00:00').toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'});}
 
 function kill(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 function mkLeg(id,entries){
@@ -103,7 +103,7 @@ function mkRank(id,entries,fmt){
       <div class="rank-num">${i+1}</div>
       <div class="rank-name">${e[0]}</div>
       <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(e[1]/max*100)}%;background:${PALETTE[i%PALETTE.length]}"></div></div>
-      <div class="rank-val">${fmt?fmt(e[1]):Math.round(e[1]).toLocaleString()}</div>
+      <div class="rank-val">${fmt?fmt(e[1]):Math.round(e[1]).toLocaleString('es-CO')}</div>
     </div>`).join('');
 }
 
