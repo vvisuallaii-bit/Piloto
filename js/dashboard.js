@@ -73,7 +73,10 @@ function renderHealthScore(data){
 function render(data){
   CURRENT_DATA=data;
   renderHealthScore(data);
-  document.getElementById('ai-empty').style.display='block';
+  // Collapse the AI panel back to its slim bar — a stale analysis for a
+  // different filter selection must not stay on screen.
+  document.querySelector('.ai-panel').classList.remove('open');
+  document.getElementById('ai-empty').style.display='none';
   document.getElementById('ai-loading').style.display='none';
   document.getElementById('ai-result').style.display='none';
   document.getElementById('ai-btn').disabled=false;
@@ -82,6 +85,16 @@ function render(data){
   const overheadRate=Math.round(m.overheadRate);
   const acceptanceRate=Math.round(m.acceptanceRate);
   const noShowRate=Math.round(m.noShowRate);
+
+  // KPI accent bars encode state vs benchmark (neutral = no benchmark applies)
+  const st=benchmarkStates(m);
+  const setState=(id,state)=>{const el=document.getElementById(id);if(el)el.className='kpi st-'+(state||'neutral');};
+  setState('kpi-production',null);
+  setState('kpi-overhead',st.overhead);
+  setState('kpi-newpat',st.newPat);
+  setState('kpi-appts',null);
+  setState('kpi-acceptance',st.acceptance);
+  setState('kpi-noshow',st.noShow);
 
   document.getElementById('kCollections').textContent='$'+(m.totalCollections/1e6).toFixed(1)+'M';
   document.getElementById('kCollectionsSub').textContent=data.length+' meses registrados';
@@ -110,7 +123,7 @@ function render(data){
       datasets:[{
         label:'Recaudación',
         data:months.map(mo=>byMonth.get(mo)?.collections||0),
-        borderColor:'#00D4AA',backgroundColor:'rgba(0,212,170,0.07)',tension:0.35,fill:true,pointRadius:3,pointBackgroundColor:'#00D4AA',borderWidth:2
+        borderColor:CHART_TEAL,backgroundColor:'rgba(0,168,139,0.08)',tension:0.35,fill:true,pointRadius:3,pointBackgroundColor:CHART_TEAL,borderWidth:2
       },{
         label:'Producción',
         data:months.map(mo=>byMonth.get(mo)?.gross_production||0),
@@ -150,7 +163,7 @@ function render(data){
   kill('cOverhead');
   charts['cOverhead']=new Chart(document.getElementById('cOverhead'),{
     type:'doughnut',
-    data:{labels:['Personal','Insumos','Otros gastos'],datasets:[{data:[m.staffCosts,m.suppliesCosts,otherCosts>0?otherCosts:0],backgroundColor:['#388BFD','#E3B341','#A371F7'],borderWidth:0,hoverOffset:4}]},
+    data:{labels:['Personal','Insumos','Otros gastos'],datasets:[{data:[m.staffCosts,m.suppliesCosts,otherCosts>0?otherCosts:0],backgroundColor:[PALETTE[1],PALETTE[2],PALETTE[4]],borderWidth:0,hoverOffset:4}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:10}}}}
   });
 
@@ -161,8 +174,8 @@ function render(data){
     data:{
       labels:months.map(monthLabel),
       datasets:[
-        {label:'Producción',data:months.map(mo=>byMonth.get(mo)?.gross_production||0),backgroundColor:'rgba(56,139,253,0.7)',borderRadius:4,borderSkipped:false},
-        {label:'Recaudación',data:months.map(mo=>byMonth.get(mo)?.collections||0),backgroundColor:'rgba(0,212,170,0.7)',borderRadius:4,borderSkipped:false}
+        {label:'Producción',data:months.map(mo=>byMonth.get(mo)?.gross_production||0),backgroundColor:'rgba(56,139,253,0.75)',borderRadius:4,borderSkipped:false},
+        {label:'Recaudación',data:months.map(mo=>byMonth.get(mo)?.collections||0),backgroundColor:'rgba(0,168,139,0.85)',borderRadius:4,borderSkipped:false}
       ]
     },
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:10}}},scales:{x:{ticks:{font:{size:10}},grid:{color:'#21262D'}},y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1e6)+'M'},grid:{color:'#21262D'}}}}

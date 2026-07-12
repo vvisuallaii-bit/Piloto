@@ -6,6 +6,7 @@ const MSGS=['Analizando datos de la clínica...','Revisando métricas de pacient
 
 async function runAnalysis(){
   const btn=document.getElementById('ai-btn');btn.disabled=true;
+  document.querySelector('.ai-panel').classList.add('open');
   document.getElementById('ai-empty').style.display='none';
   document.getElementById('ai-result').style.display='none';
   document.getElementById('ai-loading').style.display='flex';

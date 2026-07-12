@@ -2,7 +2,12 @@
    Loaded first. Every other js/*.js file relies on the globals defined here.
    Chart.js must already be loaded (see index.html) before this file runs. */
 
-const PALETTE=['#00D4AA','#388BFD','#E3B341','#A371F7','#F85149','#3FB950'];
+/* Categorical chart palette — dark-surface validated (lightness band, chroma,
+   CVD adjacent ΔE ≥12, contrast ≥3:1 on #161B22). Slot ORDER is the
+   colorblind-safety mechanism: re-validate before reordering or adding hues.
+   Brighter UI tokens (--accent etc.) are for interactive chrome, not data marks. */
+const PALETTE=['#00A88B','#388BFD','#C98500','#E66767','#A371F7','#2EA043'];
+const CHART_TEAL='#00A88B',CHART_GREEN='#2EA043',CHART_AMBER='#C98500',CHART_RED='#E66767';
 const WORKER_URL='https://claude-proxy.vvisuall-aii.workers.dev';
 const MODEL_ID='claude-sonnet-4-5';
 Chart.defaults.color='#7D8590';Chart.defaults.borderColor='#21262D';Chart.defaults.font.family="'Inter',system-ui,sans-serif";
@@ -45,10 +50,6 @@ function applyWhiteLabel(){
   // Brand subtitle
   const subEl=document.querySelector('.brand-sub');
   if(subEl) subEl.textContent=city?`${city} · Practice Intelligence`:'Dashboard de Inteligencia Dental';
-
-  // AI panel empty state (innerHTML — name can come from the URL, so it must be escaped)
-  const aiEmpty=document.getElementById('ai-empty');
-  if(aiEmpty) aiEmpty.innerHTML=`<div class="ai-empty-icon">◈</div>Haz clic en <strong style="color:var(--accent)">Analizar con IA</strong> para generar un análisis ejecutivo de ${escapeHtml(name)}. Los filtros activos aplican.`;
 
   // Tendencias del Sector subtitle
   const miSub=document.querySelector('.mi-header p');

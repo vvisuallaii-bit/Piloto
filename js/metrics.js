@@ -43,37 +43,48 @@ function computeMetrics(data){
   };
 }
 
+/* Three-way state vs the Colombia benchmarks, shared by the health score
+   items and the KPI accent bars: 'good' | 'warn' | 'bad'. */
+function benchmarkStates(m){
+  // No-data edge cases score as worst-case (a clinic with zero collections
+  // or zero scheduled appointments is not "healthy by default").
+  const overheadRate=m.totalCollections?m.overheadRate:100;
+  const noShowRate=m.totalScheduled?m.noShowRate:100;
+  return{
+    overhead: overheadRate<55?'good':overheadRate<65?'warn':'bad',       // meta <65% Colombia
+    acceptance: m.acceptanceRate>65?'good':m.acceptanceRate>55?'warn':'bad', // meta >65%
+    noShow: noShowRate<8?'good':noShowRate<12?'warn':'bad',              // meta <12%
+    newPat: m.avgNewPatPerMonth>25?'good':m.avgNewPatPerMonth>15?'warn':'bad', // meta >20/mes
+    collection: m.collectionRate>95?'good':m.collectionRate>90?'warn':'bad',   // meta >95%
+  };
+}
+const STATE_COLOR={good:'green',warn:'amber',bad:'red'};
+
 /* ── PRACTICE HEALTH SCORE ── */
 function computeHealthScore(data){
   const m=computeMetrics(data);
+  const st=benchmarkStates(m);
 
-  // 1. Tasa de gastos — meta <65% Colombia (costos operativos más altos relativamente)
-  //    No-collections edge case is scored as worst-case here (unlike the 0%
-  //    default computeMetrics uses elsewhere) — matches original behavior.
+  // Same worst-case overrides as benchmarkStates
   const overheadRate=m.totalCollections?m.overheadRate:100;
   const overheadScore=overheadRate<55?100:overheadRate<65?75:overheadRate<75?45:20;
-  const overheadColor=overheadRate<55?'green':overheadRate<65?'amber':'red';
+  const overheadColor=STATE_COLOR[st.overhead];
 
-  // 2. Aceptación de tratamientos — meta >65% Colombia
   const acceptRate=m.acceptanceRate;
   const acceptScore=acceptRate>65?100:acceptRate>55?78:acceptRate>45?50:25;
-  const acceptColor=acceptRate>65?'green':acceptRate>55?'amber':'red';
+  const acceptColor=STATE_COLOR[st.acceptance];
 
-  // 3. Ausentismo — meta <12% Colombia (cultura local más flexible)
-  //    Same no-data-treated-as-worst-case override as overheadRate above.
   const noShowRate=m.totalScheduled?m.noShowRate:100;
   const noShowScore=noShowRate<8?100:noShowRate<12?72:noShowRate<18?44:15;
-  const noShowColor=noShowRate<8?'green':noShowRate<12?'amber':'red';
+  const noShowColor=STATE_COLOR[st.noShow];
 
-  // 4. Pacientes nuevos — meta >20/mes clínica mediana Colombia
   const avgNewPat=m.avgNewPatPerMonth;
   const newPatScore=avgNewPat>25?100:avgNewPat>15?75:avgNewPat>8?48:22;
-  const newPatColor=avgNewPat>25?'green':avgNewPat>15?'amber':'red';
+  const newPatColor=STATE_COLOR[st.newPat];
 
-  // 5. Tasa de cobro — meta >95% Colombia
   const colRate=m.collectionRate;
   const colScore=colRate>95?100:colRate>90?80:colRate>85?55:30;
-  const colColor=colRate>95?'green':colRate>90?'amber':'red';
+  const colColor=STATE_COLOR[st.collection];
 
   // Ponderado total
   const total=Math.round(

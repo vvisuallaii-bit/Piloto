@@ -115,33 +115,35 @@ function renderForecast(r){
     type:'line',
     data:{
       labels:allLabels,
+      // Scenario lines get DISTINCT dash patterns on top of color — red vs
+      // green alone is not distinguishable for red-green colorblind users.
       datasets:[
         {
           label:'Histórico',
           data:[...historical,null],
-          borderColor:'#00D4AA',backgroundColor:'rgba(0,212,170,0.07)',
-          tension:0.35,fill:true,pointRadius:3,pointBackgroundColor:'#00D4AA',borderWidth:2
+          borderColor:CHART_TEAL,backgroundColor:'rgba(0,168,139,0.08)',
+          tension:0.35,fill:true,pointRadius:3,pointBackgroundColor:CHART_TEAL,borderWidth:2
         },
         {
           label:'Pesimista',
           data:[...Array(historical.length-1).fill(null),lastVal,r.pessimistic.collections],
-          borderColor:'#F85149',backgroundColor:'transparent',
-          borderDash:[5,4],tension:0.2,pointRadius:[...Array(historical.length-1).fill(0),3,5],
-          pointBackgroundColor:'#F85149',borderWidth:2
+          borderColor:CHART_RED,backgroundColor:'transparent',
+          borderDash:[3,3],tension:0.2,pointRadius:[...Array(historical.length-1).fill(0),3,5],
+          pointBackgroundColor:CHART_RED,borderWidth:2
         },
         {
           label:'Base',
           data:[...Array(historical.length-1).fill(null),lastVal,r.base.collections],
-          borderColor:'#E3B341',backgroundColor:'transparent',
-          borderDash:[5,4],tension:0.2,pointRadius:[...Array(historical.length-1).fill(0),3,5],
-          pointBackgroundColor:'#E3B341',borderWidth:2
+          borderColor:CHART_AMBER,backgroundColor:'transparent',
+          borderDash:[8,5],tension:0.2,pointRadius:[...Array(historical.length-1).fill(0),3,5],
+          pointBackgroundColor:CHART_AMBER,borderWidth:2
         },
         {
           label:'Optimista',
           data:[...Array(historical.length-1).fill(null),lastVal,r.optimistic.collections],
-          borderColor:'#3FB950',backgroundColor:'transparent',
-          borderDash:[5,4],tension:0.2,pointRadius:[...Array(historical.length-1).fill(0),3,5],
-          pointBackgroundColor:'#3FB950',borderWidth:2
+          borderColor:CHART_GREEN,backgroundColor:'transparent',
+          borderDash:[14,4],tension:0.2,pointRadius:[...Array(historical.length-1).fill(0),3,5],
+          pointBackgroundColor:CHART_GREEN,borderWidth:2
         }
       ]
     },
