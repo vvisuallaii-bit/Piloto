@@ -94,7 +94,6 @@ select:hover,select:focus{border-color:var(--accent)}
 .ai-panel-title{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:var(--text)}
 .ai-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:aipulse 2s ease-in-out infinite}
 @keyframes aipulse{0%,100%{box-shadow:0 0 0 0 rgba(0,212,170,.4)}50%{box-shadow:0 0 0 5px rgba(0,212,170,0)}}
-.ai-badge{font-size:10px;font-weight:700;background:rgba(0,212,170,.12);color:var(--accent);padding:2px 8px;border-radius:20px;border:1px solid rgba(0,212,170,.25);letter-spacing:.04em}
 .ai-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--accent);color:#0D1117;border:none;border-radius:var(--radius-sm);font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .18s}
 .ai-btn:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,212,170,.3)}
 .ai-btn:disabled{opacity:.4;cursor:default;transform:none;box-shadow:none}
@@ -304,9 +303,6 @@ select:hover,select:focus{border-color:var(--accent)}
   .hero-val{font-size:32px}
   .tab-btn{font-size:12px;padding:10px 12px}
 }
-
-/* FOOTER */
-.page-footer{text-align:center;font-size:10px;font-weight:600;color:var(--faint);letter-spacing:.05em;padding:14px 28px 18px;border-top:1px solid var(--border)}
 
 /* ── REVENUE FORECAST ── */
 .fc-hero{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}

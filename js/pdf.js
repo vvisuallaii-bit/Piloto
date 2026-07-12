@@ -32,9 +32,7 @@ function exportPDF(){
   // right side
   const now=new Date().toLocaleDateString('es-CO',{month:'long',day:'numeric',year:'numeric'});
   rgb(C.muted);doc.setFontSize(8);
-  doc.text('Generado el '+now,W-M,22,{align:'right'});
-  rgb(C.teal);doc.setFont('helvetica','bold');doc.setFontSize(8);
-  doc.text('Desarrollado con Claude IA',W-M,16,{align:'right'});
+  doc.text('Generado el '+now,W-M,19,{align:'right'});
 
   y=46;
 
@@ -164,7 +162,6 @@ function exportPDF(){
     rgb(C.muted);doc.setFont('helvetica','normal');doc.setFontSize(7);
     doc.text(`${pracName} — Informe de Inteligencia de la Clínica`,M,291);
     doc.text(`Página ${p} de ${pages}`,W-M,291,{align:'right'});
-    rgb(C.teal);doc.text('Desarrollado con Claude IA',W/2,291,{align:'center'});
   }
 
   doc.save(`SmileDental_Analisis_${new Date().toISOString().slice(0,10)}.pdf`);
