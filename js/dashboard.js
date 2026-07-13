@@ -97,7 +97,33 @@ function render(data){
   setState('kpi-noshow',st.noShow);
 
   document.getElementById('kCollections').textContent='$'+(m.totalCollections/1e6).toFixed(1)+'M';
-  document.getElementById('kCollectionsSub').textContent=data.length+' meses registrados';
+
+  // Hero subtitle + month-over-month delta. The delta only appears when a
+  // single month is filtered — a MoM comparison on a multi-month total is
+  // meaningless, so we don't force one.
+  const selMonth=data.length===1?data[0].month:null;
+  const collSub=document.getElementById('kCollectionsSub');
+  const deltaEl=document.getElementById('kCollectionsDelta');
+  if(selMonth){
+    collSub.textContent=new Date(selMonth+'-02').toLocaleDateString('es-CO',{month:'long',year:'numeric'});
+    const sorted=[...ALL].sort((a,b)=>a.month<b.month?-1:a.month>b.month?1:0);
+    const idx=sorted.findIndex(r=>r.month===selMonth);
+    const prev=idx>0?sorted[idx-1]:null;   // earliest month has no predecessor
+    if(prev&&prev.collections>0){
+      const pct=(data[0].collections-prev.collections)/prev.collections*100;
+      const dir=pct>0.05?'up':pct<-0.05?'down':'flat';   // up = more revenue = good
+      const arrow=dir==='up'?'↑':dir==='down'?'↓':'→';
+      const prevLbl=new Date(prev.month+'-02').toLocaleDateString('es-CO',{month:'short'}).replace('.','');
+      deltaEl.className='hero-delta visible '+dir;
+      deltaEl.textContent=`${arrow} ${Math.abs(pct).toFixed(1)}% vs ${prevLbl}`;
+    }else{
+      deltaEl.className='hero-delta';deltaEl.textContent='';
+    }
+  }else{
+    collSub.textContent=data.length+' meses registrados';
+    deltaEl.className='hero-delta';deltaEl.textContent='';
+  }
+
   document.getElementById('kProduction').textContent='$'+(m.totalProduction/1e6).toFixed(1)+'M';
   document.getElementById('kProductionSub').textContent='$'+(m.avgProduction/1e6).toFixed(1)+'M prom/mes';
   document.getElementById('kNetIncome').textContent='$'+(m.totalNetIncome/1e6).toFixed(1)+'M';
@@ -111,23 +137,33 @@ function render(data){
   document.getElementById('kAcceptance').textContent=acceptanceRate+'%';
   document.getElementById('kNoShow').textContent=noShowRate+'%';
 
-  // Monthly collections trend — byMonth avoids an O(n²) data.find() per month
+  // months/byMonth are the FILTERED set — used by the "Producción vs
+  // recaudación" bar chart below, which should reflect the filter.
   const months=data.map(r=>r.month).sort();
   const byMonth=new Map(data.map(r=>[r.month,r]));
   const monthLabel=mo=>new Date(mo+'-02').toLocaleDateString('es-CO',{month:'short',year:'2-digit'});
+
+  // The trend line, in contrast, ALWAYS spans all 12 months so it never looks
+  // blank when a single month is filtered; the filtered month gets a larger,
+  // ringed point so the filter still visibly connects to the chart.
+  const allMonths=[...ALL].map(r=>r.month).sort();
+  const allByMonth=new Map(ALL.map(r=>[r.month,r]));
+  const selIdx=selMonth?allMonths.indexOf(selMonth):-1;
+  const trendPt=allMonths.map((_,i)=>i===selIdx?6:3);
+  const trendHalo=allMonths.map((_,i)=>i===selIdx?2:0);
   kill('cTime');
   charts['cTime']=new Chart(document.getElementById('cTime'),{
     type:'line',
     data:{
-      labels:months.map(monthLabel),
+      labels:allMonths.map(monthLabel),
       datasets:[{
         label:'Recaudación',
-        data:months.map(mo=>byMonth.get(mo)?.collections||0),
-        borderColor:CHART_TEAL,backgroundColor:'rgba(0,168,139,0.08)',tension:0.35,fill:true,pointRadius:3,pointBackgroundColor:CHART_TEAL,borderWidth:2
+        data:allMonths.map(mo=>allByMonth.get(mo)?.collections||0),
+        borderColor:CHART_TEAL,backgroundColor:'rgba(0,168,139,0.08)',tension:0.35,fill:true,pointRadius:trendPt,pointHoverRadius:6,pointBorderColor:'#E6EDF3',pointBorderWidth:trendHalo,pointBackgroundColor:CHART_TEAL,borderWidth:2
       },{
         label:'Producción',
-        data:months.map(mo=>byMonth.get(mo)?.gross_production||0),
-        borderColor:'#388BFD',backgroundColor:'rgba(56,139,253,0.04)',tension:0.35,fill:true,pointRadius:3,pointBackgroundColor:'#388BFD',borderWidth:2,borderDash:[4,3]
+        data:allMonths.map(mo=>allByMonth.get(mo)?.gross_production||0),
+        borderColor:'#388BFD',backgroundColor:'rgba(56,139,253,0.04)',tension:0.35,fill:true,pointRadius:trendPt,pointHoverRadius:6,pointBackgroundColor:'#388BFD',borderWidth:2,borderDash:[4,3]
       }]
     },
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:10}}},scales:{x:{ticks:{font:{size:10}},grid:{color:'#21262D'}},y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1e6)+'M'},grid:{color:'#21262D'}}}}
