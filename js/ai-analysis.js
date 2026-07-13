@@ -4,6 +4,31 @@
 
 const MSGS=['Analizando datos de la clínica...','Revisando métricas de pacientes...','Identificando oportunidades de ingresos...','Generando recomendaciones...'];
 
+/* ── DEMO SAFETY NET ──────────────────────────────────────────────────────
+   If the live API call fails or times out during a demo, we fall back to a
+   pre-written analysis so the pitch never shows a red error. It is gated to
+   the exact demo dataset (see DEMO_SIGNATURE): on real client data the net
+   never fires — a failure there shows the error instead, because showing
+   cached numbers for a different clinic would be wrong. Update both the
+   signature and the text if smile_dental_demo.csv changes. */
+const DEMO_SIGNATURE={collections:660020000,months:12};
+const DEMO_FALLBACK_ANALYSIS={
+  headline:'La clínica generó $266 millones netos y cumplió las 4 metas clave del sector, pero dejó $29 millones sin cobrar de lo producido.',
+  what_happened:'En 12 meses produjo $689 millones y recaudó $660 millones (96% de cobro), con gastos operativos en 60% — por debajo de la meta del 65%. La aceptación de tratamientos (67%) y el ausentismo (7%) están en rango saludable.',
+  why_it_matters:'Con los gastos ya controlados, el ingreso neto crece por dos palancas: cerrar la brecha de cobro y subir la aceptación de tratamientos por encima del 67% actual.',
+  opportunity:'Los $29 millones producidos y no cobrados son la oportunidad más directa: recuperarlos equivale a casi un mes extra de utilidad sin atender un paciente nuevo.',
+  actions:[
+    {priority:'URGENT',text:'Revisar la cartera pendiente esta semana y activar recordatorios de cobro por WhatsApp para los saldos más antiguos.'},
+    {priority:'MEDIUM',text:'Reforzar la presentación de planes de tratamiento en los próximos 30 días para subir la aceptación del 67% hacia el 75%.'},
+    {priority:'LOW',text:'Evaluar opciones de financiación a cuotas para tratamientos de alto valor y destrabar los casos que hoy se aplazan.'}
+  ],
+  confidence:80
+};
+function demoFallback(m,data){
+  return (data.length===DEMO_SIGNATURE.months && Math.round(m.totalCollections)===DEMO_SIGNATURE.collections)
+    ? DEMO_FALLBACK_ANALYSIS : null;
+}
+
 async function runAnalysis(){
   const btn=document.getElementById('ai-btn');btn.disabled=true;
   document.querySelector('.ai-panel').classList.add('open');
@@ -55,14 +80,25 @@ Responde ÚNICAMENTE con un objeto JSON válido (sin markdown, sin texto extra).
 Sé directo. Cita números reales. Compara contra las referencias del sector. Piensa como el CFO de la clínica.`;
 
   try{
-    const resp=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:MODEL_ID,max_tokens:1000,messages:[{role:'user',content:prompt}]})});
-    const json=await resp.json();
-    const raw=json.content.map(b=>b.text||'').join('');
-    const r=JSON.parse(raw.replace(/```json|```/g,'').trim());
-    if(!r.headline||!Array.isArray(r.actions))throw new Error('Formato de respuesta de IA inesperado');
+    // Abort a truly hung request after 30s so it can't spin forever mid-demo.
+    // Must stay well above the real analysis time (~10-18s for the full
+    // Spanish prompt) or legitimate responses get aborted into the fallback.
+    const ctrl=new AbortController();
+    const timer=setTimeout(()=>ctrl.abort(),30000);
+    let r;
+    try{
+      const resp=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:MODEL_ID,max_tokens:1000,messages:[{role:'user',content:prompt}]}),signal:ctrl.signal});
+      const json=await resp.json();
+      const raw=json.content.map(b=>b.text||'').join('');
+      r=JSON.parse(raw.replace(/```json|```/g,'').trim());
+      if(!r.headline||!Array.isArray(r.actions))throw new Error('Formato de respuesta de IA inesperado');
+    }finally{clearTimeout(timer);}
     clearInterval(ticker);showResult(r);LAST_RESULT=r;
   }catch(e){
     clearInterval(ticker);
+    // Demo safety net: on the demo dataset, never show a red error live
+    const fb=demoFallback(m,data);
+    if(fb){showResult(fb);LAST_RESULT=fb;return;}
     document.getElementById('ai-loading').style.display='none';
     document.getElementById('ai-empty').style.display='block';
     document.getElementById('ai-empty').innerHTML=`<div class="ai-empty-icon">⚠</div>Error: ${escapeHtml(e.message)}`;

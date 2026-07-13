@@ -4,13 +4,11 @@ const PP_KEY='smile_dental_practice_profile';
 let PRACTICE_PROFILE=null;
 
 function loadProfile(){
+  // No auto-open: a modal popping up mid-demo interrupts the pitch. The user
+  // opens the profile deliberately via the header pill (onclick="openProfile()").
   try{
     const raw=localStorage.getItem(PP_KEY);
     if(raw){PRACTICE_PROFILE=JSON.parse(raw);applyProfile();}
-    else{
-      // auto-open on first visit after 1.5s
-      setTimeout(()=>openProfile(),1500);
-    }
   }catch(e){PRACTICE_PROFILE=null;}
 }
 

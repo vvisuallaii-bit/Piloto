@@ -164,5 +164,9 @@ function exportPDF(){
     doc.text(`Página ${p} de ${pages}`,W-M,291,{align:'right'});
   }
 
-  doc.save(`SmileDental_Analisis_${new Date().toISOString().slice(0,10)}.pdf`);
+  // Filename follows the (possibly white-labeled) practice name, not "SmileDental".
+  // NFD split + ̀-ͯ range strips accents so "Clínica Peña" → "Clinica_Pena".
+  const slug=pracName.normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'')||'Clinica';
+  doc.save(`${slug}_Analisis_${new Date().toISOString().slice(0,10)}.pdf`);
 }
