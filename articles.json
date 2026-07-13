@@ -188,5 +188,575 @@
         ]
       }
     ]
+  },
+  {
+    "id": 6,
+    "category": "Market Intelligence",
+    "company": "Sistema de Salud",
+    "title": "La incertidumbre de las EPS está empujando al paciente hacia el pago directo",
+    "summary": "Con varias EPS grandes intervenidas y demoras de pago a prestadores en todo el sistema, el paciente colombiano confía cada vez menos en que su plan le resuelva la boca. La odontología siempre fue mayormente particular — y esa ventaja hoy vale más que nunca.",
+    "tag": "Regulación",
+    "tag_color": "red",
+    "source": "Análisis interno",
+    "date": "2026-03-10",
+    "insight": "En un sistema en crisis, la clínica que no depende de pagadores externos duerme más tranquila que la que sí.",
+    "sections": [
+      {
+        "title": "A. Qué está pasando en el sistema",
+        "bullets": [
+          "Intervenciones y liquidaciones de aseguradoras grandes generan incertidumbre en pacientes y prestadores",
+          "Los ciclos de pago a prestadores se alargan, y la cartera con pagadores institucionales se vuelve más riesgosa",
+          "La discusión de la reforma mantiene las reglas del juego en el aire"
+        ]
+      },
+      {
+        "title": "B. Por qué la odontología está mejor parada",
+        "bullets": [
+          "El grueso del ingreso dental en Colombia siempre ha sido pago directo del paciente, no del asegurador",
+          "Las clínicas con poca dependencia de convenios sienten menos el golpe del sistema",
+          "El paciente que perdió confianza en su EPS busca soluciones donde pueda pagar y ser atendido ya"
+        ]
+      },
+      {
+        "title": "C. Qué hacer con esta coyuntura",
+        "bullets": [
+          "Revisar qué porcentaje del ingreso depende de pagadores institucionales y qué tan sana está esa cartera",
+          "Fortalecer la propuesta de pago directo: financiación, planes propios, precios claros",
+          "Si un convenio paga tarde y mal, calcular si de verdad conviene — con números, no por costumbre"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "category": "Industry Trend",
+    "company": "Turismo Dental",
+    "title": "Colombia se consolida como destino de turismo dental para pacientes del exterior",
+    "summary": "Pacientes de Estados Unidos, Europa y otros países de la región viajan a Bogotá, Medellín y Cartagena por tratamientos que en sus países cuestan varias veces más. El diferencial de precio con calidad comparable es la propuesta — y las clínicas preparadas lo están capitalizando.",
+    "tag": "Oportunidad",
+    "tag_color": "green",
+    "source": "Análisis interno",
+    "date": "2026-05-18",
+    "insight": "El paciente internacional no compra el procedimiento: compra un paquete resuelto — tiempos, idioma, seguimiento y confianza.",
+    "sections": [
+      {
+        "title": "A. Por qué vienen",
+        "bullets": [
+          "El costo de implantes, rehabilitación y estética en Colombia es una fracción del de EE. UU. o Europa",
+          "La reputación estética del país (diseño de sonrisa) funciona como marca de categoría",
+          "Conectividad aérea y oferta hotelera hacen viable resolver un tratamiento en una o dos visitas"
+        ]
+      },
+      {
+        "title": "B. Qué buscan estos pacientes",
+        "bullets": [
+          "Casos de alto valor: implantes, rehabilitación completa, carillas, ortodoncia estética",
+          "Planes de tratamiento comprimidos en tiempos definidos, porque el tiquete y el hotel corren por su cuenta",
+          "Comunicación previa clara: cotización cerrada, fotos/escaneos remotos antes de viajar"
+        ]
+      },
+      {
+        "title": "C. Qué exige competir en este segmento",
+        "bullets": [
+          "Atención en inglés en el consultorio y en la comunicación digital",
+          "Protocolos de seguimiento remoto post-tratamiento — el paciente vuela de regreso y algo puede complicarse",
+          "Reputación online impecable: este paciente decide 100% por lo que encuentra en internet"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "category": "Market Intelligence",
+    "company": "Habilitación",
+    "title": "La exigencia en habilitación de servicios está subiendo el estándar del sector",
+    "summary": "La normativa de habilitación vigente (Resolución 3100) define condiciones de infraestructura, dotación y procesos para operar legalmente un servicio odontológico. Las verificaciones son cada vez más rigurosas — y estar al día dejó de ser trámite para volverse ventaja competitiva.",
+    "tag": "Regulación",
+    "tag_color": "amber",
+    "source": "Análisis interno",
+    "date": "2026-02-12",
+    "insight": "La habilitación no es un papel para la secretaría de salud: es un argumento de venta frente al paciente que compara.",
+    "sections": [
+      {
+        "title": "A. Qué revisa la norma",
+        "bullets": [
+          "Condiciones de infraestructura física del consultorio: áreas, acabados, bioseguridad",
+          "Dotación y mantenimiento de equipos con soporte documentado",
+          "Procesos: historia clínica, esterilización, manejo de residuos, talento humano con registro vigente"
+        ]
+      },
+      {
+        "title": "B. Por qué importa más ahora",
+        "bullets": [
+          "Las visitas de verificación pueden derivar en planes de mejora o cierre temporal del servicio",
+          "Convenios, pólizas y pacientes corporativos exigen habilitación vigente como requisito de entrada",
+          "El costo de ponerse al día bajo presión siempre es mayor que mantenerse al día"
+        ]
+      },
+      {
+        "title": "C. Cómo convertirla en ventaja",
+        "bullets": [
+          "Comunicar el estatus de habilitación y los protocolos de bioseguridad como sello de confianza",
+          "Usar los requisitos de la norma como checklist de calidad interna, no como carga",
+          "Frente a la competencia informal, la habilitación es la línea divisoria más clara que existe"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "category": "Market Intelligence",
+    "company": "Formalización",
+    "title": "Facturación electrónica y reportes: la formalización ya no es opcional",
+    "summary": "Entre la facturación electrónica de la DIAN y los reportes obligatorios del sector salud, el consultorio que opera en cuadernos quedó por fuera del juego. La parte buena: el que se formaliza termina conociendo su negocio mucho mejor que antes.",
+    "tag": "Regulación",
+    "tag_color": "amber",
+    "source": "Análisis interno",
+    "date": "2025-11-20",
+    "insight": "La formalización se paga sola: no por evitar sanciones, sino porque obliga a tener los números que se necesitan para decidir.",
+    "sections": [
+      {
+        "title": "A. Qué cambió",
+        "bullets": [
+          "La factura electrónica es obligatoria y deja trazabilidad completa del ingreso",
+          "Los reportes del sector salud exigen registro ordenado de la actividad asistencial",
+          "El cruce de información entre entidades hace visible al que antes era invisible"
+        ]
+      },
+      {
+        "title": "B. El costo de no estar al día",
+        "bullets": [
+          "Sanciones económicas que pueden superar por mucho el costo de un software de gestión",
+          "Sin facturación en regla no hay convenios, pacientes corporativos ni acceso a crédito formal",
+          "Un cierre o sanción publicada destruye en días una reputación construida en años"
+        ]
+      },
+      {
+        "title": "C. El lado bueno que pocos ven",
+        "bullets": [
+          "Facturar bien significa saber exactamente cuánto entra, por qué servicio y en qué mes",
+          "Esos datos son la materia prima de decisiones de tarifas, agenda y crecimiento",
+          "El consultorio formalizado puede demostrar ingresos: clave para crédito de expansión"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "category": "Industry Trend",
+    "company": "Flujo Digital",
+    "title": "El escáner intraoral está pasando de lujo a estándar en clínicas medianas",
+    "summary": "Con más marcas compitiendo y precios bajando, el escáner intraoral dejó de ser exclusivo de las clínicas grandes. Los laboratorios ya reciben archivos digitales con normalidad, y la impresión con cubetas empieza a verse como cosa del pasado.",
+    "tag": "Tecnología",
+    "tag_color": "green",
+    "source": "Análisis interno",
+    "date": "2026-04-08",
+    "insight": "El escáner no se compra por moda: se compra cuando el volumen de casos protésicos y de ortodoncia hace que se pague solo.",
+    "sections": [
+      {
+        "title": "A. Qué cambió en el mercado",
+        "bullets": [
+          "Más fabricantes compitiendo bajaron el precio de entrada de forma sostenida",
+          "Los laboratorios dentales locales ya trabajan con flujo digital sin sobrecosto",
+          "La curva de aprendizaje se acortó: el equipo se domina en semanas, no meses"
+        ]
+      },
+      {
+        "title": "B. El impacto real en la operación",
+        "bullets": [
+          "Menos repeticiones de impresión: el error se ve en pantalla antes de mandar al laboratorio",
+          "Mejor experiencia del paciente — sin cubetas ni material de impresión incómodo",
+          "El escaneo proyectado en pantalla ayuda a explicar y cerrar planes de tratamiento"
+        ]
+      },
+      {
+        "title": "C. Cómo evaluar la inversión con cabeza fría",
+        "bullets": [
+          "Contar cuántos casos protésicos y de ortodoncia se hacen al mes: ese volumen paga o no paga el equipo",
+          "Sumar el costo real de las repeticiones e impresiones falladas del último año",
+          "Considerar el valor comercial: es de las pocas inversiones que el paciente percibe de inmediato"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "category": "Competitor Move",
+    "company": "Cadenas Dentales",
+    "title": "Las cadenas dentales aceleran aperturas en ciudades intermedias",
+    "summary": "Las redes de clínicas ya no solo pelean en Bogotá, Medellín y Cali: están abriendo en ciudades intermedias con locales en centros comerciales, horarios extendidos y precios de entrada agresivos. La clínica independiente local tiene que decidir en qué cancha juega.",
+    "tag": "Competencia",
+    "tag_color": "red",
+    "source": "Análisis interno",
+    "date": "2026-06-02",
+    "insight": "A la cadena no se le gana copiando su modelo — se le gana en lo que su modelo no puede dar: continuidad y relación.",
+    "sections": [
+      {
+        "title": "A. El movimiento",
+        "bullets": [
+          "Aperturas en centros comerciales con alto tráfico y horarios que incluyen noches y fines de semana",
+          "Precios de entrada muy bajos en valoración y limpieza como gancho de captación",
+          "Marca unificada y pauta digital que una clínica individual difícilmente iguala en volumen"
+        ]
+      },
+      {
+        "title": "B. Su fortaleza y su debilidad",
+        "bullets": [
+          "Fortaleza real: financiación propia, marca y capacidad de compra centralizada",
+          "Debilidad estructural: alta rotación de odontólogos — el paciente rara vez ve al mismo profesional dos veces",
+          "El modelo de metas comerciales por sede puede presionar sobrediagnóstico, y el paciente lo percibe"
+        ]
+      },
+      {
+        "title": "C. Cómo compite la clínica independiente",
+        "bullets": [
+          "Continuidad: el mismo odontólogo conoce al paciente, su historia y su familia",
+          "Agilidad: decidir precios, horarios y convenios sin pedirle permiso a una gerencia nacional",
+          "Comunidad: la reputación local construida por años es una barrera que la pauta no derriba"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "category": "Market Intelligence",
+    "company": "Talento",
+    "title": "Más odontólogos graduados, misma torta: la saturación urbana es real",
+    "summary": "Colombia gradúa odontólogos a un ritmo que las grandes ciudades no absorben. El resultado: presión de tarifas a la baja, más profesionales asalariados en cadenas, y una oportunidad que pocos miran — las ciudades intermedias y los nichos especializados.",
+    "tag": "Mercado",
+    "tag_color": "amber",
+    "source": "Análisis interno",
+    "date": "2026-01-15",
+    "insight": "Cuando todos compiten por el mismo paciente en la misma ciudad, el que gana no es el más barato: es el más diferenciado.",
+    "sections": [
+      {
+        "title": "A. El panorama",
+        "bullets": [
+          "Una oferta amplia de facultades concentra egresados en las principales ciudades",
+          "La competencia por el paciente urbano de clase media es cada vez más intensa",
+          "Parte de la nueva generación termina empleada en cadenas, con poco margen de decisión clínica"
+        ]
+      },
+      {
+        "title": "B. Las consecuencias visibles",
+        "bullets": [
+          "Presión de tarifas a la baja en procedimientos básicos (limpieza, resinas, valoración)",
+          "Guerra de descuentos que erosiona el margen de todos sin fidelizar a nadie",
+          "Dificultad creciente para diferenciarse solo con 'buena atención'"
+        ]
+      },
+      {
+        "title": "C. Dónde está el espacio",
+        "bullets": [
+          "Especialización clínica real: el generalista compite con todos, el especialista con pocos",
+          "Ciudades intermedias con demanda creciente y menos competencia por metro cuadrado",
+          "Nichos etarios y clínicos: odontopediatría, adulto mayor, pacientes médicamente complejos"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "category": "Market Intelligence",
+    "company": "Costos",
+    "title": "El dólar sigue marcando el costo de los insumos: proteger margen es gestión, no suerte",
+    "summary": "Resinas, implantes, equipos y repuestos son mayormente importados, así que cada movimiento de la tasa de cambio entra directo al costo del consultorio. Las clínicas que gestionan compras y revisan tarifas protegen el margen; las que no, lo ven evaporarse sin saber por qué.",
+    "tag": "Costos",
+    "tag_color": "red",
+    "source": "Análisis interno",
+    "date": "2026-02-25",
+    "insight": "Si los insumos suben con el dólar y las tarifas llevan dos años quietas, el margen no se perdió: se regaló.",
+    "sections": [
+      {
+        "title": "A. Por qué el dólar pega tan directo",
+        "bullets": [
+          "La gran mayoría de insumos clínicos y equipos odontológicos son importados",
+          "Los proveedores trasladan la devaluación al precio local con rapidez",
+          "El mantenimiento y los repuestos de equipos también están dolarizados"
+        ]
+      },
+      {
+        "title": "B. Los errores que se repiten",
+        "bullets": [
+          "Tarifas congeladas por años mientras el costo por procedimiento sube en silencio",
+          "Compras de afán, sin comparar proveedores ni aprovechar volumen",
+          "No conocer el costo real por procedimiento — sin eso, cualquier tarifa es una adivinanza"
+        ]
+      },
+      {
+        "title": "C. Qué hacen las clínicas bien gestionadas",
+        "bullets": [
+          "Compras programadas y comparación periódica de al menos dos proveedores por insumo crítico",
+          "Revisión de tarifas mínimo una vez al año, con el costo actualizado en la mano",
+          "Monitorear la tasa de gastos mensual — exactamente lo que este dashboard ya mide"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "category": "Industry Trend",
+    "company": "Financiación",
+    "title": "El pago a cuotas está destrabando los tratamientos grandes",
+    "summary": "La mayoría de los planes de tratamiento que se caen no se caen por falta de convencimiento: se caen por flujo de caja del paciente. Las opciones de financiación — fintechs de crédito, convenios bancarios y planes internos — están convirtiendo el 'lo pienso' en 'empecemos'.",
+    "tag": "Conversión",
+    "tag_color": "green",
+    "source": "Análisis interno",
+    "date": "2026-05-05",
+    "insight": "El paciente no rechaza el tratamiento de varios millones: rechaza pagarlo de contado. La cuota cambia la conversación.",
+    "sections": [
+      {
+        "title": "A. El problema que resuelve",
+        "bullets": [
+          "La aceptación de tratamientos se cae principalmente en los casos de mayor valor",
+          "El paciente que aplaza 'para diciembre' muchas veces no vuelve",
+          "Presentar solo el precio total obliga al paciente a comparar contra su bolsillo de hoy"
+        ]
+      },
+      {
+        "title": "B. Las opciones que ya existen en el mercado",
+        "bullets": [
+          "Fintechs de crédito de consumo que aprueban en minutos desde el celular del paciente",
+          "Convenios con bancos y cooperativas para libranza o crédito de libre inversión",
+          "Planes internos: cuota inicial + pagos contra avance clínico, con reglas claras"
+        ]
+      },
+      {
+        "title": "C. Cómo implementarlo sin quemarse",
+        "bullets": [
+          "Definir quién asume el riesgo de cartera: con fintech lo asume el tercero, con plan interno lo asume la clínica",
+          "Presentar la opción de cuota junto con el plan de tratamiento, no después del 'no'",
+          "Medir el cambio en la tasa de aceptación antes y después — ese es el indicador del éxito"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "category": "Industry Trend",
+    "company": "Marketing Digital",
+    "title": "WhatsApp e Instagram son el nuevo voz a voz de las clínicas",
+    "summary": "El paciente colombiano descubre la clínica en Instagram, la valida en las reseñas de Google y agenda por WhatsApp. Las clínicas que dominan ese recorrido de tres pasos captan pacientes a una fracción del costo de la pauta tradicional.",
+    "tag": "Captación",
+    "tag_color": "green",
+    "source": "Análisis interno",
+    "date": "2026-06-20",
+    "insight": "La primera cita ya no empieza en la recepción: empieza en el perfil de Instagram y en la velocidad de respuesta del WhatsApp.",
+    "sections": [
+      {
+        "title": "A. El recorrido real del paciente",
+        "bullets": [
+          "Instagram y TikTok para ver resultados y 'conocer' al profesional antes de contactarlo",
+          "Google Maps y reseñas para validar que la clínica es confiable",
+          "WhatsApp como canal de contacto: si la respuesta tarda horas, el paciente ya escribió a otra clínica"
+        ]
+      },
+      {
+        "title": "B. Qué funciona de verdad",
+        "bullets": [
+          "Casos antes/después publicados con consentimiento expreso del paciente",
+          "Responder el WhatsApp en minutos, con opción de agendar en el mismo chat",
+          "Pedir la reseña justo después de una cita exitosa, cuando la satisfacción está fresca"
+        ]
+      },
+      {
+        "title": "C. Qué evitar",
+        "bullets": [
+          "Prometer resultados garantizados — la publicidad en salud tiene límites legales claros",
+          "Publicar fotos de pacientes sin consentimiento documentado",
+          "Comprar seguidores o reseñas: se nota, y el costo reputacional es alto"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "category": "Industry Trend",
+    "company": "Salud Sistémica",
+    "title": "La medicina está mirando a la boca: la conexión oral-sistémica gana terreno",
+    "summary": "La relación entre enfermedad periodontal y condiciones como la diabetes o el riesgo cardiovascular ya es consenso clínico, y el sector médico empieza a actuar en consecuencia: más remisiones, más programas de manejo integral, más interconsulta. Para la odontología es una puerta de entrada nueva.",
+    "tag": "Integración",
+    "tag_color": "green",
+    "source": "Análisis interno",
+    "date": "2026-03-28",
+    "insight": "Cuando el médico remite al odontólogo, el paciente llega convencido por prescripción — no por estética. Es otro tipo de demanda.",
+    "sections": [
+      {
+        "title": "A. Lo que ya es consenso clínico",
+        "bullets": [
+          "La enfermedad periodontal y la diabetes se agravan mutuamente: controlar una ayuda a controlar la otra",
+          "La salud oral en gestantes es parte del control prenatal recomendado",
+          "La boca funciona como ventana de detección temprana de condiciones sistémicas"
+        ]
+      },
+      {
+        "title": "B. Qué está cambiando en el sector médico",
+        "bullets": [
+          "Médicos internistas y endocrinólogos remitiendo pacientes crónicos a valoración periodontal",
+          "Programas de manejo integral de pacientes crónicos que incluyen el componente oral",
+          "La interconsulta médico-odontológica deja de ser rareza en pacientes complejos"
+        ]
+      },
+      {
+        "title": "C. La oportunidad para la clínica",
+        "bullets": [
+          "Construir relación con médicos de la zona: internistas, endocrinólogos, ginecólogos",
+          "Comunicar el valor médico de la periodoncia, no solo el estético de la sonrisa",
+          "Documentar y reportar hallazgos al médico tratante: eso convierte una remisión en una relación"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "category": "Market Intelligence",
+    "company": "Aseguramiento Privado",
+    "title": "Planes complementarios y pólizas con cobertura dental crecen en las ciudades",
+    "summary": "Ante la crisis del sistema público, más familias urbanas contratan medicina prepagada, planes complementarios y pólizas de salud — y varios incluyen componente odontológico. Entrar a esas redes da volumen de pacientes, pero a tarifas negociadas. La decisión merece números, no intuición.",
+    "tag": "Pagadores",
+    "tag_color": "amber",
+    "source": "Análisis interno",
+    "date": "2026-04-22",
+    "insight": "Un convenio se firma con una sola pregunta respondida: ¿la tarifa negociada cubre mi costo por hora de silla, con margen?",
+    "sections": [
+      {
+        "title": "A. Qué está pasando",
+        "bullets": [
+          "La desconfianza en las EPS empuja a la clase media urbana hacia el aseguramiento privado",
+          "Aseguradoras y prepagadas amplían redes odontológicas para diferenciar sus planes",
+          "El paciente asegurado consume más odontología preventiva que el que paga todo de bolsillo"
+        ]
+      },
+      {
+        "title": "B. El intercambio que proponen",
+        "bullets": [
+          "Volumen de pacientes estable a cambio de tarifa negociada por debajo de la particular",
+          "Pagos más formales que una EPS, pero con glosas y tiempos administrativos propios",
+          "El riesgo silencioso: llenar la agenda con tarifa baja y dejar sin espacio al paciente particular"
+        ]
+      },
+      {
+        "title": "C. Cómo decidir con datos",
+        "bullets": [
+          "Calcular el costo real por hora de silla antes de mirar cualquier tarifario",
+          "Simular la mezcla: qué porcentaje de la agenda puede ser convenio sin canibalizar lo particular",
+          "Revisar el convenio cada año con datos de rentabilidad reales, no renovar en automático"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "category": "Industry Trend",
+    "company": "Adulto Mayor",
+    "title": "El envejecimiento poblacional está creando demanda de rehabilitación oral",
+    "summary": "Colombia envejece de forma sostenida: cada año hay más adultos mayores, muchos con capacidad de pago, dientes por rehabilitar y condiciones médicas que exigen manejo cuidadoso. Es un segmento creciente que la mayoría de clínicas atiende de forma reactiva en lugar de estratégica.",
+    "tag": "Demografía",
+    "tag_color": "green",
+    "source": "Análisis interno",
+    "date": "2026-01-30",
+    "insight": "El adulto mayor no busca la clínica más moderna: busca la que lo trata con paciencia, coordina con su médico y le resuelve la función.",
+    "sections": [
+      {
+        "title": "A. El cambio demográfico",
+        "bullets": [
+          "La pirámide poblacional colombiana se invierte: más adultos mayores cada año",
+          "Una generación que llega a la vejez con más dientes propios que las anteriores — y más por rehabilitar",
+          "Pensionados con capacidad de pago y tiempo disponible para tratamientos largos"
+        ]
+      },
+      {
+        "title": "B. Qué demanda este segmento",
+        "bullets": [
+          "Prótesis, implantes y rehabilitación funcional más que estética pura",
+          "Manejo de pacientes con comorbilidades: diabetes, anticoagulantes, polifarmacia",
+          "Citas más largas, trato pausado y acompañamiento de la familia en decisiones"
+        ]
+      },
+      {
+        "title": "C. Cómo prepararse",
+        "bullets": [
+          "Protocolos escritos para pacientes médicamente complejos, con interconsulta al médico tratante",
+          "Accesibilidad física del consultorio: el detalle que decide si el paciente vuelve",
+          "Horarios de mañana entre semana — justo las franjas que otras clínicas no llenan"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "category": "Competitor Move",
+    "company": "Informalidad",
+    "title": "La competencia informal compite por precio; la formal debe competir por confianza",
+    "summary": "Consultorios sin habilitación, personal no profesional haciendo procedimientos clínicos y precios imposibles de igualar: la informalidad existe en todo el país. Intentar ganarle bajando tarifas es la única estrategia garantizada para perder.",
+    "tag": "Competencia",
+    "tag_color": "amber",
+    "source": "Análisis interno",
+    "date": "2025-12-10",
+    "insight": "El paciente que solo compara precio no es el paciente de la clínica formal. El que compara confianza, sí — y hay que hablarle a ese.",
+    "sections": [
+      {
+        "title": "A. El fenómeno",
+        "bullets": [
+          "Locales sin habilitación operando abiertamente en barrios y centros comerciales populares",
+          "Procedimientos clínicos realizados por personal sin formación profesional",
+          "Precios que ninguna operación formal puede igualar sin operar a pérdida"
+        ]
+      },
+      {
+        "title": "B. Por qué no se le gana con precio",
+        "bullets": [
+          "La estructura de costos formal (habilitación, bioseguridad, personal calificado) no compite con la de un garaje",
+          "Bajar tarifas al nivel informal destruye el margen sin capturar a ese paciente",
+          "La carrera al fondo degrada la percepción de valor de todo el sector local"
+        ]
+      },
+      {
+        "title": "C. Cómo diferenciarse de verdad",
+        "bullets": [
+          "Hacer visible lo invisible: esterilización, habilitación, registro profesional, materiales certificados",
+          "Educar sin atacar: contenido sobre los riesgos reales de procedimientos sin condiciones",
+          "Documentar casos de rehabilitación de trabajos mal hechos — el mejor argumento silencioso"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "category": "Market Intelligence",
+    "company": "Reputación",
+    "title": "Las reseñas en línea pesan más que la pauta: la reputación es un proceso, no un accidente",
+    "summary": "Antes de llamar, el paciente ya leyó las reseñas — y las malas primero. Las clínicas que tratan la reputación digital como un proceso semanal captan al paciente que las demás pierden sin enterarse.",
+    "tag": "Reputación",
+    "tag_color": "amber",
+    "source": "Análisis interno",
+    "date": "2026-07-01",
+    "insight": "Una mala reseña sin respuesta le habla más fuerte al próximo paciente que diez buenas.",
+    "sections": [
+      {
+        "title": "A. Cómo decide el paciente hoy",
+        "bullets": [
+          "Busca la clínica en Google Maps antes que en cualquier otro canal",
+          "Lee primero las reseñas negativas para ver 'qué es lo peor que puede pasar'",
+          "Una calificación mediocre filtra a la clínica antes de que pueda dar su primera impresión"
+        ]
+      },
+      {
+        "title": "B. Los errores que más se repiten",
+        "bullets": [
+          "No responder ninguna reseña — ni las buenas ni las malas",
+          "Discutir en público con un paciente molesto: siempre se pierde, aunque se tenga razón",
+          "Acordarse de las reseñas solo cuando llega una mala"
+        ]
+      },
+      {
+        "title": "C. Un proceso simple que funciona",
+        "bullets": [
+          "Pedir la reseña sistemáticamente después de cada cita exitosa, con el enlace directo",
+          "Responder todas: agradecer las buenas, y las malas con empatía e invitación a resolver en privado",
+          "Revisar la calificación mensualmente como un KPI más de la clínica"
+        ]
+      }
+    ]
   }
 ]
