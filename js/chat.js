@@ -2,7 +2,10 @@
 
 function buildSystemPrompt(dataCtx){
   const profileCtx=buildProfileContext();
-  const practiceName=PRACTICE_PROFILE?.name||getWhiteLabel()||'esta clínica dental';
+  // Must match getWhiteLabel()'s priority (URL param > saved profile >
+  // default) — reversing it here would let a stale locally-saved profile
+  // from a previous client override the current ?practice= URL.
+  const practiceName=getWhiteLabel()||'esta clínica dental';
   return `Eres el socio estratégico y asesor de negocios on-demand de ${practiceName}, una clínica dental en Colombia. Tienes acceso completo a sus datos de rendimiento y actúas como un asesor financiero de nivel directivo disponible en cualquier momento — a las 11pm, temprano en la mañana, cuando el dueño necesite tomar una decisión.
 
 ${dataCtx}
