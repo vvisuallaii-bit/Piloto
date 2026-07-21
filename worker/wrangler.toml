@@ -1,0 +1,24 @@
+# claude-proxy — Cloudflare Worker
+# Proxy hacia la API de Claude + API de tareas (Fase 2, Cloudflare D1).
+#
+# Secrets esperados (NO van en este archivo — se configuran con `wrangler secret put`):
+#   ANTHROPIC_API_KEY  → usado por la ruta proxy existente (POST /)
+#   ADMIN_KEY          → protege POST /tareas (creación manual de tareas)
+#
+# IMPORTANTE antes del primer deploy: si el Worker desplegado hoy usa otro nombre
+# de variable para la API key de Anthropic, ajusta env.ANTHROPIC_API_KEY en
+# src/index.js para que coincida (los secrets ya configurados en Cloudflare se
+# conservan entre deploys de wrangler).
+
+name = "claude-proxy"
+main = "src/index.js"
+compatibility_date = "2026-07-01"
+
+# Binding D1 para el sistema de tareas (Fase 2).
+# 1. Crea la base:            npx wrangler d1 create smile-dental-tareas
+# 2. Copia el database_id que devuelve el comando y reemplázalo abajo.
+[[d1_databases]]
+binding = "DB"
+database_name = "smile-dental-tareas"
+database_id = "REEMPLAZAR-CON-EL-ID-QUE-DEVUELVE-wrangler-d1-create"
+migrations_dir = "migrations"

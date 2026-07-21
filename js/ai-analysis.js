@@ -29,13 +29,45 @@ function demoFallback(m,data){
     ? DEMO_FALLBACK_ANALYSIS : null;
 }
 
+/* ── TEST MODE ────────────────────────────────────────────────────────────
+   Instant, offline, zero-cost preview: builds an analysis-shaped object
+   from the REAL computed metrics and the REAL white-labeled practice name,
+   without ever calling the Worker/API. Exists so the practice name (and any
+   other profile change) can be visually confirmed inside the AI-panel look
+   while iterating, without spending real Anthropic API credits each time.
+   Off by default and NOT persisted across reloads — a client demo must
+   never accidentally show mock text as if it were live. */
+let AI_TEST_MODE=false;
+function toggleTestMode(){
+  AI_TEST_MODE=!AI_TEST_MODE;
+  const btn=document.getElementById('test-mode-btn');
+  const lbl=document.getElementById('test-mode-label');
+  btn.classList.toggle('on',AI_TEST_MODE);
+  lbl.textContent='Modo prueba: '+(AI_TEST_MODE?'encendido':'apagado');
+}
+function buildMockAnalysis(m,overheadRate,acceptanceRate,noShowRate,period){
+  const name=getWhiteLabel();
+  const gapM=((m.totalProduction-m.totalCollections)/1e6).toFixed(1);
+  return{
+    headline:`${name} generó $${(m.totalNetIncome/1e6).toFixed(1)}M netos en ${period}, con gastos en ${overheadRate}%.`,
+    what_happened:`En el período analizado, ${name} produjo $${(m.totalProduction/1e6).toFixed(1)}M y recaudó $${(m.totalCollections/1e6).toFixed(1)}M. La aceptación de tratamientos fue ${acceptanceRate}% y el ausentismo ${noShowRate}%.`,
+    why_it_matters:`Estos números reflejan la salud operativa de ${name} frente a las referencias del sector odontológico colombiano.`,
+    opportunity:`La brecha entre producción y recaudación ($${gapM}M) es la oportunidad más directa de capturar sin atender un paciente nuevo.`,
+    actions:[
+      {priority:'URGENT',text:`Revisar la cartera pendiente de ${name} esta semana.`},
+      {priority:'MEDIUM',text:'Reforzar la presentación de planes de tratamiento en los próximos 30 días.'},
+      {priority:'LOW',text:'Evaluar financiación a cuotas para tratamientos de alto valor.'}
+    ],
+    confidence:75,
+    _mock:true
+  };
+}
+
 async function runAnalysis(){
   const btn=document.getElementById('ai-btn');btn.disabled=true;
   document.querySelector('.ai-panel').classList.add('open');
   document.getElementById('ai-empty').style.display='none';
   document.getElementById('ai-result').style.display='none';
-  document.getElementById('ai-loading').style.display='flex';
-  let mi=0;const ticker=setInterval(()=>{mi=(mi+1)%MSGS.length;document.getElementById('ai-loading-txt').textContent=MSGS[mi];},1500);
 
   const data=CURRENT_DATA;
   const m=computeMetrics(data);
@@ -45,6 +77,16 @@ async function runAnalysis(){
   const months=data.length;
   const fmtMonth=mo=>new Date(mo+'-02').toLocaleDateString('es-CO',{month:'long',year:'numeric'});
   const period=data.length?`${fmtMonth(data[0].month)} – ${fmtMonth(data[data.length-1].month)}`:'desconocido';
+
+  // Test mode: skip the network entirely — no loading state needed either.
+  if(AI_TEST_MODE){
+    const r=buildMockAnalysis(m,overheadRate,acceptanceRate,noShowRate,period);
+    showResult(r);LAST_RESULT=r;
+    return;
+  }
+
+  document.getElementById('ai-loading').style.display='flex';
+  let mi=0;const ticker=setInterval(()=>{mi=(mi+1)%MSGS.length;document.getElementById('ai-loading-txt').textContent=MSGS[mi];},1500);
 
   const summary=`Clínica: ${getWhiteLabel()}
 Período: ${period} (${months} meses)
@@ -110,7 +152,9 @@ function showResult(r){
   document.getElementById('ai-loading').style.display='none';
   const pc={'URGENT':'ab-u','MEDIUM':'ab-m','LOW':'ab-b'};
   const confidence=Number(r.confidence)||0;
+  const mockNote=r._mock?`<div class="ai-mock-note">🧪 Vista previa — modo prueba, no es una respuesta real de Claude</div>`:'';
   document.getElementById('ai-result').innerHTML=`
+    ${mockNote}
     <div class="ai-lead">${escapeHtml(r.headline)}</div>
     <div class="ai-blocks">
       <div class="ai-block"><div class="ai-block-lbl">Qué pasó</div><div class="ai-block-txt">${escapeHtml(r.what_happened)}</div></div>

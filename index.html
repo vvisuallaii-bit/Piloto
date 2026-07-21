@@ -29,10 +29,23 @@
     <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-4M12 8h.01"/></svg>
     Datos de ejemplo — vista de demostración
   </span>
-  <button class="profile-pill" id="profile-pill" onclick="openProfile()">
-    <span class="profile-dot"></span>
-    <span id="profile-pill-label">Configurar perfil de clínica</span>
-  </button>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="bell-wrap" id="bell-wrap">
+      <button class="bell-btn" id="bell-btn" onclick="toggleBellDropdown(event)" title="Tareas pendientes" aria-label="Notificaciones de tareas">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+        <span class="bell-badge" id="bell-badge" style="display:none">0</span>
+      </button>
+      <div class="bell-dropdown" id="bell-dropdown">
+        <div class="bell-dd-header">Tareas pendientes</div>
+        <div id="bell-dd-list"><div class="bell-dd-empty">Cargando...</div></div>
+        <button class="bell-dd-footer" onclick="irATareas()">Ver todas las tareas →</button>
+      </div>
+    </div>
+    <button class="profile-pill" id="profile-pill" onclick="openProfile()">
+      <span class="profile-dot"></span>
+      <span id="profile-pill-label">Configurar perfil de clínica</span>
+    </button>
+  </div>
 </header>
 
 <nav class="tab-nav">
@@ -51,6 +64,10 @@
   <button class="tab-btn" onclick="switchTab('forecast',this)">
     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
     Proyección
+  </button>
+  <button class="tab-btn" id="tab-btn-tareas" onclick="switchTab('tareas',this)">
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+    Pendientes
   </button>
 </nav>
 
@@ -137,6 +154,10 @@
     <div class="ai-panel-header">
       <div class="ai-panel-title"><div class="ai-dot"></div>Análisis Ejecutivo IA</div>
       <div style="display:flex;align-items:center;gap:8px">
+        <button class="test-mode-btn" id="test-mode-btn" onclick="toggleTestMode()" title="Vista previa instantánea con tus datos y el nombre de la clínica, sin llamar a la API — no consume créditos. Actívalo mientras ajustas el perfil; apágalo para la respuesta real de Claude.">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3h6M10 3v5.5L5.5 17a1.5 1.5 0 001.3 2.25h10.4a1.5 1.5 0 001.3-2.25L14 8.5V3"/><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 14h9"/></svg>
+          <span id="test-mode-label">Modo prueba: apagado</span>
+        </button>
         <button class="pdf-btn" id="pdf-btn" onclick="exportPDF()">
           <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           Exportar PDF
@@ -316,6 +337,88 @@
 
 </div><!-- /tab-forecast -->
 
+<!-- TAREAS PENDIENTES (Fase 2) -->
+<div class="tab-pane" id="tab-tareas">
+
+  <!-- Franja de métricas de ROI -->
+  <div class="roi-strip">
+    <div class="roi-card">
+      <div class="roi-lbl">Completadas esta semana</div>
+      <div class="roi-val" id="roi-completadas">—</div>
+      <div class="roi-sub">acciones de la semana en curso</div>
+    </div>
+    <div class="roi-card">
+      <div class="roi-lbl">Valor recuperado</div>
+      <div class="roi-val roi-val-money" id="roi-valor">—</div>
+      <div class="roi-sub">esta semana · citas agendadas</div>
+    </div>
+    <div class="roi-card" id="roi-vencidas-card">
+      <div class="roi-lbl">Vencidas</div>
+      <div class="roi-val" id="roi-vencidas">—</div>
+      <div class="roi-sub">requieren atención inmediata</div>
+    </div>
+  </div>
+
+  <!-- Filtros por responsable -->
+  <div class="tareas-toolbar">
+    <div class="tarea-filters">
+      <button class="tf-btn active" onclick="setTareaFiltro('todas',this)">Todas <span class="tf-count" id="tf-count-todas">0</span></button>
+      <button class="tf-btn" onclick="setTareaFiltro('dueno',this)">Doctor / Dueño <span class="tf-count" id="tf-count-dueno">0</span></button>
+      <button class="tf-btn" onclick="setTareaFiltro('recepcionista',this)">Recepción <span class="tf-count" id="tf-count-recepcionista">0</span></button>
+    </div>
+    <button class="tareas-refresh" onclick="fetchTareas()" title="Actualizar tareas">↻ Actualizar</button>
+  </div>
+
+  <div id="tareas-status"></div>
+  <div class="tareas-list" id="tareas-list"></div>
+
+  <!-- Formulario de administración (uso interno — visible solo con ?admin en la URL) -->
+  <div class="tarea-admin" id="tarea-admin" style="display:none">
+    <div class="tarea-admin-title">⚙ Crear tarea (administración)</div>
+    <div class="ta-grid">
+      <label>Clave admin<input type="password" id="ta-key" placeholder="ADMIN_KEY del Worker"/></label>
+      <label>Título *<input type="text" id="ta-titulo" maxlength="120" placeholder="ej. Llamar a 12 pacientes inactivos"/></label>
+      <label class="ta-full">Descripción<input type="text" id="ta-desc" maxlength="300" placeholder="detalle opcional"/></label>
+      <label>Categoría
+        <select id="ta-categoria">
+          <option value="recall_inactivos">Recall inactivos</option>
+          <option value="no_shows">No-shows</option>
+          <option value="aceptacion_tratamiento">Aceptación de tratamiento</option>
+          <option value="seguimiento_post">Seguimiento post-tratamiento</option>
+          <option value="otro">Otro</option>
+        </select>
+      </label>
+      <label>Asignado a
+        <select id="ta-asignado">
+          <option value="recepcionista">Recepción</option>
+          <option value="dueno">Dueño</option>
+        </select>
+      </label>
+      <label>Prioridad
+        <select id="ta-prioridad">
+          <option value="alta">Alta</option>
+          <option value="media" selected>Media</option>
+          <option value="baja">Baja</option>
+        </select>
+      </label>
+      <label>Valor estimado (COP)<input type="number" id="ta-valor" min="0" step="1000" placeholder="0"/></label>
+      <label>Fecha límite<input type="date" id="ta-limite"/></label>
+      <label>Semana (lunes)<input type="date" id="ta-semana"/></label>
+      <label>Fuente
+        <select id="ta-fuente">
+          <option value="manual" selected>Manual</option>
+          <option value="ia_semanal">IA semanal</option>
+        </select>
+      </label>
+    </div>
+    <div class="ta-footer">
+      <button class="ta-crear" id="ta-crear" onclick="crearTareaAdmin()">＋ Crear tarea</button>
+      <span class="ta-msg" id="ta-msg"></span>
+    </div>
+  </div>
+
+</div><!-- /tab-tareas -->
+
 </div><!-- /page -->
 
 <!-- ARTICLE MODAL -->
@@ -467,5 +570,6 @@
 <script defer src="js/chat.js"></script>
 <script defer src="js/forecast.js"></script>
 <script defer src="js/main.js"></script>
+<script defer src="js/tareas.js"></script>
 </body>
 </html>

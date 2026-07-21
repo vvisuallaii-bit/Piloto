@@ -63,10 +63,11 @@ function applyWhiteLabel(){
   const chatWelcomeP=document.getElementById('chat-welcome-p')||document.querySelector('#chat-welcome p');
   if(chatWelcomeP) chatWelcomeP.textContent=`Tengo acceso completo a los datos de rendimiento de ${name}. Pregúntame lo que sea — valido ideas, analizo tendencias y te doy consejo estratégico directo.`;
 
-  // Profile pill
+  // Profile pill — reflects whichever source actually named the practice
+  // (URL param or a saved profile), not just the URL param case.
   const pill=document.getElementById('profile-pill');
   const pillLbl=document.getElementById('profile-pill-label');
-  if(URL_PARAMS.active && pill && pillLbl){
+  if(pill&&pillLbl&&(URL_PARAMS.active||PRACTICE_PROFILE?.name)){
     pill.classList.add('complete');
     pillLbl.textContent=`${name}${doctor?' · '+doctor:''}${city?' · '+city:''}`;
   }

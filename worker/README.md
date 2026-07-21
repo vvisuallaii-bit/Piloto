@@ -1,0 +1,118 @@
+# claude-proxy — Worker de Smile Dental Intelligence
+
+Cloudflare Worker que sirve dos cosas:
+
+1. **Proxy de Claude** (ruta original): `POST /` reenvía `{model, max_tokens, messages}` a la API de Anthropic con la key guardada como secret.
+2. **API de tareas (Fase 2)**: `POST /tareas`, `GET /tareas`, `PATCH /tareas/:id`, con persistencia en Cloudflare D1.
+
+> ⚠️ **Antes del primer deploy con wrangler:** este código fuente fue reconstruido a partir del contrato que usa el frontend (el Worker original se editó en el dashboard de Cloudflare y no estaba en el repo). Abre el editor del Worker en el dashboard y verifica que el nombre del secret de la API key coincida con `ANTHROPIC_API_KEY` (si allá se llama distinto, ajusta `src/index.js` o renombra el secret). Un `wrangler deploy` **reemplaza** el código desplegado, pero **conserva** los secrets ya configurados.
+
+## Requisitos
+
+- Node.js + npm (no están instalados en la máquina actual — instalar desde https://nodejs.org)
+- Cuenta de Cloudflare con el Worker `claude-proxy` existente
+- `npx wrangler login` (abre el navegador para autorizar)
+
+## Puesta en marcha (una sola vez)
+
+```bash
+cd Piloto/worker
+
+# 1. Autenticarse
+npx wrangler login
+
+# 2. Crear la base D1
+npx wrangler d1 create smile-dental-tareas
+# → copia el database_id que imprime y pégalo en wrangler.toml ([[d1_databases]])
+
+# 3. Aplicar la migración (crea la tabla `tareas`)
+npx wrangler d1 migrations apply smile-dental-tareas --remote
+# (sin --remote aplica solo a la copia local de desarrollo)
+
+# 4. Configurar los secrets (si no existen ya)
+npx wrangler secret put ANTHROPIC_API_KEY   # key de la API de Anthropic (ya existe si el proxy funciona)
+npx wrangler secret put ADMIN_KEY           # clave simple que protege POST /tareas — invéntala tú
+
+# 5. Desplegar
+npx wrangler deploy
+```
+
+## Probar los endpoints manualmente
+
+Base: `https://claude-proxy.vvisuall-aii.workers.dev`
+
+### Crear una tarea (`POST /tareas`, requiere la clave admin)
+
+```bash
+curl -X POST "https://claude-proxy.vvisuall-aii.workers.dev/tareas" \
+  -H "Content-Type: application/json" \
+  -H "X-Admin-Key: TU_ADMIN_KEY" \
+  -d '{
+    "practice_id": "smile-dental",
+    "semana": "2026-07-13",
+    "titulo": "Llamar a 12 pacientes inactivos de higiene",
+    "descripcion": "Pacientes sin cita en 8+ meses, lista en el CRM",
+    "categoria": "recall_inactivos",
+    "asignado_a": "recepcionista",
+    "prioridad": "alta",
+    "valor_estimado_cop": 1800000,
+    "fecha_limite": "2026-07-17",
+    "fuente": "manual"
+  }'
+# → 201 con la tarea creada (incluye "id")
+# → 401 si falta o no coincide X-Admin-Key
+# → 400 si falta un campo requerido o un valor no es permitido
+```
+
+### Listar tareas + resumen ROI (`GET /tareas`)
+
+```bash
+# Todas las tareas de la clínica
+curl "https://claude-proxy.vvisuall-aii.workers.dev/tareas?practice_id=smile-dental"
+
+# Filtradas
+curl "https://claude-proxy.vvisuall-aii.workers.dev/tareas?practice_id=smile-dental&estado=pendiente&asignado_a=recepcionista"
+```
+
+Respuesta:
+
+```json
+{
+  "tareas": [ /* ordenadas: vencidas → prioridad alta>media>baja → más recientes */ ],
+  "resumen": {
+    "semana": "2026-07-13",
+    "total_semana": 4,
+    "completadas_semana": 1,
+    "valor_recuperado_cop": 1800000,
+    "vencidas_count": 0
+  }
+}
+```
+
+El `resumen` se calcula sobre la semana actual (lunes, hora de Colombia).
+`valor_recuperado_cop` suma el `valor_estimado_cop` de las tareas completadas
+con `resultado = 'agendo_cita'` — el valor solo cuenta cuando se materializó.
+
+### Completar una tarea (`PATCH /tareas/:id`)
+
+```bash
+curl -X PATCH "https://claude-proxy.vvisuall-aii.workers.dev/tareas/1" \
+  -H "Content-Type: application/json" \
+  -d '{"estado":"completada","resultado":"agendo_cita","completado_por":"recepcionista"}'
+# → 200 con la tarea actualizada (completado_en lo pone el servidor)
+# → 400 si estado=completada sin resultado o sin completado_por
+# → 404 si el id no existe
+```
+
+## Formulario de administración en el dashboard
+
+En el dashboard, abre el tab **Pendientes** agregando `?admin` a la URL
+(ej. `https://vvisuallaii-bit.github.io/Piloto/?admin`). Aparece un formulario
+mínimo para crear tareas; pide la `ADMIN_KEY` una vez y la guarda en
+`sessionStorage` (se borra al cerrar la pestaña). La clave viaja en el header
+`X-Admin-Key`, nunca en la URL.
+
+## Zona horaria
+
+"Hoy" (para marcar vencidas) y "semana actual" (para el resumen ROI) se
+calculan en hora de Colombia (UTC-5 fijo, sin horario de verano).
