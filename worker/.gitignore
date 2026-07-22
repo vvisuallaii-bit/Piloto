@@ -1,0 +1,4 @@
+# Estado/caché local de wrangler (no versionar)
+.wrangler/
+node_modules/
+.dev.vars

@@ -14,11 +14,22 @@ name = "claude-proxy"
 main = "src/index.js"
 compatibility_date = "2026-07-01"
 
+# Observabilidad (logs en el dashboard de Cloudflare). Se restaura aquí porque
+# venía activa en el Worker original y un deploy sin este bloque la apagaba.
+[observability]
+enabled = true
+
+# Binding de Workers AI que traía el Worker original. El proxy no lo usa (llama
+# a la API de Anthropic por fetch directo), pero se conserva para no alterar la
+# configuración previa del Worker.
+[ai]
+binding = "AI"
+
 # Binding D1 para el sistema de tareas (Fase 2).
 # 1. Crea la base:            npx wrangler d1 create smile-dental-tareas
 # 2. Copia el database_id que devuelve el comando y reemplázalo abajo.
 [[d1_databases]]
 binding = "DB"
 database_name = "smile-dental-tareas"
-database_id = "REEMPLAZAR-CON-EL-ID-QUE-DEVUELVE-wrangler-d1-create"
+database_id = "b7a26615-686d-4d0b-ac44-8d7971fe2fc8"
 migrations_dir = "migrations"
