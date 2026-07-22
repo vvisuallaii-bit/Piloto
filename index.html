@@ -374,10 +374,39 @@
 
   <!-- Formulario de administración (uso interno — visible solo con ?admin en la URL) -->
   <div class="tarea-admin" id="tarea-admin" style="display:none">
-    <div class="tarea-admin-title">⚙ Crear tarea (administración)</div>
+    <div class="tarea-admin-title">⚙ Administración de tareas (uso interno)</div>
+
+    <label class="ta-keyfield">Clave admin
+      <input type="password" id="ta-key" placeholder="ADMIN_KEY del Worker"/>
+    </label>
+
+    <!-- Generación con IA (Paso 1: propone y tú revisas antes de guardar) -->
+    <div class="tia-box">
+      <div class="tia-head">
+        <div class="tia-head-txt">
+          <div class="tia-title">✨ Generar tareas de la semana con IA</div>
+          <div class="tia-sub">Claude lee las métricas actuales y propone 3–5 acciones. Revísalas y edítalas antes de guardar.</div>
+        </div>
+        <button class="tia-gen-btn" id="tia-gen-btn" onclick="generarTareasIA()">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          Generar propuestas
+        </button>
+      </div>
+      <div class="tia-status" id="tia-status"></div>
+      <div id="tia-propuestas"></div>
+      <div class="tia-actions" id="tia-actions" style="display:none">
+        <button class="tia-save-btn" id="tia-save-btn" onclick="guardarPropuestas()">Guardar</button>
+        <button class="tia-discard-btn" onclick="descartarPropuestas()">Descartar</button>
+        <span class="tia-save-msg" id="tia-save-msg"></span>
+      </div>
+    </div>
+
+    <div class="ta-divider"></div>
+
+    <!-- Creación manual -->
+    <div class="ta-manual-title">O crear una tarea manual</div>
     <div class="ta-grid">
-      <label>Clave admin<input type="password" id="ta-key" placeholder="ADMIN_KEY del Worker"/></label>
-      <label>Título *<input type="text" id="ta-titulo" maxlength="120" placeholder="ej. Llamar a 12 pacientes inactivos"/></label>
+      <label class="ta-full">Título *<input type="text" id="ta-titulo" maxlength="120" placeholder="ej. Llamar a 12 pacientes inactivos"/></label>
       <label class="ta-full">Descripción<input type="text" id="ta-desc" maxlength="300" placeholder="detalle opcional"/></label>
       <label>Categoría
         <select id="ta-categoria">
@@ -571,5 +600,6 @@
 <script defer src="js/forecast.js"></script>
 <script defer src="js/main.js"></script>
 <script defer src="js/tareas.js"></script>
+<script defer src="js/tareas-ia.js"></script>
 </body>
 </html>
