@@ -545,3 +545,30 @@ select:hover,select:focus{border-color:var(--accent)}
 .tia-save-msg.err{color:var(--red)}
 
 @media(max-width:700px){.tia-row{grid-template-columns:1fr 1fr}}
+
+/* ══ LISTA DE PACIENTES EN TAREAS Y PROPUESTAS ══════════════════════════ */
+.tarea-pac{margin-top:10px;border-top:1px solid var(--border);padding-top:9px}
+.tarea-pac-sum{font-size:11px;font-weight:600;color:var(--accent);cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:6px;user-select:none}
+.tarea-pac-sum::-webkit-details-marker{display:none}
+.tarea-pac-sum::before{content:'▸';font-size:10px;transition:transform .15s;display:inline-block}
+.tarea-pac[open] .tarea-pac-sum::before{transform:rotate(90deg)}
+.tarea-pac-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.tarea-pac-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px}
+.tarea-pac-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.tarea-pac-nombre{font-size:12px;font-weight:600;color:var(--text)}
+.tarea-pac-tel{font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--accent);text-decoration:none;white-space:nowrap}
+.tarea-pac-tel:hover{text-decoration:underline}
+.tarea-pac-accion{font-size:12px;color:var(--text);margin-top:5px;line-height:1.45}
+.tarea-pac-ctx{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.45}
+
+/* Pacientes dentro de una propuesta de IA (vista previa antes de guardar) */
+.tia-pac{margin-top:10px}
+.tia-pac summary{font-size:11px;font-weight:600;color:var(--accent);cursor:pointer;list-style:none;user-select:none}
+.tia-pac summary::-webkit-details-marker{display:none}
+.tia-pac summary::before{content:'▸ ';font-size:10px}
+.tia-pac[open] summary::before{content:'▾ '}
+.tia-pac-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.tia-pac-item{font-size:11px;color:var(--muted);line-height:1.5;padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.tia-pac-item strong{color:var(--text)}
+.tia-pac-tel{font-family:'JetBrains Mono',monospace;color:var(--muted);margin-left:6px}
+.tia-pac-accion{color:var(--text)}

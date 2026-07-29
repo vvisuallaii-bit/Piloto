@@ -8,6 +8,18 @@ let TAREAS=[],TAREAS_RESUMEN=null,TAREA_FILTRO='todas';
 let TAREAS_CARGANDO=false,TAREAS_ERROR=false;
 let TAREA_CONFIRMANDO=null; // id de la tarea con el selector de resultado abierto
 let TAREA_PATCH_PENDIENTE=false;
+let PACIENTES=[]; // base de pacientes (pacientes.json) — para adjuntar listas a tareas
+
+/* Carga la base de pacientes. No bloquea el tablero: si falla, PACIENTES
+   queda vacío y la generación con IA simplemente no adjunta pacientes. */
+async function loadPacientes(){
+  try{
+    const resp=await fetch('pacientes.json');
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    const data=await resp.json();
+    if(Array.isArray(data))PACIENTES=data;
+  }catch(e){PACIENTES=[];}
+}
 
 const T_PRIORIDAD_LBL={alta:'Alta',media:'Media',baja:'Baja'};
 const T_CATEGORIA_LBL={recall_inactivos:'Recall inactivos',no_shows:'No-shows',aceptacion_tratamiento:'Aceptación de tratamiento',seguimiento_post:'Seguimiento post-tratamiento',otro:'Otro'};
@@ -193,10 +205,32 @@ function renderTareasLista(){
           ${done&&t.resultado?`<span class="tarea-resultado">${escapeHtml(T_RESULTADO_LBL[t.resultado]||t.resultado)}</span>`:''}
           ${descartada?`<span class="tarea-badge">Descartada</span>`:''}
         </div>
+        ${(Array.isArray(t.pacientes)&&t.pacientes.length)?renderTareaPacientes(t):''}
         ${confirmando?renderConfirmacion(t):''}
       </div>
     </div>`;
   }).join('');
+}
+
+/* Lista concreta de pacientes de una tarea de contacto: nombre, teléfono
+   (clic para llamar), qué hacer con cada uno y el contexto de su última cita. */
+function renderTareaPacientes(t){
+  const ps=t.pacientes;
+  return `
+  <details class="tarea-pac">
+    <summary class="tarea-pac-sum">👥 ${ps.length} paciente${ps.length===1?'':'s'} para contactar</summary>
+    <div class="tarea-pac-list">
+      ${ps.map(p=>`
+        <div class="tarea-pac-item">
+          <div class="tarea-pac-top">
+            <span class="tarea-pac-nombre">${escapeHtml(p.nombre||'—')}</span>
+            ${p.telefono?`<a class="tarea-pac-tel" href="tel:${escapeHtml(String(p.telefono).replace(/\s+/g,''))}">📞 ${escapeHtml(p.telefono)}</a>`:''}
+          </div>
+          ${p.accion?`<div class="tarea-pac-accion">→ ${escapeHtml(p.accion)}</div>`:''}
+          ${(p.que_paso||p.ultima_consulta)?`<div class="tarea-pac-ctx">${p.ultima_consulta?'Última cita '+escapeHtml(fmtFechaCorta(p.ultima_consulta))+': ':''}${escapeHtml(p.que_paso||'')}</div>`:''}
+        </div>`).join('')}
+    </div>
+  </details>`;
 }
 
 /* Mini-selector inline: el checkbox no se "cierra" hasta elegir resultado */
@@ -329,4 +363,5 @@ async function crearTareaAdmin(){
 
 /* ── init ── */
 initTareasAdmin();
+loadPacientes();
 fetchTareas();

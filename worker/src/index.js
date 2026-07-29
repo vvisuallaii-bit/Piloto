@@ -48,6 +48,15 @@ function lunesSemanaActual() {
   return d.toISOString().slice(0, 10);
 }
 
+/* La columna `pacientes` se guarda como TEXT (JSON). Al leer, la devolvemos
+   como arreglo para que la API sea consistente; si está vacía o corrupta, null. */
+function hydrateTarea(t) {
+  if (t && typeof t.pacientes === 'string' && t.pacientes) {
+    try { t.pacientes = JSON.parse(t.pacientes); } catch { t.pacientes = null; }
+  }
+  return t;
+}
+
 /* ── Proxy original hacia la API de Claude ── */
 async function handleProxy(request, env) {
   const body = await request.text();
@@ -90,15 +99,23 @@ async function crearTarea(request, env, url) {
   if (b.fecha_limite && !/^\d{4}-\d{2}-\d{2}$/.test(b.fecha_limite)) return json({ error: 'fecha_limite debe ser fecha ISO' }, 400);
   const valor = Number.isFinite(Number(b.valor_estimado_cop)) ? Math.round(Number(b.valor_estimado_cop)) : 0;
 
+  let pacientesJson = null;
+  if (b.pacientes !== undefined && b.pacientes !== null) {
+    if (!Array.isArray(b.pacientes)) return json({ error: 'pacientes debe ser un arreglo' }, 400);
+    if (b.pacientes.length > 100) return json({ error: 'demasiados pacientes en una tarea (máx 100)' }, 400);
+    pacientesJson = JSON.stringify(b.pacientes);
+    if (pacientesJson.length > 30000) return json({ error: 'la lista de pacientes es demasiado grande' }, 400);
+  }
+
   try {
     const tarea = await env.DB.prepare(
-      `INSERT INTO tareas (practice_id, semana, titulo, descripcion, categoria, asignado_a, prioridad, valor_estimado_cop, fecha_limite, fuente)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10) RETURNING *`
+      `INSERT INTO tareas (practice_id, semana, titulo, descripcion, categoria, asignado_a, prioridad, valor_estimado_cop, fecha_limite, fuente, pacientes)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11) RETURNING *`
     ).bind(
       b.practice_id.trim(), b.semana, b.titulo.trim(), b.descripcion?.trim() || null,
-      b.categoria, b.asignado_a, b.prioridad, valor, b.fecha_limite || null, fuente
+      b.categoria, b.asignado_a, b.prioridad, valor, b.fecha_limite || null, fuente, pacientesJson
     ).first();
-    return json(tarea, 201);
+    return json(hydrateTarea(tarea), 201);
   } catch (e) {
     console.error('D1 insert error:', e.message);
     return json({ error: 'Error interno al crear la tarea' }, 500);
@@ -142,7 +159,7 @@ async function listarTareas(env, url) {
        FROM tareas WHERE practice_id = ?2 AND semana = ?3`
     ).bind(hoy, practiceId, semana).first();
     return json({
-      tareas: results,
+      tareas: (results || []).map(hydrateTarea),
       resumen: {
         semana,
         total_semana: r?.total_semana || 0,
@@ -189,7 +206,7 @@ async function actualizarTarea(request, env, id) {
     const tarea = await env.DB.prepare(
       `UPDATE tareas SET ${sets.join(', ')} WHERE id = ?${binds.length} RETURNING *`
     ).bind(...binds).first();
-    return json(tarea);
+    return json(hydrateTarea(tarea));
   } catch (e) {
     console.error('D1 update error:', e.message);
     return json({ error: 'Error interno al actualizar la tarea' }, 500);

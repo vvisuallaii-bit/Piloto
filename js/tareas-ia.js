@@ -47,6 +47,14 @@ Planes de tratamiento: presentados ${m.totalPlansPresented}, aceptados ${m.total
 Ingresos por línea: higiene ${cop(m.hygieneRevenue)}, restaurativa ${cop(m.restorativeRevenue)}, estética ${cop(m.cosmeticRevenue)}, ortodoncia ${cop(m.orthoRevenue)}`;
 }
 
+/* Lista de pacientes accionables (excluye los que están al día) para que la IA
+   elija de aquí por ID — así no inventa nombres ni teléfonos. */
+function tiaPacientesRoster(){
+  const acc=(typeof PACIENTES!=='undefined'?PACIENTES:[]).filter(p=>p.motivo&&p.motivo!=='al_dia');
+  if(!acc.length)return null;
+  return acc.map(p=>`${p.id} | ${p.nombre} | motivo:${p.motivo} | última cita:${p.ultima_consulta||'?'} | qué pasó:${p.que_paso||''} | próximo paso sugerido:${p.proximos_pasos||''} | valor pendiente:$${(p.valor_pendiente_cop||0).toLocaleString('es-CO')}`).join('\n');
+}
+
 function tiaProfileText(){
   const p=(typeof PRACTICE_PROFILE!=='undefined')?PRACTICE_PROFILE:null;
   if(!p)return '(sin perfil configurado)';
@@ -88,7 +96,8 @@ async function generarTareasIA(){
               asignado_a:{type:'string',enum:['dueno','recepcionista'],description:'recepcionista para tareas operativas (llamadas, confirmaciones, recall, cobro); dueno para decisiones estratégicas o revisión de casos de alto valor.'},
               prioridad:{type:'string',enum:['alta','media','baja']},
               valor_estimado_cop:{type:'integer',description:'Valor potencial en COP que se recupera si la acción se concreta. Realista según los números dados. 0 si no aplica.'},
-              justificacion:{type:'string',description:'Una frase: por qué esta acción, citando un número real de los datos.'}
+              justificacion:{type:'string',description:'Una frase: por qué esta acción, citando un número real de los datos.'},
+              pacientes:{type:'array',description:'Pacientes concretos de la LISTA DE PACIENTES provista que corresponden a esta tarea. Usa solo IDs de esa lista. Déjalo vacío si la tarea no es de contactar pacientes puntuales.',items:{type:'object',properties:{id:{type:'string',description:'ID EXACTO de la lista de pacientes (ej. P003). No inventes IDs.'},accion:{type:'string',description:'Qué hacer específicamente con ESTE paciente (concreto y personalizado a su caso).'}},required:['id','accion']}}
             },
             required:['titulo','descripcion','categoria','asignado_a','prioridad','valor_estimado_cop','justificacion']
           }
@@ -98,6 +107,7 @@ async function generarTareasIA(){
     }
   };
 
+  const roster=tiaPacientesRoster();
   const prompt=`Eres un consultor de operaciones para clínicas dentales colombianas. Con base en los datos, propón las 3 a 5 acciones operativas MÁS IMPORTANTES y accionables para ESTA SEMANA. Prioriza lo que mueve ingresos rápido sin atender pacientes nuevos: cerrar la brecha de cobro, recuperar pacientes inactivos, reducir ausentismo y subir la aceptación de tratamientos.
 
 DATOS DE LA CLÍNICA:
@@ -105,35 +115,51 @@ ${tiaBuildSummary()}
 
 PERFIL DE LA CLÍNICA:
 ${tiaProfileText()}
-
+${roster?`
+LISTA DE PACIENTES (elige de aquí los que van en cada tarea de contacto, usando su ID exacto):
+${roster}
+`:''}
 REFERENCIAS DEL SECTOR (Colombia): gastos operativos <65%, aceptación de tratamientos >65%, ausentismo <12%, pacientes nuevos 20-25+/mes.
 
 Reglas:
 - Cada tarea debe ser ejecutable por UNA persona esta semana, no un objetivo vago ("subir la aceptación" no sirve; "re-presentar los 3 planes de mayor valor no aceptados" sí).
 - Asigna a 'recepcionista' las llamadas, confirmaciones, recall y gestión de cobro; a 'dueno' las decisiones estratégicas o la revisión de casos de alto valor.
-- Estima el valor en COP de forma realista con base en los números dados; no inventes cifras desproporcionadas.
+- Estima el valor en COP de forma realista con base en los números dados; no inventes cifras desproporcionadas.${roster?`
+- Para las tareas de contacto (recall, no-shows, seguimiento, aceptación), ADJUNTA en 'pacientes' los pacientes concretos de la LISTA DE PACIENTES que correspondan, cada uno con una acción específica a su caso. Usa solo IDs de la lista; agrupa por motivo coherente con la categoría de la tarea.` : ''}
 - Redacta en español, tono colombiano directo.
 
 Llama a la herramienta proponer_tareas con las acciones.`;
 
   try{
     const ctrl=new AbortController();
-    const timer=setTimeout(()=>ctrl.abort(),45000);
+    const timer=setTimeout(()=>ctrl.abort(),90000);
     let tareas;
     try{
       const resp=await fetch(WORKER_URL,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({model:MODEL_ID,max_tokens:1500,tools:[tool],tool_choice:{type:'tool',name:'proponer_tareas'},messages:[{role:'user',content:prompt}]}),
+        body:JSON.stringify({model:MODEL_ID,max_tokens:4000,tools:[tool],tool_choice:{type:'tool',name:'proponer_tareas'},messages:[{role:'user',content:prompt}]}),
         signal:ctrl.signal
       });
       const json=await resp.json();
       if(json.error)throw new Error(json.error.message||'Error de la API de IA');
       const block=(json.content||[]).find(b=>b.type==='tool_use'&&b.name==='proponer_tareas');
-      if(!block||!block.input||!Array.isArray(block.input.tareas))throw new Error('La IA no devolvió tareas en el formato esperado.');
+      if(!block||!block.input||!Array.isArray(block.input.tareas)){
+        if(json.stop_reason==='max_tokens')throw new Error('La respuesta se truncó (demasiadas tareas/pacientes). Reintenta.');
+        throw new Error('La IA no devolvió tareas en el formato esperado.');
+      }
       tareas=block.input.tareas;
     }finally{clearTimeout(timer);}
     if(!tareas.length)throw new Error('La IA no propuso tareas.');
+    // Enriquecer los pacientes elegidos por ID con los datos reales del dataset
+    // (nombre/teléfono/contexto los ponemos nosotros; la IA solo eligió id + acción).
+    tareas.forEach(t=>{
+      t._pacientes=(Array.isArray(t.pacientes)?t.pacientes:[]).map(x=>{
+        const p=(typeof PACIENTES!=='undefined'?PACIENTES:[]).find(pp=>pp.id===x.id);
+        if(!p)return null;
+        return {id:p.id,nombre:p.nombre,telefono:p.telefono,ultima_consulta:p.ultima_consulta,que_paso:p.que_paso,accion:x.accion||p.proximos_pasos||''};
+      }).filter(Boolean);
+    });
     TIA_PROPUESTAS=tareas.slice(0,5);
     renderPropuestas();
     tiaStatus('','');
@@ -149,8 +175,8 @@ function tiaOptions(opts,sel){return opts.map(([v,l])=>`<option value="${v}"${v=
 
 function renderPropuestas(){
   const cont=document.getElementById('tia-propuestas');
-  cont.innerHTML=TIA_PROPUESTAS.map(t=>`
-    <div class="tia-card">
+  cont.innerHTML=TIA_PROPUESTAS.map((t,i)=>`
+    <div class="tia-card" data-i="${i}">
       <div class="tia-card-top">
         <label class="tia-inc"><input type="checkbox" class="tia-chk" checked> Incluir</label>
         ${t.justificacion?`<span class="tia-justif">💡 ${escapeHtml(t.justificacion)}</span>`:''}
@@ -163,6 +189,13 @@ function renderPropuestas(){
         <label>Prioridad<select class="tia-f tia-f-prio">${tiaOptions([['alta','Alta'],['media','Media'],['baja','Baja']],t.prioridad)}</select></label>
         <label>Valor COP<input type="number" class="tia-f tia-f-valor" min="0" step="1000" value="${Number(t.valor_estimado_cop)||0}"/></label>
       </div>
+      ${(t._pacientes&&t._pacientes.length)?`
+      <details class="tia-pac">
+        <summary>👥 ${t._pacientes.length} paciente${t._pacientes.length===1?'':'s'} adjunto${t._pacientes.length===1?'':'s'}</summary>
+        <div class="tia-pac-list">
+          ${t._pacientes.map(p=>`<div class="tia-pac-item"><strong>${escapeHtml(p.nombre)}</strong> <span class="tia-pac-tel">${escapeHtml(p.telefono||'')}</span><br><span class="tia-pac-accion">→ ${escapeHtml(p.accion||'')}</span></div>`).join('')}
+        </div>
+      </details>`:''}
     </div>`).join('');
   document.getElementById('tia-actions').style.display='flex';
   cont.querySelectorAll('.tia-chk').forEach(c=>c.addEventListener('change',updateSaveCount));
@@ -198,6 +231,8 @@ async function guardarPropuestas(){
   const semana=tareasLunes();
   let ok=0;const errs=[];
   for(const card of cards){
+    const idx=Number(card.dataset.i);
+    const pacientes=(TIA_PROPUESTAS[idx]&&TIA_PROPUESTAS[idx]._pacientes)||[];
     const body={
       practice_id:tareasPracticeId(),
       semana,
@@ -209,6 +244,7 @@ async function guardarPropuestas(){
       valor_estimado_cop:Number(card.querySelector('.tia-f-valor').value)||0,
       fuente:'ia_semanal'
     };
+    if(pacientes.length)body.pacientes=pacientes;
     if(!body.titulo){errs.push('una propuesta sin título');continue;}
     try{
       const resp=await fetch(`${WORKER_URL}/tareas`,{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Key':clave},body:JSON.stringify(body)});
