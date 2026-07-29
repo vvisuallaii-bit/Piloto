@@ -200,7 +200,13 @@ async function actualizarTarea(request, env, id) {
       binds.push(ahoraBogota().toISOString().replace('T', ' ').slice(0, 19));
       sets.push(`completado_en = ?${binds.length}`);
     }
-    if (!sets.length) return json({ error: 'Nada que actualizar (campos permitidos: estado, resultado, completado_por)' }, 400);
+    if (b.pacientes !== undefined) {
+      if (!Array.isArray(b.pacientes)) return json({ error: 'pacientes debe ser un arreglo' }, 400);
+      const pj = JSON.stringify(b.pacientes);
+      if (pj.length > 30000) return json({ error: 'la lista de pacientes es demasiado grande' }, 400);
+      binds.push(pj); sets.push(`pacientes = ?${binds.length}`);
+    }
+    if (!sets.length) return json({ error: 'Nada que actualizar (campos permitidos: estado, resultado, completado_por, pacientes)' }, 400);
 
     binds.push(Number(id));
     const tarea = await env.DB.prepare(

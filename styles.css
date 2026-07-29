@@ -572,3 +572,56 @@ select:hover,select:focus{border-color:var(--accent)}
 .tia-pac-item strong{color:var(--text)}
 .tia-pac-tel{font-family:'JetBrains Mono',monospace;color:var(--muted);margin-left:6px}
 .tia-pac-accion{color:var(--text)}
+
+/* ══ TAREA: tarjeta clicable + mini-progreso en la lista ════════════════ */
+.tarea-row.clickable{cursor:pointer;align-items:center}
+.tarea-row.clickable:hover{border-color:var(--accent)}
+.tarea-chevron{color:var(--faint);font-size:22px;line-height:1;flex-shrink:0;padding-left:6px}
+.tarea-row.clickable:hover .tarea-chevron{color:var(--accent)}
+.tarea-prog{display:flex;align-items:center;gap:10px;margin-top:10px}
+.tarea-prog-bar{flex:1;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;max-width:260px}
+.tarea-prog-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .3s}
+.tarea-prog-lbl{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;white-space:nowrap}
+
+/* ══ VISTA DETALLE de tarea ═════════════════════════════════════════════ */
+.td-back{background:none;border:none;color:var(--muted);font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;padding:4px 0;margin-bottom:14px;transition:color .15s}
+.td-back:hover{color:var(--accent)}
+.td-head{margin-bottom:16px}
+.td-title{font-size:18px;font-weight:600;color:var(--text);line-height:1.35;margin-bottom:10px}
+.td-desc{font-size:13px;color:var(--muted);line-height:1.6;margin-top:10px}
+.td-done-banner{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--green);background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3);padding:8px 14px;border-radius:var(--radius-sm);margin-bottom:16px}
+
+/* Barra de progreso grande */
+.td-progress{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;margin-bottom:14px}
+.td-progress-top{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:10px}
+.td-progress-pct{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--text)}
+.td-progress-bar{height:10px;background:var(--surface2);border-radius:5px;overflow:hidden}
+.td-progress-fill{height:100%;background:var(--accent);border-radius:5px;transition:width .35s ease}
+
+/* Lista de pacientes con marcado */
+.td-pac-list{display:flex;flex-direction:column;gap:8px}
+.td-pac{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;transition:border-color .15s,opacity .15s}
+.td-pac.hecho{border-left:3px solid var(--accent)}
+.td-pac-info{flex:1;min-width:220px}
+.td-pac-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.td-pac-nombre{font-size:14px;font-weight:600;color:var(--text)}
+.td-pac-tel{font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--accent);text-decoration:none;white-space:nowrap}
+.td-pac-tel:hover{text-decoration:underline}
+.td-pac-accion{font-size:13px;color:var(--text);margin-top:6px;line-height:1.5}
+.td-pac-ctx{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.5}
+.td-pac-acts{display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start}
+.td-pac-btn{padding:6px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;color:var(--muted);font-family:'Inter',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+.td-pac-btn:hover:not(:disabled){color:var(--text);border-color:var(--muted)}
+.td-pac-btn:disabled{opacity:.6;cursor:default}
+.td-pac-btn.sel.agendo_cita{color:var(--green);background:rgba(63,185,80,.12);border-color:rgba(63,185,80,.4)}
+.td-pac-btn.sel.no_respondio{color:var(--amber);background:rgba(227,179,65,.12);border-color:rgba(227,179,65,.4)}
+.td-pac-btn.sel.no_aplicaba{color:var(--muted);background:var(--surface2);border-color:var(--muted)}
+.td-pac-btn.td-nopac-opt.sel{color:var(--accent);background:rgba(0,212,170,.1);border-color:var(--accent)}
+
+.td-actions{display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap}
+.td-complete{padding:9px 18px;background:var(--accent);border:none;border-radius:var(--radius-sm);color:#0D1117;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:background .15s}
+.td-complete:hover{background:var(--accent2)}
+.td-save-msg{font-size:12px;color:var(--muted)}
+.td-save-msg.err{color:var(--red)}
+.td-nopac{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+.td-nopac-lbl{font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px}

@@ -6,8 +6,9 @@
 
 let TAREAS=[],TAREAS_RESUMEN=null,TAREA_FILTRO='todas';
 let TAREAS_CARGANDO=false,TAREAS_ERROR=false;
-let TAREA_CONFIRMANDO=null; // id de la tarea con el selector de resultado abierto
+let TAREA_CONFIRMANDO=null; // (legado) id de la tarea con el selector de resultado abierto
 let TAREA_PATCH_PENDIENTE=false;
+let TAREA_DETALLE_ID=null; // id de la tarea abierta en la vista de detalle (o null = lista)
 let PACIENTES=[]; // base de pacientes (pacientes.json) — para adjuntar listas a tareas
 
 /* Carga la base de pacientes. No bloquea el tablero: si falla, PACIENTES
@@ -173,6 +174,14 @@ function renderTareasStatus(){
   el.innerHTML='';
 }
 
+/* Progreso de contacto de una tarea: cuántos pacientes ya tienen un resultado. */
+function tareaProgreso(t){
+  const ps=Array.isArray(t.pacientes)?t.pacientes:[];
+  const total=ps.length;
+  const hechos=ps.filter(p=>p.estado&&p.estado!=='pendiente').length;
+  return {total,hechos,pct:total?Math.round(hechos/total*100):0};
+}
+
 function renderTareasLista(){
   const el=document.getElementById('tareas-list');
   if(!el)return;
@@ -186,13 +195,10 @@ function renderTareasLista(){
     const done=t.estado==='completada';
     const descartada=t.estado==='descartada';
     const vencida=tareaVencida(t);
-    const confirmando=TAREA_CONFIRMANDO===t.id;
+    const pr=tareaProgreso(t);
     return `
-    <div class="tarea-row${done||descartada?' done':''}${vencida?' overdue':''}">
-      <button class="tarea-check${done?' checked':''}" ${done||descartada?'disabled':''}
-        onclick="abrirConfirmacion(${t.id})" aria-label="Marcar como completada">
-        ${done?'<svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>':''}
-      </button>
+    <div class="tarea-row clickable${done||descartada?' done':''}${vencida?' overdue':''}" role="button" tabindex="0"
+      onclick="openTareaDetalle(${t.id})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openTareaDetalle(${t.id})}">
       <div class="tarea-main">
         <div class="tarea-title">${escapeHtml(t.titulo)}</div>
         ${t.descripcion?`<div class="tarea-desc">${escapeHtml(t.descripcion)}</div>`:''}
@@ -205,102 +211,150 @@ function renderTareasLista(){
           ${done&&t.resultado?`<span class="tarea-resultado">${escapeHtml(T_RESULTADO_LBL[t.resultado]||t.resultado)}</span>`:''}
           ${descartada?`<span class="tarea-badge">Descartada</span>`:''}
         </div>
-        ${(Array.isArray(t.pacientes)&&t.pacientes.length)?renderTareaPacientes(t):''}
-        ${confirmando?renderConfirmacion(t):''}
+        ${pr.total?`
+        <div class="tarea-prog">
+          <div class="tarea-prog-bar"><div class="tarea-prog-fill" style="width:${pr.pct}%"></div></div>
+          <span class="tarea-prog-lbl">${pr.hechos}/${pr.total} contactados</span>
+        </div>`:''}
       </div>
+      <div class="tarea-chevron" aria-hidden="true">›</div>
     </div>`;
   }).join('');
 }
 
-/* Lista concreta de pacientes de una tarea de contacto: nombre, teléfono
-   (clic para llamar), qué hacer con cada uno y el contexto de su última cita. */
-function renderTareaPacientes(t){
-  const ps=t.pacientes;
-  return `
-  <details class="tarea-pac">
-    <summary class="tarea-pac-sum">👥 ${ps.length} paciente${ps.length===1?'':'s'} para contactar</summary>
-    <div class="tarea-pac-list">
-      ${ps.map(p=>`
-        <div class="tarea-pac-item">
-          <div class="tarea-pac-top">
-            <span class="tarea-pac-nombre">${escapeHtml(p.nombre||'—')}</span>
-            ${p.telefono?`<a class="tarea-pac-tel" href="tel:${escapeHtml(String(p.telefono).replace(/\s+/g,''))}">📞 ${escapeHtml(p.telefono)}</a>`:''}
-          </div>
-          ${p.accion?`<div class="tarea-pac-accion">→ ${escapeHtml(p.accion)}</div>`:''}
-          ${(p.que_paso||p.ultima_consulta)?`<div class="tarea-pac-ctx">${p.ultima_consulta?'Última cita '+escapeHtml(fmtFechaCorta(p.ultima_consulta))+': ':''}${escapeHtml(p.que_paso||'')}</div>`:''}
-        </div>`).join('')}
+/* ── VISTA DETALLE de una tarea: pacientes + barra de progreso + marcado ── */
+function mostrarVista(v){
+  const l=document.getElementById('vista-lista');
+  const d=document.getElementById('vista-detalle');
+  if(l)l.style.display=v==='lista'?'':'none';
+  if(d)d.style.display=v==='detalle'?'':'none';
+}
+
+function openTareaDetalle(id){
+  TAREA_DETALLE_ID=id;
+  renderTareaDetalle();
+  mostrarVista('detalle');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function volverALista(){
+  TAREA_DETALLE_ID=null;
+  mostrarVista('lista');
+  renderTareasUI();
+}
+
+const P_OPTS=[['agendo_cita','Agendó cita'],['no_respondio','No contestó'],['no_aplicaba','No aplica']];
+
+function renderTareaDetalle(){
+  const cont=document.getElementById('vista-detalle');
+  if(!cont)return;
+  const t=TAREAS.find(x=>x.id===TAREA_DETALLE_ID);
+  if(!t){volverALista();return;}
+  const done=t.estado==='completada';
+  const ps=Array.isArray(t.pacientes)?t.pacientes:[];
+  const pr=tareaProgreso(t);
+  cont.innerHTML=`
+    <button class="td-back" onclick="volverALista()">← Volver a pendientes</button>
+    <div class="td-head">
+      <div class="td-title">${escapeHtml(t.titulo)}</div>
+      <div class="tarea-meta">
+        <span class="tarea-badge prio-${t.prioridad}">${escapeHtml(T_PRIORIDAD_LBL[t.prioridad]||t.prioridad)}</span>
+        <span class="tarea-badge">${escapeHtml(T_CATEGORIA_LBL[t.categoria]||t.categoria)}</span>
+        <span class="tarea-badge">${escapeHtml(T_ASIGNADO_LBL[t.asignado_a]||t.asignado_a)}</span>
+        ${t.valor_estimado_cop>0?`<span class="tarea-valor">${fmtCOP(t.valor_estimado_cop)}</span>`:''}
+        ${done&&t.resultado?`<span class="tarea-resultado">${escapeHtml(T_RESULTADO_LBL[t.resultado]||t.resultado)}</span>`:''}
+      </div>
+      ${t.descripcion?`<div class="td-desc">${escapeHtml(t.descripcion)}</div>`:''}
     </div>
-  </details>`;
+    ${done?`<div class="td-done-banner">✓ Tarea completada${t.completado_por?' · por '+escapeHtml(T_ASIGNADO_LBL[t.completado_por]||t.completado_por):''}</div>`:''}
+    ${ps.length?`
+      <div class="td-progress">
+        <div class="td-progress-top"><span>Progreso de contacto</span><span class="td-progress-pct">${pr.hechos} de ${pr.total} contactados · ${pr.pct}%</span></div>
+        <div class="td-progress-bar"><div class="td-progress-fill" style="width:${pr.pct}%"></div></div>
+      </div>
+      <div class="td-pac-list">
+        ${ps.map((p,i)=>`
+          <div class="td-pac${p.estado&&p.estado!=='pendiente'?' hecho':''}">
+            <div class="td-pac-info">
+              <div class="td-pac-top">
+                <span class="td-pac-nombre">${escapeHtml(p.nombre||'—')}</span>
+                ${p.telefono?`<a class="td-pac-tel" href="tel:${escapeHtml(String(p.telefono).replace(/\s+/g,''))}">📞 ${escapeHtml(p.telefono)}</a>`:''}
+              </div>
+              ${p.accion?`<div class="td-pac-accion">→ ${escapeHtml(p.accion)}</div>`:''}
+              ${(p.que_paso||p.ultima_consulta)?`<div class="td-pac-ctx">${p.ultima_consulta?'Última cita '+escapeHtml(fmtFechaCorta(p.ultima_consulta))+': ':''}${escapeHtml(p.que_paso||'')}</div>`:''}
+            </div>
+            <div class="td-pac-acts">
+              ${P_OPTS.map(([v,l])=>`<button class="td-pac-btn${p.estado===v?' sel '+v:''}" ${done?'disabled':''} onclick="marcarPaciente(${i},'${v}')">${l}</button>`).join('')}
+            </div>
+          </div>`).join('')}
+      </div>
+      ${!done?`<div class="td-actions"><button class="td-complete" onclick="completarTareaDetalle()">Marcar tarea como completada</button><span class="td-save-msg" id="td-save-msg"></span></div>`:''}
+    `:(done?'':`
+      <div class="td-nopac">
+        <div class="td-nopac-lbl">¿Qué pasó con esta tarea?</div>
+        <div class="td-pac-acts">
+          ${P_OPTS.map(([v,l])=>`<button class="td-pac-btn td-nopac-opt" data-r="${v}" onclick="selNoPac(this)">${l}</button>`).join('')}
+        </div>
+        <div class="td-actions"><button class="td-complete" onclick="completarTareaSinPac()">Completar tarea</button><span class="td-save-msg" id="td-save-msg"></span></div>
+      </div>`)}
+  `;
 }
 
-/* Mini-selector inline: el checkbox no se "cierra" hasta elegir resultado */
-function renderConfirmacion(t){
-  return `
-  <div class="tarea-confirm" id="tarea-confirm-${t.id}">
-    <div class="tarea-confirm-lbl">¿Qué pasó con esta tarea?</div>
-    <div class="tarea-confirm-opts">
-      <button class="tc-opt" data-resultado="agendo_cita" onclick="elegirResultado(this)">✓ Agendó cita</button>
-      <button class="tc-opt" data-resultado="no_respondio" onclick="elegirResultado(this)">No respondió</button>
-      <button class="tc-opt" data-resultado="no_aplicaba" onclick="elegirResultado(this)">No aplicaba</button>
-    </div>
-    <div class="tarea-confirm-row">
-      <label class="tarea-confirm-quien">Completada por
-        <select id="tc-quien-${t.id}">
-          <option value="recepcionista"${t.asignado_a==='recepcionista'?' selected':''}>Recepción</option>
-          <option value="dueno"${t.asignado_a==='dueno'?' selected':''}>Dueño</option>
-        </select>
-      </label>
-      <button class="tc-confirm" onclick="confirmarTarea(${t.id})">Confirmar</button>
-      <button class="tc-cancel" onclick="cerrarConfirmacion()">Cancelar</button>
-    </div>
-    <div class="tc-error" id="tc-error-${t.id}"></div>
-  </div>`;
-}
-
-function abrirConfirmacion(id){
-  if(TAREA_PATCH_PENDIENTE)return;
-  TAREA_CONFIRMANDO=id;
-  renderTareasLista();
-  document.getElementById(`tarea-confirm-${id}`)?.scrollIntoView({block:'nearest',behavior:'smooth'});
-}
-function cerrarConfirmacion(){TAREA_CONFIRMANDO=null;renderTareasLista();}
-function elegirResultado(btn){
-  btn.closest('.tarea-confirm-opts').querySelectorAll('.tc-opt').forEach(b=>b.classList.remove('selected'));
-  btn.classList.add('selected');
-  const err=btn.closest('.tarea-confirm').querySelector('.tc-error');
-  if(err)err.textContent='';
-}
-
-async function confirmarTarea(id){
-  const panel=document.getElementById(`tarea-confirm-${id}`);
-  const errEl=document.getElementById(`tc-error-${id}`);
-  const sel=panel?.querySelector('.tc-opt.selected');
-  if(!sel){if(errEl)errEl.textContent='Selecciona qué pasó antes de confirmar.';return;}
-  const resultado=sel.dataset.resultado;
-  const completadoPor=document.getElementById(`tc-quien-${id}`)?.value||'recepcionista';
-
-  TAREA_PATCH_PENDIENTE=true;
-  panel.querySelectorAll('button,select').forEach(b=>b.disabled=true);
-  if(errEl)errEl.textContent='Guardando...';
+/* Marca (o desmarca) el resultado de un paciente y lo persiste. Optimista:
+   actualiza la vista de una vez y guarda en segundo plano. */
+async function marcarPaciente(i,estado){
+  const t=TAREAS.find(x=>x.id===TAREA_DETALLE_ID);
+  if(!t||!Array.isArray(t.pacientes)||!t.pacientes[i])return;
+  const p=t.pacientes[i];
+  p.estado=(p.estado===estado)?'pendiente':estado; // toggle
+  renderTareaDetalle();
   try{
-    const resp=await fetch(`${WORKER_URL}/tareas/${id}`,{
-      method:'PATCH',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({estado:'completada',resultado,completado_por:completadoPor}),
-    });
-    const json=await resp.json().catch(()=>({}));
-    if(!resp.ok)throw new Error(json.error||`HTTP ${resp.status}`);
-    // Actualiza el estado local — sin repetir el GET completo
-    const idx=TAREAS.findIndex(t=>t.id===id);
-    if(idx>=0)TAREAS[idx]=json;
-    TAREA_CONFIRMANDO=null;TAREA_PATCH_PENDIENTE=false;
-    recomputarResumen();
-    renderTareasUI();
+    const body={pacientes:t.pacientes};
+    if(t.estado==='pendiente')body.estado='en_proceso';
+    const resp=await fetch(`${WORKER_URL}/tareas/${t.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const j=await resp.json().catch(()=>({}));
+    if(!resp.ok)throw new Error(j.error||`HTTP ${resp.status}`);
+    const idx=TAREAS.findIndex(x=>x.id===t.id);if(idx>=0)TAREAS[idx]=j;
+    renderBellBadge();renderBellDropdown();
   }catch(e){
-    TAREA_PATCH_PENDIENTE=false;
-    panel?.querySelectorAll('button,select').forEach(b=>b.disabled=false);
-    if(errEl)errEl.textContent=`⚠ No se pudo guardar: ${e.message}`;
+    const m=document.getElementById('td-save-msg');
+    if(m){m.className='td-save-msg err';m.textContent='⚠ No se guardó el cambio: '+e.message;}
   }
+}
+
+/* Deriva el resultado de la tarea a partir de los pacientes: si al menos uno
+   agendó cita, la tarea cuenta como "agendó cita" para el ROI. */
+async function completarTareaDetalle(){
+  const t=TAREAS.find(x=>x.id===TAREA_DETALLE_ID);if(!t)return;
+  const ps=Array.isArray(t.pacientes)?t.pacientes:[];
+  const resultado=ps.some(p=>p.estado==='agendo_cita')?'agendo_cita':ps.some(p=>p.estado==='no_respondio')?'no_respondio':'no_aplicaba';
+  const m=document.getElementById('td-save-msg');if(m){m.className='td-save-msg';m.textContent='Guardando…';}
+  try{
+    const resp=await fetch(`${WORKER_URL}/tareas/${t.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({estado:'completada',resultado,completado_por:t.asignado_a,pacientes:ps})});
+    const j=await resp.json().catch(()=>({}));
+    if(!resp.ok)throw new Error(j.error||`HTTP ${resp.status}`);
+    const idx=TAREAS.findIndex(x=>x.id===t.id);if(idx>=0)TAREAS[idx]=j;
+    recomputarResumen();volverALista();
+  }catch(e){if(m){m.className='td-save-msg err';m.textContent='⚠ '+e.message;}}
+}
+
+function selNoPac(btn){
+  btn.closest('.td-pac-acts').querySelectorAll('.td-nopac-opt').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+async function completarTareaSinPac(){
+  const t=TAREAS.find(x=>x.id===TAREA_DETALLE_ID);if(!t)return;
+  const sel=document.querySelector('#vista-detalle .td-nopac-opt.sel');
+  const m=document.getElementById('td-save-msg');
+  if(!sel){if(m){m.className='td-save-msg err';m.textContent='Selecciona qué pasó.';}return;}
+  if(m){m.className='td-save-msg';m.textContent='Guardando…';}
+  try{
+    const resp=await fetch(`${WORKER_URL}/tareas/${t.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({estado:'completada',resultado:sel.dataset.r,completado_por:t.asignado_a})});
+    const j=await resp.json().catch(()=>({}));
+    if(!resp.ok)throw new Error(j.error||`HTTP ${resp.status}`);
+    const idx=TAREAS.findIndex(x=>x.id===t.id);if(idx>=0)TAREAS[idx]=j;
+    recomputarResumen();volverALista();
+  }catch(e){if(m){m.className='td-save-msg err';m.textContent='⚠ '+e.message;}}
 }
 
 /* ── formulario de administración (uso interno) ──────────────────────────
