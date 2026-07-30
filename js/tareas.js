@@ -58,6 +58,7 @@ async function fetchTareas(){
     if(!Array.isArray(json.tareas))throw new Error('Respuesta inesperada del servidor');
     TAREAS=json.tareas;
     TAREAS_RESUMEN=json.resumen||null;
+    recomputarResumen(); // recalcula el ROI de forma precisa (por paciente) en el cliente
     TAREAS_CARGANDO=false;
     renderTareasUI();
   }catch(e){
@@ -76,10 +77,21 @@ function recomputarResumen(){
     semana,
     total_semana:sem.length,
     completadas_semana:sem.filter(t=>t.estado==='completada').length,
-    valor_recuperado_cop:sem.filter(t=>t.estado==='completada'&&t.resultado==='agendo_cita')
-      .reduce((s,t)=>s+(Number(t.valor_estimado_cop)||0),0),
+    // ROI preciso: para tareas con pacientes, suma el valor pendiente SOLO de
+    // los que efectivamente agendaron; para tareas sin pacientes, cuenta el
+    // valor de la tarea si su resultado fue "agendó cita".
+    valor_recuperado_cop:sem.reduce((s,t)=>s+valorRecuperadoTarea(t),0),
     vencidas_count:sem.filter(tareaVencida).length,
   };
+}
+
+/* Valor efectivamente recuperado por una tarea (base del ROI). */
+function valorRecuperadoTarea(t){
+  const ps=Array.isArray(t.pacientes)?t.pacientes:[];
+  if(ps.length){
+    return ps.filter(p=>p.estado==='agendo_cita').reduce((a,p)=>a+(Number(p.valor_pendiente_cop)||0),0);
+  }
+  return (t.estado==='completada'&&t.resultado==='agendo_cita')?(Number(t.valor_estimado_cop)||0):0;
 }
 
 /* ── render maestro ── */
@@ -413,6 +425,82 @@ async function crearTareaAdmin(){
   }catch(e){
     msg.textContent=`⚠ ${e.message}`;
   }finally{btn.disabled=false;}
+}
+
+/* ── RESUMEN SEMANAL DEL DUEÑO ───────────────────────────────────────────
+   Lo que el dueño vería en el correo semanal (por ahora se ve en la app y se
+   puede copiar para enviar por correo/WhatsApp). Todo se calcula del lado del
+   cliente a partir de las tareas de la semana en curso. */
+function buildResumenDueno(){
+  const semana=TAREAS_RESUMEN?.semana||tareasLunes();
+  const sem=TAREAS.filter(t=>t.semana===semana);
+  const completadas=sem.filter(t=>t.estado==='completada');
+  const pendientes=sem.filter(tareaAbierta);
+  let contactados=0,totalPac=0,agendaron=0;
+  sem.forEach(t=>{const ps=Array.isArray(t.pacientes)?t.pacientes:[];totalPac+=ps.length;contactados+=ps.filter(p=>p.estado&&p.estado!=='pendiente').length;agendaron+=ps.filter(p=>p.estado==='agendo_cita').length;});
+  return {
+    semana,total:sem.length,completadas,pendientes,
+    valor:sem.reduce((s,t)=>s+valorRecuperadoTarea(t),0),
+    contactados,totalPac,agendaron,
+    vencidas:sem.filter(tareaVencida).length,
+  };
+}
+
+function abrirResumen(){
+  const r=buildResumenDueno();
+  const nombre=getWhiteLabel();
+  const body=document.getElementById('resumen-body');
+  const pacLine=r.totalPac?`<div class="rs-stat"><div class="rs-stat-num">${r.contactados}<span class="rs-stat-den">/${r.totalPac}</span></div><div class="rs-stat-lbl">Pacientes contactados</div></div>`:'';
+  body.innerHTML=`
+    <div class="rs-sub">Semana del ${fmtDate(r.semana)}</div>
+    <div class="rs-hero">
+      <div class="rs-hero-lbl">Valor recuperado esta semana</div>
+      <div class="rs-hero-val">${fmtCOP(r.valor||0)}</div>
+      <div class="rs-hero-sub">${r.agendaron} cita${r.agendaron===1?'':'s'} agendada${r.agendaron===1?'':'s'} a partir de las acciones de la semana</div>
+    </div>
+    <div class="rs-stats">
+      <div class="rs-stat"><div class="rs-stat-num">${r.completadas.length}<span class="rs-stat-den">/${r.total}</span></div><div class="rs-stat-lbl">Tareas completadas</div></div>
+      ${pacLine}
+      <div class="rs-stat${r.vencidas>0?' rs-alert':''}"><div class="rs-stat-num">${r.vencidas}</div><div class="rs-stat-lbl">Vencidas</div></div>
+    </div>
+    ${r.completadas.length?`<div class="rs-section-t">Lo que se logró</div>${r.completadas.map(t=>{
+      const v=valorRecuperadoTarea(t);
+      const ps=Array.isArray(t.pacientes)?t.pacientes:[];
+      const cont=ps.filter(p=>p.estado&&p.estado!=='pendiente').length;
+      return `<div class="rs-item"><span class="rs-item-dot done"></span><div><div class="rs-item-t">${escapeHtml(t.titulo)}</div><div class="rs-item-sub">${v>0?fmtCOP(v)+' · ':''}${ps.length?cont+' de '+ps.length+' contactados':escapeHtml(T_RESULTADO_LBL[t.resultado]||'')}</div></div></div>`;
+    }).join('')}`:''}
+    ${r.pendientes.length?`<div class="rs-section-t">Pendiente para esta semana</div>${r.pendientes.map(t=>{
+      const ps=Array.isArray(t.pacientes)?t.pacientes:[];
+      const falta=ps.filter(p=>!p.estado||p.estado==='pendiente').length;
+      return `<div class="rs-item"><span class="rs-item-dot prio-${t.prioridad}"></span><div><div class="rs-item-t">${escapeHtml(t.titulo)}</div><div class="rs-item-sub">${escapeHtml(T_ASIGNADO_LBL[t.asignado_a]||t.asignado_a)}${ps.length?' · '+falta+' pacientes por contactar':''}</div></div></div>`;
+    }).join('')}`:''}
+    <div class="rs-foot">Generado automáticamente por ${escapeHtml(nombre)} · Intelligence</div>`;
+  document.getElementById('resumen-msg').textContent='';
+  document.getElementById('resumen-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function cerrarResumen(){document.getElementById('resumen-overlay').classList.remove('open');document.body.style.overflow='';}
+function resumenOverlayClick(e){if(e.target===document.getElementById('resumen-overlay'))cerrarResumen();}
+
+function resumenTexto(){
+  const r=buildResumenDueno();const nombre=getWhiteLabel();
+  const L=[];
+  L.push(`Resumen semanal — ${nombre}`);
+  L.push(`Semana del ${fmtDate(r.semana)}`);
+  L.push('');
+  L.push(`Valor recuperado: ${fmtCOP(r.valor||0)}`);
+  L.push(`Tareas completadas: ${r.completadas.length} de ${r.total}`);
+  if(r.totalPac)L.push(`Pacientes contactados: ${r.contactados} de ${r.totalPac} (agendaron: ${r.agendaron})`);
+  if(r.vencidas>0)L.push(`Vencidas: ${r.vencidas}`);
+  if(r.completadas.length){L.push('');L.push('Lo que se logró:');r.completadas.forEach(t=>{const v=valorRecuperadoTarea(t);L.push(`- ${t.titulo}${v>0?' ('+fmtCOP(v)+')':''}`);});}
+  if(r.pendientes.length){L.push('');L.push('Pendiente:');r.pendientes.forEach(t=>{L.push(`- ${t.titulo} (${T_ASIGNADO_LBL[t.asignado_a]||t.asignado_a})`);});}
+  L.push('');L.push(`Generado por ${nombre} Intelligence.`);
+  return L.join('\n');
+}
+async function copiarResumen(){
+  const msg=document.getElementById('resumen-msg');
+  try{await navigator.clipboard.writeText(resumenTexto());msg.textContent='✓ Copiado — pégalo en un correo o WhatsApp.';}
+  catch(e){msg.textContent='No se pudo copiar automáticamente.';}
 }
 
 /* ── init ── */

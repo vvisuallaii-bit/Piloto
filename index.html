@@ -369,6 +369,7 @@
       <button class="tf-btn" onclick="setTareaFiltro('dueno',this)">Doctor / Dueño <span class="tf-count" id="tf-count-dueno">0</span></button>
       <button class="tf-btn" onclick="setTareaFiltro('recepcionista',this)">Recepción <span class="tf-count" id="tf-count-recepcionista">0</span></button>
     </div>
+    <button class="tareas-resumen" onclick="abrirResumen()" title="Resumen semanal para el dueño">📄 Resumen del dueño</button>
     <button class="tareas-refresh" onclick="fetchTareas()" title="Actualizar tareas">↻ Actualizar</button>
   </div>
 
@@ -606,6 +607,21 @@
 <script defer src="js/profile.js"></script>
 <script defer src="js/chat.js"></script>
 <script defer src="js/forecast.js"></script>
+<!-- RESUMEN SEMANAL DEL DUEÑO (modal) -->
+<div class="rs-overlay" id="resumen-overlay" onclick="resumenOverlayClick(event)">
+  <div class="rs-modal">
+    <div class="rs-modal-head">
+      <div class="rs-modal-title">📄 Resumen semanal del dueño</div>
+      <button class="rs-close" onclick="cerrarResumen()">✕</button>
+    </div>
+    <div class="rs-modal-body" id="resumen-body"></div>
+    <div class="rs-modal-foot">
+      <button class="rs-copy" onclick="copiarResumen()">Copiar para enviar</button>
+      <span class="rs-msg" id="resumen-msg"></span>
+    </div>
+  </div>
+</div>
+
 <script defer src="js/main.js"></script>
 <script defer src="js/tareas.js"></script>
 <script defer src="js/tareas-ia.js"></script>

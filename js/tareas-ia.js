@@ -157,7 +157,7 @@ Llama a la herramienta proponer_tareas con las acciones.`;
       t._pacientes=(Array.isArray(t.pacientes)?t.pacientes:[]).map(x=>{
         const p=(typeof PACIENTES!=='undefined'?PACIENTES:[]).find(pp=>pp.id===x.id);
         if(!p)return null;
-        return {id:p.id,nombre:p.nombre,telefono:p.telefono,ultima_consulta:p.ultima_consulta,que_paso:p.que_paso,accion:x.accion||p.proximos_pasos||''};
+        return {id:p.id,nombre:p.nombre,telefono:p.telefono,ultima_consulta:p.ultima_consulta,que_paso:p.que_paso,accion:x.accion||p.proximos_pasos||'',valor_pendiente_cop:Number(p.valor_pendiente_cop)||0};
       }).filter(Boolean);
     });
     TIA_PROPUESTAS=tareas.slice(0,5);
