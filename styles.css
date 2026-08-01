@@ -426,6 +426,10 @@ select:hover,select:focus{border-color:var(--accent)}
 .tarea-overdue-lbl{color:var(--red);font-weight:600}
 
 /* — Franja ROI — */
+.roi-month-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.roi-month-title{font-size:15px;font-weight:600;color:var(--text)}
+.roi-month-title strong{color:var(--accent);text-transform:capitalize}
+.roi-month-note{font-size:11px;color:var(--faint)}
 .roi-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
 .roi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;position:relative;overflow:hidden}
 .roi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent)}

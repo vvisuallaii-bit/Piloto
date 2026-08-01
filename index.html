@@ -349,12 +349,18 @@
 <!-- VISTA LISTA: franja ROI + filtros + lista de tareas + admin -->
 <div id="vista-lista">
 
-  <!-- Franja de métricas de ROI -->
+  <!-- Encabezado del overview (mensual) -->
+  <div class="roi-month-head">
+    <span class="roi-month-title">Resumen de <strong id="roi-mes">—</strong></span>
+    <span class="roi-month-note">acumulado del mes · las tareas se generan por semana</span>
+  </div>
+
+  <!-- Franja de métricas de ROI (acumulado del mes) -->
   <div class="roi-strip">
     <div class="roi-card">
-      <div class="roi-lbl">Completadas esta semana</div>
+      <div class="roi-lbl">Tareas completadas</div>
       <div class="roi-val" id="roi-completadas">—</div>
-      <div class="roi-sub">acciones de la semana en curso</div>
+      <div class="roi-sub">completadas en el mes</div>
     </div>
     <div class="roi-card">
       <div class="roi-lbl">Recuperado real</div>

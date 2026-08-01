@@ -4,7 +4,7 @@
    Cargado DESPUÉS de main.js (ver index.html) para que el perfil de la
    clínica ya esté aplicado cuando se calcula el practice_id. */
 
-let TAREAS=[],TAREAS_RESUMEN=null,TAREA_FILTRO='todas';
+let TAREAS=[],TAREAS_RESUMEN=null,TAREAS_RESUMEN_MES=null,TAREA_FILTRO='todas';
 let TAREAS_CARGANDO=false,TAREAS_ERROR=false;
 let TAREA_CONFIRMANDO=null; // (legado) id de la tarea con el selector de resultado abierto
 let TAREA_PATCH_PENDIENTE=false;
@@ -83,6 +83,31 @@ function recomputarResumen(){
     valor_real_cop:sem.reduce((s,t)=>s+valorRealTarea(t),0),
     valor_recuperado_cop:sem.reduce((s,t)=>s+valorRealTarea(t),0), // compat: ahora = real
     vencidas_count:sem.filter(tareaVencida).length,
+  };
+  recomputarResumenMes();
+}
+
+/* Mes de referencia para el OVERVIEW = mes de la semana actual (el lunes en
+   curso). Las tareas siguen siendo semanales; el overview solo las agrupa por
+   mes. Cada tarea pertenece al mes de su `semana` (su lunes). */
+function mesActual(){return tareasLunes().slice(0,7);}
+function fmtMes(mes){
+  try{return new Date(mes+'-02T00:00:00').toLocaleDateString('es-CO',{month:'long',year:'numeric'});}
+  catch(e){return mes;}
+}
+
+/* Resumen MENSUAL: suma recuperado real/esperado, completadas y vencidas de
+   TODAS las semanas del mes en curso. */
+function recomputarResumenMes(){
+  const mes=mesActual();
+  const arr=TAREAS.filter(t=>String(t.semana||'').slice(0,7)===mes);
+  TAREAS_RESUMEN_MES={
+    mes,
+    total:arr.length,
+    completadas:arr.filter(t=>t.estado==='completada').length,
+    valor_esperado_cop:arr.reduce((s,t)=>s+valorEsperadoTarea(t),0),
+    valor_real_cop:arr.reduce((s,t)=>s+valorRealTarea(t),0),
+    vencidas_count:arr.filter(tareaVencida).length,
   };
 }
 
@@ -170,14 +195,16 @@ function irATareas(){
 
 /* ── c) franja ROI ── */
 function renderRoi(){
-  const r=TAREAS_RESUMEN;
+  const r=TAREAS_RESUMEN_MES;
   const elC=document.getElementById('roi-completadas');
   const elV=document.getElementById('roi-valor');
   const elX=document.getElementById('roi-vencidas');
   if(!elC)return;
   const elVsub=document.getElementById('roi-valor-sub');
+  const elMes=document.getElementById('roi-mes');
+  if(elMes)elMes.textContent=r?fmtMes(r.mes):'—';
   if(!r){elC.textContent='—';elV.textContent='—';elX.textContent='—';if(elVsub)elVsub.textContent='esperado: —';return;}
-  elC.textContent=`${r.completadas_semana} de ${r.total_semana}`;
+  elC.textContent=`${r.completadas} de ${r.total}`;
   elV.textContent=fmtCOP(r.valor_real_cop||0);
   if(elVsub)elVsub.textContent=`esperado: ${fmtCOP(r.valor_esperado_cop||0)}`;
   elX.textContent=String(r.vencidas_count||0);
