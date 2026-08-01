@@ -112,6 +112,51 @@ mínimo para crear tareas; pide la `ADMIN_KEY` una vez y la guarda en
 `sessionStorage` (se borra al cerrar la pestaña). La clave viaja en el header
 `X-Admin-Key`, nunca en la URL.
 
+## Generación automática de tareas (Paso 2 — cron)
+
+Cada **lunes 7:00am Bogotá** (cron `0 12 * * 1` en `wrangler.toml`), el handler
+`scheduled()` genera las 3-5 tareas de la semana para cada clínica activa, sin
+navegador. Los datos que antes vivían en el navegador ahora están en D1:
+
+- `practices` — una fila por clínica (`practice_id`, `nombre`, `perfil` JSON, `activo`).
+- `metricas_mensuales` — las columnas del CSV; `computeMetrics()` (portado de
+  `metrics.js`) agrega sobre ellas para armar el resumen del prompt.
+- `pacientes` — el roster accionable (equivalente a `pacientes.json`).
+
+Sembrar/actualizar los datos en D1:
+
+```bash
+cd Piloto/worker
+node scripts/seed-d1.mjs          # lee ../smile_dental_demo.csv y ../pacientes.json → seed_smile_dental.sql
+npx wrangler d1 execute smile-dental-tareas --remote --file seed_smile_dental.sql
+```
+
+El cron es idempotente: si ya existen tareas `ia_semanal` para esa clínica+semana,
+salta (anti-duplicados).
+
+### Disparar la generación a mano (`POST /tareas/generar`, requiere `X-Admin-Key`)
+
+```bash
+# Devuelve las propuestas SIN insertarlas (para probar); force ignora el anti-dup:
+curl -X POST "https://claude-proxy.vvisuall-aii.workers.dev/tareas/generar?dry_run=1&force=1&practice_id=smile-dental" \
+  -H "X-Admin-Key: TU_ADMIN_KEY"
+
+# Genera e inserta de verdad (todas las clínicas activas si se omite practice_id):
+curl -X POST "https://claude-proxy.vvisuall-aii.workers.dev/tareas/generar" -H "X-Admin-Key: TU_ADMIN_KEY"
+```
+
+## Valor esperado vs. monto real recuperado
+
+`valor_estimado_cop` = ROI esperado (lo que la acción debería traer). El **monto
+real** que de verdad entró lo registra recepción al completar:
+- Tareas **con pacientes**: por paciente, en el campo `monto_real_cop` dentro del
+  JSON de la columna `pacientes` (llega por el PATCH `pacientes`, sin columna nueva).
+- Tareas **sin pacientes**: en la columna `valor_real_cop` (migración 0004), vía
+  `PATCH /tareas/:id {valor_real_cop}`.
+
+El `GET /tareas` devuelve en `resumen` tanto `valor_esperado_cop` como
+`valor_real_cop` (el cliente los recalcula con precisión por paciente).
+
 ## Zona horaria
 
 "Hoy" (para marcar vencidas) y "semana actual" (para el resumen ROI) se
