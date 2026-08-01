@@ -264,27 +264,33 @@
 <!-- REVENUE FORECAST -->
 <div class="tab-pane" id="tab-forecast">
 
-  <!-- Hero / Controls -->
+  <!-- Hero -->
   <div class="fc-hero">
     <div class="fc-hero-left">
       <h2>📈 Proyección de Ingresos</h2>
       <p>Con base en tus datos históricos, la IA proyecta tu próximo mes en 3 escenarios — para tomar decisiones de contratación, compras y agenda con confianza.</p>
     </div>
-    <div class="fc-hero-right">
-      <span class="fc-decision-label">Estoy decidiendo sobre:</span>
-      <select class="fc-decision-select" id="fc-decision">
-        <option value="general">Panorama general</option>
-        <option value="hiring">Contratar un higienista</option>
-        <option value="equipment">Comprar equipo</option>
-        <option value="saturday">Abrir los sábados</option>
-        <option value="promotion">Lanzar una promoción</option>
-        <option value="insurance">Salir de un seguro</option>
-        <option value="expansion">Expandir la clínica</option>
-      </select>
+  </div>
+
+  <!-- Decisión (texto libre) -->
+  <div class="fc-decision-bar">
+    <label class="fc-decision-label" for="fc-decision">¿Qué estás decidiendo? Escríbelo en tus palabras y la IA proyecta sobre eso.</label>
+    <div class="fc-decision-row">
+      <input type="text" class="fc-decision-input" id="fc-decision" maxlength="220"
+        placeholder="Ej: Estoy pensando en contratar una higienista de medio tiempo y subir 10% el precio de ortodoncia…"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();generateForecast();}">
       <button class="fc-gen-btn" id="fc-gen-btn" onclick="generateForecast()">
         <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
         Generar Proyección
       </button>
+    </div>
+    <div class="fc-decision-examples">
+      <span class="fc-ex-lbl">Ideas:</span>
+      <button class="fc-ex-chip" onclick="fillDecision('Contratar una higienista de tiempo completo')">Contratar higienista</button>
+      <button class="fc-ex-chip" onclick="fillDecision('Comprar un escáner intraoral (~$40M COP)')">Comprar equipo</button>
+      <button class="fc-ex-chip" onclick="fillDecision('Abrir los sábados medio día')">Abrir sábados</button>
+      <button class="fc-ex-chip" onclick="fillDecision('Subir 10% el precio de ortodoncia')">Subir precios</button>
+      <button class="fc-ex-chip" onclick="fillDecision('Lanzar una promoción de blanqueamiento este mes')">Lanzar promoción</button>
     </div>
   </div>
 

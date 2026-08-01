@@ -328,8 +328,17 @@ select:hover,select:focus{border-color:var(--accent)}
 .fc-hero-left p{font-size:12px;color:var(--muted);line-height:1.5;max-width:480px}
 .fc-hero-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0}
 .fc-decision-label{font-size:11px;color:var(--faint);white-space:nowrap}
-.fc-decision-select{font-family:'Inter',sans-serif;font-size:12px;font-weight:500;padding:7px 28px 7px 12px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);cursor:pointer;outline:none;transition:border-color .15s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237D8590' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
-.fc-decision-select:focus{border-color:var(--accent)}
+
+/* Decisión en texto libre (reemplaza el antiguo dropdown de opciones fijas) */
+.fc-decision-bar{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.fc-decision-row{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap}
+.fc-decision-input{flex:1;min-width:280px;font-family:'Inter',sans-serif;font-size:13px;padding:11px 14px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);outline:none;transition:border-color .15s}
+.fc-decision-input:focus{border-color:var(--accent)}
+.fc-decision-input::placeholder{color:var(--faint)}
+.fc-decision-examples{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fc-ex-lbl{font-size:11px;color:var(--faint)}
+.fc-ex-chip{font-family:'Inter',sans-serif;font-size:11px;padding:5px 11px;border:1px solid var(--border2);border-radius:20px;background:transparent;color:var(--muted);cursor:pointer;transition:all .15s}
+.fc-ex-chip:hover{color:var(--text);border-color:var(--accent)}
 .fc-gen-btn{display:flex;align-items:center;gap:7px;padding:9px 20px;background:var(--accent);color:#0D1117;border:none;border-radius:var(--radius-sm);font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .18s;white-space:nowrap}
 .fc-gen-btn:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,212,170,.3)}
 .fc-gen-btn:disabled{opacity:.4;cursor:default;transform:none;box-shadow:none}
@@ -390,7 +399,7 @@ select:hover,select:focus{border-color:var(--accent)}
 .fc-answer-txt strong{color:var(--accent)}
 .fc-answer-txt ul{margin:8px 0 8px 16px;display:flex;flex-direction:column;gap:4px}
 @media(max-width:900px){.fc-scenarios{grid-template-columns:1fr}.fc-q-grid{grid-template-columns:1fr}}
-@media(max-width:600px){.fc-hero{flex-direction:column;align-items:flex-start}.fc-hero-right{width:100%}.fc-decision-select{flex:1}}
+@media(max-width:600px){.fc-hero{flex-direction:column;align-items:flex-start}.fc-decision-input{min-width:100%}.fc-decision-row .fc-gen-btn{width:100%;justify-content:center}}
 
 /* ══ TAREAS / NOTIFICACIONES / ROI (Fase 2) ══════════════════════════════ */
 

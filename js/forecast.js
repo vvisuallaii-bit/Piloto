@@ -1,22 +1,25 @@
 /* ── REVENUE FORECAST (tab: Proyección) ── */
 
-const FC_DECISION_LABELS={
-  general:'Panorama general',
-  hiring:'Contratar un higienista',
-  equipment:'Comprar equipo',
-  saturday:'Abrir los sábados',
-  promotion:'Lanzar una promoción',
-  insurance:'Salir de un seguro',
-  expansion:'Expandir la clínica'
-};
+/* Rellena el campo de decisión con una idea de ejemplo (sigue siendo editable). */
+function fillDecision(txt){
+  const el=document.getElementById('fc-decision');
+  if(!el)return;
+  el.value=txt;
+  el.focus();
+}
+
+/* La decisión que evalúa el dueño, en sus propias palabras (texto libre). */
+function fcDecisionText(){
+  return (document.getElementById('fc-decision')?.value||'').trim();
+}
 
 async function generateForecast(){
   if(!ALL.length)return;
   const btn=document.getElementById('fc-gen-btn');
   btn.disabled=true;btn.innerHTML='<svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Analizando...';
 
-  const decision=document.getElementById('fc-decision').value;
-  const decisionLabel=FC_DECISION_LABELS[decision]||'Panorama general';
+  const decisionText=fcDecisionText();
+  const decisionDesc=decisionText||'un panorama general de la clínica (el dueño no especificó una decisión puntual)';
   const dataCtx=buildForecastDataContext();
   const nextMonthDate=new Date();
   nextMonthDate.setMonth(nextMonthDate.getMonth()+1);
@@ -24,7 +27,10 @@ async function generateForecast(){
 
   const prompt=`Eres un analista financiero especializado en clínicas dentales colombianas. Analiza los datos históricos y genera una proyección para el próximo mes (${nextMonth}).
 
-El dueño evalúa esta decisión: "${decisionLabel}"
+El dueño está evaluando esta decisión, escrita en sus propias palabras:
+"${decisionDesc}"
+
+Toma esa decisión en serio y adáptala a ESTA clínica: los 3 escenarios, el "decision_context", los factores, los CTA y las preguntas de seguimiento deben estar directamente relacionados con lo que el dueño escribió (si mencionó contratar, un costo, un precio, un horario, etc., razona su impacto concreto en la recaudación con los números reales). Si el texto es vago o general, haz una proyección de panorama general.
 
 ${dataCtx}
 
@@ -69,12 +75,14 @@ Responde ÚNICAMENTE con JSON válido, sin markdown:
     "cta": "Una accion concreta para tomar ESTA SEMANA"
   },
   "questions": [
-    {"icon":"💼","text":"¿Que pasa si contrato un higienista el proximo mes?"},
-    {"icon":"📉","text":"Si reduzco el ausentismo un 5%, cuanto mas recaudo?"},
+    {"icon":"🤔","text":"Pregunta de seguimiento específica a la decisión que escribió el dueño"},
+    {"icon":"📉","text":"Pregunta sobre una palanca de sus datos (ausentismo, aceptación, cobro)"},
     {"icon":"📆","text":"¿Que semana de ${nextMonth} debo presionar mas en agendamiento?"},
     {"icon":"🎯","text":"¿Cual es mi accion de mayor impacto para ${nextMonth}?"}
   ]
 }
+
+Las 4 "questions" deben ser preguntas reales y accionables: la primera y la segunda ligadas a la decisión que escribió el dueño y a sus números; usa un emoji adecuado en cada icon.
 
 Promedio mensual: $${Math.round(ALL.reduce((s,r)=>s+r.collections,0)/ALL.length).toLocaleString('es-CO')} COP. Pesimista ~10-18% por debajo, base ~0-8% de la tendencia, optimista ~8-18% por encima. Ajusta por estacionalidad de ${nextMonth}.`;
 
@@ -192,7 +200,8 @@ function renderForecast(r){
   if(r.decision_context){
     const note=document.createElement('div');
     note.style.cssText='background:rgba(56,139,253,.07);border:1px solid rgba(56,139,253,.2);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px';
-    note.innerHTML=`<span style="color:var(--blue);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.06em">Decision context · ${escapeHtml(FC_DECISION_LABELS[document.getElementById('fc-decision').value]||'')}</span><br>${escapeHtml(r.decision_context)}`;
+    const decLbl=fcDecisionText()||'Panorama general';
+    note.innerHTML=`<span style="color:var(--blue);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.06em">Tu decisión · ${escapeHtml(decLbl)}</span><br>${escapeHtml(r.decision_context)}`;
     scContainer.insertAdjacentElement('afterend',note);
   }
 
