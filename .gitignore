@@ -1,0 +1,5 @@
+# Caché local de Wrangler (no debe subirse; se regenera en cada máquina).
+.wrangler/
+
+# Node
+node_modules/
