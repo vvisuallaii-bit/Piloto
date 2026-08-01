@@ -192,12 +192,16 @@ function setTareaFiltro(filtro,btn){
   renderTareasLista();
 }
 
+/* Una tarea está "cerrada" (fuera de la lista activa) si se completó o descartó. */
+function tareaCerrada(t){return t.estado==='completada'||t.estado==='descartada';}
+
 function renderTareaFiltros(){
   const abiertas=TAREAS.filter(tareaAbierta);
   const set=(id,n)=>{const el=document.getElementById(id);if(el)el.textContent=String(n);};
   set('tf-count-todas',abiertas.length);
   set('tf-count-dueno',abiertas.filter(t=>t.asignado_a==='dueno').length);
   set('tf-count-recepcionista',abiertas.filter(t=>t.asignado_a==='recepcionista').length);
+  set('tf-count-completadas',TAREAS.filter(tareaCerrada).length);
 }
 
 function renderTareasStatus(){
@@ -220,9 +224,18 @@ function renderTareasLista(){
   const el=document.getElementById('tareas-list');
   if(!el)return;
   if(TAREAS_CARGANDO||TAREAS_ERROR){el.innerHTML='';return;}
-  const visibles=TAREA_FILTRO==='todas'?TAREAS:TAREAS.filter(t=>t.asignado_a===TAREA_FILTRO);
+  let visibles;
+  if(TAREA_FILTRO==='completadas'){
+    visibles=TAREAS.filter(tareaCerrada);
+  }else{
+    // Las vistas activas (Todas / responsable) solo muestran lo que falta hacer;
+    // al completar/descartar una tarea sale de aquí y pasa a "Completadas".
+    const activas=TAREAS.filter(t=>!tareaCerrada(t));
+    visibles=TAREA_FILTRO==='todas'?activas:activas.filter(t=>t.asignado_a===TAREA_FILTRO);
+  }
   if(!visibles.length){
-    el.innerHTML=`<div class="tareas-empty">Sin tareas ${TAREA_FILTRO==='todas'?'':'para este responsable '}por ahora.</div>`;
+    const msg=TAREA_FILTRO==='completadas'?'Aún no hay tareas completadas.':`Sin tareas ${TAREA_FILTRO==='todas'?'':'para este responsable '}por ahora. 🎉`;
+    el.innerHTML=`<div class="tareas-empty">${msg}</div>`;
     return;
   }
   el.innerHTML=visibles.map(t=>{

@@ -441,6 +441,9 @@ select:hover,select:focus{border-color:var(--accent)}
 .tf-btn{display:flex;align-items:center;gap:6px;padding:6px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;color:var(--muted);font-family:'Inter',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s}
 .tf-btn:hover{color:var(--text);border-color:var(--muted)}
 .tf-btn.active{color:var(--accent);border-color:rgba(0,212,170,.4);background:rgba(0,212,170,.08)}
+/* La pestaña de completadas se separa del grupo activo y se distingue en verde. */
+.tf-btn-done{margin-left:auto}
+.tf-btn-done.active{color:var(--green);border-color:rgba(63,185,80,.4);background:rgba(63,185,80,.08)}
 .tf-count{font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--surface);border:1px solid var(--border2);padding:1px 6px;border-radius:10px}
 .tareas-refresh{margin-left:auto;padding:6px 12px;background:none;border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--muted);font-family:'Inter',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s}
 .tareas-refresh:hover{color:var(--accent);border-color:var(--accent)}
