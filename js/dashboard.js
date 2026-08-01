@@ -91,22 +91,6 @@ function metricTrend(key,refMonth){
   return {values:serie.map(s=>s.value), refIndex:i, mom:calc(prev), yoy:calc(yoy)};
 }
 
-/* Sparkline SVG inline. Línea tenue + punto en el mes de referencia, coloreado
-   según la dirección buena/mala del último movimiento. */
-function sparklineSVG(vals,dirClass,hi){
-  if(!vals||vals.length<2)return '';
-  const w=76,h=22,pad=3;
-  const min=Math.min(...vals),max=Math.max(...vals),rng=(max-min)||1;
-  const x=i=>pad+i*(w-2*pad)/(vals.length-1);
-  const y=v=>h-pad-((v-min)/rng)*(h-2*pad);
-  const pts=vals.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
-  const hiIdx=(hi==null?vals.length-1:hi);
-  return `<svg class="hs-spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" preserveAspectRatio="none" aria-hidden="true">`
-    +`<polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.45"/>`
-    +`<circle class="hs-spark-dot ${dirClass||'flat'}" cx="${x(hiIdx).toFixed(1)}" cy="${y(vals[hiIdx]).toFixed(1)}" r="2.4"/>`
-    +`</svg>`;
-}
-
 /* HTML de una flecha de delta (↑/↓/→) coloreada por bueno/malo. */
 function deltaHTML(d,label){
   if(!d)return '';
@@ -134,10 +118,9 @@ function renderHealthScore(data){
     const tr=it.key?metricTrend(it.key,refMonth):null;
     let trendHtml='';
     if(tr){
-      const spark=sparklineSVG(tr.values,tr.mom?tr.mom.dir:'flat',tr.refIndex);
       const mom=tr.mom?deltaHTML(tr.mom,'vs '+mesCorto(tr.mom.month)):'';
       const yoy=tr.yoy?deltaHTML(tr.yoy,'vs '+mesCorto(tr.yoy.month,true)):'';
-      trendHtml=`<span class="hs-trend">${spark}${mom}${yoy}</span>`;
+      if(mom||yoy)trendHtml=`<span class="hs-trend">${mom}${yoy}</span>`;
     }
     return `
     <div class="hs-item">
