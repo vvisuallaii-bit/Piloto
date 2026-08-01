@@ -302,7 +302,16 @@ select:hover,select:focus{border-color:var(--accent)}
 .hs-bar-track{height:4px;background:var(--border2);border-radius:2px;overflow:hidden}
 .hs-bar-fill{height:4px;border-radius:2px;transition:width .6s ease}
 .hs-bar-fill.green{background:#3FB950}.hs-bar-fill.amber{background:#E3B341}.hs-bar-fill.red{background:#F85149}
-.hs-item-bench{font-size:9px;color:var(--faint);margin-top:1px}
+.hs-item-bench{font-size:9px;color:var(--faint)}
+/* Tendencia por métrica: sparkline + deltas MoM/YoY */
+.hs-item-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:1px;flex-wrap:wrap}
+.hs-trend{display:flex;align-items:center;gap:7px;color:var(--muted)}
+.hs-spark{display:block;flex-shrink:0}
+.hs-spark-dot{fill:var(--muted)}
+.hs-spark-dot.good{fill:#3FB950}.hs-spark-dot.bad{fill:#F85149}.hs-spark-dot.flat{fill:var(--muted)}
+.hs-delta{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;white-space:nowrap}
+.hs-delta.good{color:#3FB950}.hs-delta.bad{color:#F85149}.hs-delta.flat{color:var(--muted)}
+.hs-delta-ctx{color:var(--faint);font-weight:500}
 @media(max-width:700px){.hs-wrap{grid-template-columns:1fr}.hs-left{border-right:none;border-bottom:1px solid var(--border)}.hs-right{grid-template-columns:1fr 1fr}}
 
 @media(max-width:1200px){

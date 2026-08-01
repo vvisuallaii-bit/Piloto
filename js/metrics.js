@@ -102,11 +102,11 @@ function computeHealthScore(data){
   return{
     total,label,labelClass,ringColor,
     items:[
-      {name:'Tasa de gastos',val:overheadRate.toFixed(1)+'%',bench:'Meta: <65%',score:overheadScore,color:overheadColor},
-      {name:'Aceptación tratamientos',val:acceptRate.toFixed(0)+'%',bench:'Meta: >65%',score:acceptScore,color:acceptColor},
-      {name:'Tasa de ausentismo',val:noShowRate.toFixed(1)+'%',bench:'Meta: <12%',score:noShowScore,color:noShowColor},
-      {name:'Pacientes nuevos/mes',val:avgNewPat.toFixed(0),bench:'Meta: >20/mes',score:newPatScore,color:newPatColor},
-      {name:'Tasa de cobro',val:colRate.toFixed(1)+'%',bench:'Meta: >95%',score:colScore,color:colColor},
+      {key:'overhead',name:'Tasa de gastos',val:overheadRate.toFixed(1)+'%',bench:'Meta: <65%',score:overheadScore,color:overheadColor},
+      {key:'acceptance',name:'Aceptación tratamientos',val:acceptRate.toFixed(0)+'%',bench:'Meta: >65%',score:acceptScore,color:acceptColor},
+      {key:'noshow',name:'Tasa de ausentismo',val:noShowRate.toFixed(1)+'%',bench:'Meta: <12%',score:noShowScore,color:noShowColor},
+      {key:'newpat',name:'Pacientes nuevos/mes',val:avgNewPat.toFixed(0),bench:'Meta: >20/mes',score:newPatScore,color:newPatColor},
+      {key:'collection',name:'Tasa de cobro',val:colRate.toFixed(1)+'%',bench:'Meta: >95%',score:colScore,color:colColor},
     ]
   };
 }

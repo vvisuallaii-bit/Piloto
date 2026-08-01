@@ -45,6 +45,76 @@ function go(){
 }
 function resetFilters(){document.getElementById('fMonth').value='';render(ALL);}
 
+/* ── TENDENCIAS POR MÉTRICA (serie mensual + MoM/YoY) ─────────────────────
+   Un dueño no solo quiere el número actual, quiere la trayectoria. Cada métrica
+   clave se calcula por mes sobre ALL (la tendencia no depende del filtro) y se
+   muestra como sparkline + flecha vs mes anterior (y vs año pasado si hay ≥13
+   meses). El color codifica si el movimiento es BUENO o MALO para esa métrica
+   (ausentismo bajando = verde), no un ingenuo ↑=verde. */
+const METRIC_HIGHER_BETTER={overhead:false,acceptance:true,noshow:false,newpat:true,collection:true};
+
+function metricValue(key,r){
+  switch(key){
+    case 'overhead':   return r.collections?r.overhead_costs/r.collections*100:0;
+    case 'acceptance': return r.treatment_plans_presented?r.treatment_plans_accepted/r.treatment_plans_presented*100:0;
+    case 'noshow':     return r.appointments_scheduled?r.no_shows/r.appointments_scheduled*100:0;
+    case 'newpat':     return r.new_patients||0;
+    case 'collection': return r.gross_production?r.collections/r.gross_production*100:0;
+    default: return 0;
+  }
+}
+
+function metricSeries(key){
+  return [...ALL].sort((a,b)=>a.month<b.month?-1:1).map(r=>({month:r.month,value:metricValue(key,r)}));
+}
+
+function mesCorto(m,conAnio){
+  const s=new Date(m+'-02T00:00:00').toLocaleDateString('es-CO',{month:'short'}).replace('.','');
+  return conAnio?`${s} '${m.slice(2,4)}`:s;
+}
+
+/* Tendencia de una métrica respecto de un mes de referencia (el filtrado si hay
+   uno, si no el último). Devuelve la serie (para el sparkline) + deltas MoM/YoY. */
+function metricTrend(key,refMonth){
+  const serie=metricSeries(key);
+  if(serie.length<2)return null;
+  const idx=refMonth?serie.findIndex(s=>s.month===refMonth):-1;
+  const i=idx>=0?idx:serie.length-1;
+  const cur=serie[i], prev=i>0?serie[i-1]:null, yoy=i>=12?serie[i-12]:null;
+  const higher=METRIC_HIGHER_BETTER[key];
+  const calc=from=>{
+    if(!from||!isFinite(from.value)||from.value===0)return null;
+    const pct=(cur.value-from.value)/Math.abs(from.value)*100;
+    const dir=Math.abs(pct)<1?'flat':((pct>0)===higher?'good':'bad');
+    return {pct,dir,month:from.month};
+  };
+  return {values:serie.map(s=>s.value), refIndex:i, mom:calc(prev), yoy:calc(yoy)};
+}
+
+/* Sparkline SVG inline. Línea tenue + punto en el mes de referencia, coloreado
+   según la dirección buena/mala del último movimiento. */
+function sparklineSVG(vals,dirClass,hi){
+  if(!vals||vals.length<2)return '';
+  const w=76,h=22,pad=3;
+  const min=Math.min(...vals),max=Math.max(...vals),rng=(max-min)||1;
+  const x=i=>pad+i*(w-2*pad)/(vals.length-1);
+  const y=v=>h-pad-((v-min)/rng)*(h-2*pad);
+  const pts=vals.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const hiIdx=(hi==null?vals.length-1:hi);
+  return `<svg class="hs-spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" preserveAspectRatio="none" aria-hidden="true">`
+    +`<polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.45"/>`
+    +`<circle class="hs-spark-dot ${dirClass||'flat'}" cx="${x(hiIdx).toFixed(1)}" cy="${y(vals[hiIdx]).toFixed(1)}" r="2.4"/>`
+    +`</svg>`;
+}
+
+/* HTML de una flecha de delta (↑/↓/→) coloreada por bueno/malo. */
+function deltaHTML(d,label){
+  if(!d)return '';
+  const arrow=d.dir==='flat'?'→':(d.pct>0?'↑':'↓');
+  const pct=Math.abs(d.pct);
+  return `<span class="hs-delta ${d.dir}">${arrow} ${pct.toFixed(pct>=10?0:1)}% <span class="hs-delta-ctx">${label}</span></span>`;
+}
+
 /* ── PRACTICE HEALTH SCORE ── */
 function renderHealthScore(data){
   const hs=computeHealthScore(data);
@@ -58,15 +128,29 @@ function renderHealthScore(data){
   const lbl=document.getElementById('hs-label');
   lbl.textContent=hs.label;
   lbl.className='hs-label '+hs.labelClass;
-  document.getElementById('hs-items').innerHTML=hs.items.map(it=>`
+  // Mes de referencia para la tendencia: el mes filtrado si hay uno, si no el último.
+  const refMonth=(data&&data.length===1)?data[0].month:null;
+  document.getElementById('hs-items').innerHTML=hs.items.map(it=>{
+    const tr=it.key?metricTrend(it.key,refMonth):null;
+    let trendHtml='';
+    if(tr){
+      const spark=sparklineSVG(tr.values,tr.mom?tr.mom.dir:'flat',tr.refIndex);
+      const mom=tr.mom?deltaHTML(tr.mom,'vs '+mesCorto(tr.mom.month)):'';
+      const yoy=tr.yoy?deltaHTML(tr.yoy,'vs '+mesCorto(tr.yoy.month,true)):'';
+      trendHtml=`<span class="hs-trend">${spark}${mom}${yoy}</span>`;
+    }
+    return `
     <div class="hs-item">
       <div class="hs-item-head">
         <span class="hs-item-name">${it.name}</span>
         <span class="hs-item-val ${it.color}">${it.val}</span>
       </div>
       <div class="hs-bar-track"><div class="hs-bar-fill ${it.color}" style="width:${it.score}%"></div></div>
-      <div class="hs-item-bench">${it.bench}</div>
-    </div>`).join('');
+      <div class="hs-item-foot">
+        <span class="hs-item-bench">${it.bench}</span>
+        ${trendHtml}
+      </div>
+    </div>`;}).join('');
 }
 
 /* ── RENDER ── */
