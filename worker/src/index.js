@@ -30,6 +30,56 @@ const RESULTADOS = ['agendo_cita', 'no_respondio', 'no_aplicaba'];
 const FUENTES = ['ia_semanal', 'manual'];
 const MODELO_IA = 'claude-sonnet-4-5';   // mismo modelo que usa el frontend (core.js)
 
+/* ── Blindaje del proxy público (POST /) ──────────────────────────────────
+   La URL del Worker es pública (el frontend la llama desde el navegador), así
+   que el proxy es abusable: cualquiera podría gastar la API key de Anthropic.
+   Estas 4 capas acotan el daño sin romper la app: allowlist de modelos, tope
+   de max_tokens, chequeo de Origin y rate-limit por IP. */
+const MODELOS_PERMITIDOS = new Set([
+  'claude-sonnet-4-5',
+  'claude-haiku-4-5',
+  'claude-haiku-4-5-20251001',
+]);
+const MAX_TOKENS_TOPE = 4096;      // el frontend usa 4000; nadie puede pedir respuestas enormes
+const PROXY_BODY_MAX = 60000;      // bytes; el prompt más grande (roster de pacientes) cabe de sobra
+const RL_MAX_POR_MIN = 20;         // solicitudes por IP por minuto al proxy
+
+/* Solo se acepta el proxy desde nuestros propios sitios. Frena el abuso desde
+   el navegador de terceros (un curl puede falsear el Origin, pero para eso
+   están el rate-limit y los topes por request). */
+function originPermitido(origin) {
+  if (!origin) return false;
+  try {
+    const h = new URL(origin).hostname;
+    return (
+      h === 'smile-dental-intelligence.pages.dev' ||
+      h.endsWith('.smile-dental-intelligence.pages.dev') ||  // deploys por hash de CF Pages
+      h === 'vvisuallaii-bit.github.io' ||
+      h === 'localhost' || h === '127.0.0.1'
+    );
+  } catch { return false; }
+}
+
+/* Rate-limit por IP con ventana fija de 1 minuto sobre D1. Fail-open: si D1
+   falla, no bloquea (mejor dejar pasar que tumbar la app). */
+async function rateLimited(env, ip) {
+  if (!ip) return false;
+  const win = Math.floor(Date.now() / 60000);
+  const bucket = `${ip}:${win}`;
+  try {
+    const row = await env.DB.prepare(
+      `INSERT INTO rate_limit (bucket, win, count) VALUES (?1, ?2, 1)
+       ON CONFLICT(bucket) DO UPDATE SET count = count + 1 RETURNING count`
+    ).bind(bucket, win).first();
+    if (Math.random() < 0.05) {  // limpieza probabilística de ventanas viejas
+      await env.DB.prepare(`DELETE FROM rate_limit WHERE win < ?1`).bind(win - 2).run().catch(() => {});
+    }
+    return (row?.count || 0) > RL_MAX_POR_MIN;
+  } catch {
+    return false;
+  }
+}
+
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -58,9 +108,30 @@ function hydrateTarea(t) {
   return t;
 }
 
-/* ── Proxy original hacia la API de Claude ── */
+/* ── Proxy hacia la API de Claude — con blindaje (ver constantes arriba) ── */
 async function handleProxy(request, env) {
+  // 1. Solo desde nuestros orígenes.
+  const origin = request.headers.get('Origin');
+  if (!originPermitido(origin)) return json({ error: 'Origen no autorizado' }, 403);
+
+  // 2. Rate-limit por IP.
+  const ip = request.headers.get('CF-Connecting-IP') || '';
+  if (await rateLimited(env, ip)) return json({ error: 'Demasiadas solicitudes. Intenta de nuevo en un minuto.' }, 429);
+
+  // 3. Tamaño del cuerpo.
   const body = await request.text();
+  if (body.length > PROXY_BODY_MAX) return json({ error: 'Solicitud demasiado grande' }, 413);
+
+  // 4. Modelo permitido + tope de max_tokens (evita respuestas caras/enormes).
+  let parsed;
+  try { parsed = JSON.parse(body); } catch { return json({ error: 'Body JSON inválido' }, 400); }
+  if (!parsed || !MODELOS_PERMITIDOS.has(parsed.model)) {
+    return json({ error: 'Modelo no permitido' }, 400);
+  }
+  if (typeof parsed.max_tokens === 'number' && parsed.max_tokens > MAX_TOKENS_TOPE) {
+    parsed.max_tokens = MAX_TOKENS_TOPE;  // recorta en vez de rechazar
+  }
+
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -68,7 +139,7 @@ async function handleProxy(request, env) {
       'x-api-key': env.ANTHROPIC_API_KEY,
       'anthropic-version': '2023-06-01',
     },
-    body,
+    body: JSON.stringify(parsed),
   });
   const text = await resp.text();
   return new Response(text, {
