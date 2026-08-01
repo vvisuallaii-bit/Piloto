@@ -618,6 +618,16 @@ select:hover,select:focus{border-color:var(--accent)}
 .td-pac-btn.sel.no_aplicaba{color:var(--muted);background:var(--surface2);border-color:var(--muted)}
 .td-pac-btn.td-nopac-opt.sel{color:var(--accent);background:rgba(0,212,170,.1);border-color:var(--accent)}
 
+/* Monto real recuperado — aparece al marcar "agendó cita" (por paciente o por
+   tarea sin pacientes). Ocupa su propia fila dentro de la tarjeta. */
+.td-pac-real{flex-basis:100%;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px dashed var(--border2)}
+.td-pac-real-lbl{font-size:11px;font-weight:700;color:var(--green);letter-spacing:.02em}
+.td-pac-real-in{display:inline-flex;align-items:center;gap:5px;font-size:14px;font-weight:600;color:var(--text)}
+.td-pac-real-in input{width:130px;padding:6px 10px;background:var(--surface2);border:1px solid rgba(63,185,80,.45);border-radius:var(--radius-sm);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600}
+.td-pac-real-in input:focus{outline:none;border-color:var(--green)}
+.td-pac-real-in input:disabled{opacity:.6}
+.td-pac-real-exp{font-size:11px;color:var(--muted)}
+
 .td-actions{display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap}
 .td-complete{padding:9px 18px;background:var(--accent);border:none;border-radius:var(--radius-sm);color:#0D1117;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:background .15s}
 .td-complete:hover{background:var(--accent2)}

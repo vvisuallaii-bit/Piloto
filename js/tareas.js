@@ -77,21 +77,41 @@ function recomputarResumen(){
     semana,
     total_semana:sem.length,
     completadas_semana:sem.filter(t=>t.estado==='completada').length,
-    // ROI preciso: para tareas con pacientes, suma el valor pendiente SOLO de
-    // los que efectivamente agendaron; para tareas sin pacientes, cuenta el
-    // valor de la tarea si su resultado fue "agendó cita".
-    valor_recuperado_cop:sem.reduce((s,t)=>s+valorRecuperadoTarea(t),0),
+    // ROI preciso (por paciente): esperado = lo estimado de quienes agendaron;
+    // real = el monto que recepción registró que de verdad entró.
+    valor_esperado_cop:sem.reduce((s,t)=>s+valorEsperadoTarea(t),0),
+    valor_real_cop:sem.reduce((s,t)=>s+valorRealTarea(t),0),
+    valor_recuperado_cop:sem.reduce((s,t)=>s+valorRealTarea(t),0), // compat: ahora = real
     vencidas_count:sem.filter(tareaVencida).length,
   };
 }
 
-/* Valor efectivamente recuperado por una tarea (base del ROI). */
-function valorRecuperadoTarea(t){
+/* Valor ESPERADO (ROI): lo que la acción debería traer si se concreta. Es la
+   estimación — por paciente, el valor pendiente; por tarea sin pacientes, el
+   valor estimado — contando solo lo que efectivamente agendó. */
+function valorEsperadoTarea(t){
   const ps=Array.isArray(t.pacientes)?t.pacientes:[];
   if(ps.length){
     return ps.filter(p=>p.estado==='agendo_cita').reduce((a,p)=>a+(Number(p.valor_pendiente_cop)||0),0);
   }
   return (t.estado==='completada'&&t.resultado==='agendo_cita')?(Number(t.valor_estimado_cop)||0):0;
+}
+
+/* Valor REAL recuperado: el monto que de verdad entró, que registra recepción.
+   Por paciente usa monto_real_cop (si aún no lo escribió, cae al esperado);
+   por tarea sin pacientes usa valor_real_cop (o el esperado como respaldo). */
+function valorRealTarea(t){
+  const ps=Array.isArray(t.pacientes)?t.pacientes:[];
+  if(ps.length){
+    return ps.filter(p=>p.estado==='agendo_cita').reduce((a,p)=>{
+      const real=(p.monto_real_cop!==undefined&&p.monto_real_cop!==null)?Number(p.monto_real_cop):Number(p.valor_pendiente_cop);
+      return a+(Number(real)||0);
+    },0);
+  }
+  if(t.estado==='completada'&&t.resultado==='agendo_cita'){
+    return (t.valor_real_cop!==undefined&&t.valor_real_cop!==null)?(Number(t.valor_real_cop)||0):(Number(t.valor_estimado_cop)||0);
+  }
+  return 0;
 }
 
 /* ── render maestro ── */
@@ -155,9 +175,11 @@ function renderRoi(){
   const elV=document.getElementById('roi-valor');
   const elX=document.getElementById('roi-vencidas');
   if(!elC)return;
-  if(!r){elC.textContent='—';elV.textContent='—';elX.textContent='—';return;}
+  const elVsub=document.getElementById('roi-valor-sub');
+  if(!r){elC.textContent='—';elV.textContent='—';elX.textContent='—';if(elVsub)elVsub.textContent='esperado: —';return;}
   elC.textContent=`${r.completadas_semana} de ${r.total_semana}`;
-  elV.textContent=fmtCOP(r.valor_recuperado_cop||0);
+  elV.textContent=fmtCOP(r.valor_real_cop||0);
+  if(elVsub)elVsub.textContent=`esperado: ${fmtCOP(r.valor_esperado_cop||0)}`;
   elX.textContent=String(r.vencidas_count||0);
   document.getElementById('roi-vencidas-card').classList.toggle('roi-alert',(r.vencidas_count||0)>0);
 }
@@ -298,6 +320,12 @@ function renderTareaDetalle(){
             <div class="td-pac-acts">
               ${P_OPTS.map(([v,l])=>`<button class="td-pac-btn${p.estado===v?' sel '+v:''}" ${done?'disabled':''} onclick="marcarPaciente(${i},'${v}')">${l}</button>`).join('')}
             </div>
+            ${p.estado==='agendo_cita'?`
+            <label class="td-pac-real">
+              <span class="td-pac-real-lbl">💵 Monto real recuperado</span>
+              <span class="td-pac-real-in">$<input type="number" min="0" step="1000" value="${Number(p.monto_real_cop!=null?p.monto_real_cop:p.valor_pendiente_cop)||0}" ${done?'disabled':''} onchange="setMontoReal(${i},this.value)"></span>
+              <span class="td-pac-real-exp">esperado ${fmtCOP(Number(p.valor_pendiente_cop)||0)}</span>
+            </label>`:''}
           </div>`).join('')}
       </div>
       ${!done?`<div class="td-actions"><button class="td-complete" onclick="completarTareaDetalle()">Marcar tarea como completada</button><span class="td-save-msg" id="td-save-msg"></span></div>`:''}
@@ -307,6 +335,11 @@ function renderTareaDetalle(){
         <div class="td-pac-acts">
           ${P_OPTS.map(([v,l])=>`<button class="td-pac-btn td-nopac-opt" data-r="${v}" onclick="selNoPac(this)">${l}</button>`).join('')}
         </div>
+        <label class="td-pac-real" id="td-nopac-real-wrap" style="display:none">
+          <span class="td-pac-real-lbl">💵 Monto real recuperado</span>
+          <span class="td-pac-real-in">$<input type="number" id="td-nopac-real" min="0" step="1000" value="${Number(t.valor_estimado_cop)||0}"></span>
+          <span class="td-pac-real-exp">esperado ${fmtCOP(Number(t.valor_estimado_cop)||0)}</span>
+        </label>
         <div class="td-actions"><button class="td-complete" onclick="completarTareaSinPac()">Completar tarea</button><span class="td-save-msg" id="td-save-msg"></span></div>
       </div>`)}
   `;
@@ -319,7 +352,29 @@ async function marcarPaciente(i,estado){
   if(!t||!Array.isArray(t.pacientes)||!t.pacientes[i])return;
   const p=t.pacientes[i];
   p.estado=(p.estado===estado)?'pendiente':estado; // toggle
+  // Al marcar "agendó" precarga el monto real con el esperado (recepción lo
+  // ajusta si volvió por menos); si se desmarca o cambia, se limpia.
+  if(p.estado==='agendo_cita'){
+    if(p.monto_real_cop===undefined||p.monto_real_cop===null)p.monto_real_cop=Number(p.valor_pendiente_cop)||0;
+  }else{
+    delete p.monto_real_cop;
+  }
   renderTareaDetalle();
+  await guardarPacientes(t);
+}
+
+/* Registra el monto REAL que trajo un paciente (input en la vista detalle).
+   No re-renderiza para no perder el foco del campo; guarda en segundo plano. */
+async function setMontoReal(i,val){
+  const t=TAREAS.find(x=>x.id===TAREA_DETALLE_ID);
+  if(!t||!Array.isArray(t.pacientes)||!t.pacientes[i])return;
+  t.pacientes[i].monto_real_cop=Math.max(0,Math.round(Number(val)||0));
+  await guardarPacientes(t);
+}
+
+/* PATCH de la lista de pacientes; sube la tarea a 'en_proceso' si estaba
+   pendiente. Optimista: la vista ya se actualizó, esto persiste. */
+async function guardarPacientes(t){
   try{
     const body={pacientes:t.pacientes};
     if(t.estado==='pendiente')body.estado='en_proceso';
@@ -353,15 +408,23 @@ async function completarTareaDetalle(){
 function selNoPac(btn){
   btn.closest('.td-pac-acts').querySelectorAll('.td-nopac-opt').forEach(b=>b.classList.remove('sel'));
   btn.classList.add('sel');
+  // El campo de monto real solo tiene sentido si la tarea trajo una cita.
+  const wrap=document.getElementById('td-nopac-real-wrap');
+  if(wrap)wrap.style.display=btn.dataset.r==='agendo_cita'?'':'none';
 }
 async function completarTareaSinPac(){
   const t=TAREAS.find(x=>x.id===TAREA_DETALLE_ID);if(!t)return;
   const sel=document.querySelector('#vista-detalle .td-nopac-opt.sel');
   const m=document.getElementById('td-save-msg');
   if(!sel){if(m){m.className='td-save-msg err';m.textContent='Selecciona qué pasó.';}return;}
+  const body={estado:'completada',resultado:sel.dataset.r,completado_por:t.asignado_a};
+  if(sel.dataset.r==='agendo_cita'){
+    const inp=document.getElementById('td-nopac-real');
+    body.valor_real_cop=Math.max(0,Math.round(Number(inp&&inp.value)||0));
+  }
   if(m){m.className='td-save-msg';m.textContent='Guardando…';}
   try{
-    const resp=await fetch(`${WORKER_URL}/tareas/${t.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({estado:'completada',resultado:sel.dataset.r,completado_por:t.asignado_a})});
+    const resp=await fetch(`${WORKER_URL}/tareas/${t.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const j=await resp.json().catch(()=>({}));
     if(!resp.ok)throw new Error(j.error||`HTTP ${resp.status}`);
     const idx=TAREAS.findIndex(x=>x.id===t.id);if(idx>=0)TAREAS[idx]=j;
@@ -440,7 +503,8 @@ function buildResumenDueno(){
   sem.forEach(t=>{const ps=Array.isArray(t.pacientes)?t.pacientes:[];totalPac+=ps.length;contactados+=ps.filter(p=>p.estado&&p.estado!=='pendiente').length;agendaron+=ps.filter(p=>p.estado==='agendo_cita').length;});
   return {
     semana,total:sem.length,completadas,pendientes,
-    valor:sem.reduce((s,t)=>s+valorRecuperadoTarea(t),0),
+    valorReal:sem.reduce((s,t)=>s+valorRealTarea(t),0),
+    valorEsperado:sem.reduce((s,t)=>s+valorEsperadoTarea(t),0),
     contactados,totalPac,agendaron,
     vencidas:sem.filter(tareaVencida).length,
   };
@@ -454,9 +518,9 @@ function abrirResumen(){
   body.innerHTML=`
     <div class="rs-sub">Semana del ${fmtDate(r.semana)}</div>
     <div class="rs-hero">
-      <div class="rs-hero-lbl">Valor recuperado esta semana</div>
-      <div class="rs-hero-val">${fmtCOP(r.valor||0)}</div>
-      <div class="rs-hero-sub">${r.agendaron} cita${r.agendaron===1?'':'s'} agendada${r.agendaron===1?'':'s'} a partir de las acciones de la semana</div>
+      <div class="rs-hero-lbl">Recuperado real esta semana</div>
+      <div class="rs-hero-val">${fmtCOP(r.valorReal||0)}</div>
+      <div class="rs-hero-sub">de ${fmtCOP(r.valorEsperado||0)} esperado · ${r.agendaron} cita${r.agendaron===1?'':'s'} agendada${r.agendaron===1?'':'s'}</div>
     </div>
     <div class="rs-stats">
       <div class="rs-stat"><div class="rs-stat-num">${r.completadas.length}<span class="rs-stat-den">/${r.total}</span></div><div class="rs-stat-lbl">Tareas completadas</div></div>
@@ -464,7 +528,7 @@ function abrirResumen(){
       <div class="rs-stat${r.vencidas>0?' rs-alert':''}"><div class="rs-stat-num">${r.vencidas}</div><div class="rs-stat-lbl">Vencidas</div></div>
     </div>
     ${r.completadas.length?`<div class="rs-section-t">Lo que se logró</div>${r.completadas.map(t=>{
-      const v=valorRecuperadoTarea(t);
+      const v=valorRealTarea(t);
       const ps=Array.isArray(t.pacientes)?t.pacientes:[];
       const cont=ps.filter(p=>p.estado&&p.estado!=='pendiente').length;
       return `<div class="rs-item"><span class="rs-item-dot done"></span><div><div class="rs-item-t">${escapeHtml(t.titulo)}</div><div class="rs-item-sub">${v>0?fmtCOP(v)+' · ':''}${ps.length?cont+' de '+ps.length+' contactados':escapeHtml(T_RESULTADO_LBL[t.resultado]||'')}</div></div></div>`;
@@ -488,11 +552,11 @@ function resumenTexto(){
   L.push(`Resumen semanal — ${nombre}`);
   L.push(`Semana del ${fmtDate(r.semana)}`);
   L.push('');
-  L.push(`Valor recuperado: ${fmtCOP(r.valor||0)}`);
+  L.push(`Recuperado real: ${fmtCOP(r.valorReal||0)} (esperado: ${fmtCOP(r.valorEsperado||0)})`);
   L.push(`Tareas completadas: ${r.completadas.length} de ${r.total}`);
   if(r.totalPac)L.push(`Pacientes contactados: ${r.contactados} de ${r.totalPac} (agendaron: ${r.agendaron})`);
   if(r.vencidas>0)L.push(`Vencidas: ${r.vencidas}`);
-  if(r.completadas.length){L.push('');L.push('Lo que se logró:');r.completadas.forEach(t=>{const v=valorRecuperadoTarea(t);L.push(`- ${t.titulo}${v>0?' ('+fmtCOP(v)+')':''}`);});}
+  if(r.completadas.length){L.push('');L.push('Lo que se logró:');r.completadas.forEach(t=>{const v=valorRealTarea(t);L.push(`- ${t.titulo}${v>0?' ('+fmtCOP(v)+')':''}`);});}
   if(r.pendientes.length){L.push('');L.push('Pendiente:');r.pendientes.forEach(t=>{L.push(`- ${t.titulo} (${T_ASIGNADO_LBL[t.asignado_a]||t.asignado_a})`);});}
   L.push('');L.push(`Generado por ${nombre} Intelligence.`);
   return L.join('\n');

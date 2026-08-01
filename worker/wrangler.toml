@@ -14,6 +14,13 @@ name = "claude-proxy"
 main = "src/index.js"
 compatibility_date = "2026-07-01"
 
+# Cron: genera las tareas de la semana automáticamente (Paso 2).
+# "0 12 * * 1" = lunes 12:00 UTC = lunes 7:00am Bogotá (UTC-5).
+# El handler scheduled() en src/index.js itera sobre las clínicas activas.
+# Disparo manual para probar: POST /tareas/generar (con X-Admin-Key).
+[triggers]
+crons = ["0 12 * * 1"]
+
 # Observabilidad (logs en el dashboard de Cloudflare). Se restaura aquí porque
 # venía activa en el Worker original y un deploy sin este bloque la apagaba.
 [observability]
