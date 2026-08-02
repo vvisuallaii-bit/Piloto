@@ -610,4 +610,5 @@ async function copiarResumen(){
 /* ── init ── */
 initTareasAdmin();
 loadPacientes();
-fetchTareas();
+// En el demo de red no hay tareas por sede (Fase 3C); evita la llamada al Worker.
+if(!(typeof NET!=='undefined'&&NET.active))fetchTareas();

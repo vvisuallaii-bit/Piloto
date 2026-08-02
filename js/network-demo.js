@@ -185,6 +185,13 @@ function initNetworkDemo() {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('app').style.display = 'block';
 
+  // El tablero de Pendientes y la campana son por-clínica sobre D1 (Fase 3C);
+  // en el demo de red no hay datos por sede, así que se ocultan para no mostrar
+  // un tablero vacío. El resto del dashboard (Rendimiento, Tendencias, Asesor,
+  // Proyección) sí funciona por sede al hacer drill.
+  const bell = document.getElementById('bell-wrap'); if (bell) bell.style.display = 'none';
+  const tabTareas = document.getElementById('tab-btn-tareas'); if (tabTareas) tabTareas.style.display = 'none';
+
   // Barra de red (toggle Red/Sede + selector de sede).
   const bar = document.getElementById('network-bar');
   bar.innerHTML = `
@@ -233,7 +240,10 @@ function selectSede(i) {
   NET.currentName = s.name;
   const sel = document.getElementById('nb-sede-select');
   if (sel) sel.selectedIndex = i;
+  const fm = document.getElementById('fMonth');
+  if (fm) fm.value = '';                 // filtro de mes en sync con la sede
   render(s.data);
+  if (typeof initChat === 'function') initChat();  // re-arma el contexto del chat con la sede activa
   applyWhiteLabel();
 }
 
