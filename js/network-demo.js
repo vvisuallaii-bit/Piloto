@@ -100,7 +100,7 @@ function netBuildSedes() {
       production: Math.round(annualGross * d.share),
       acceptance: Math.round(d.acceptR * 100),
     }));
-    return { id: p.id, name: p.name, city: p.city, data, metrics: m, doctors, analysis: NET_SEDE_ANALYSIS[p.id], tareas: netBuildTareas(p, i) };
+    return { id: p.id, name: p.name, city: p.city, data, metrics: m, doctors, analysis: NET_SEDE_ANALYSIS[p.id], tareas: netBuildTareas(p, i, m) };
   });
 }
 
@@ -118,40 +118,108 @@ const NET_PAC = [
   ['Luisa Martínez', '+57 312 987 6543'], ['Jorge Patiño', '+57 300 111 2233'],
   ['Diana Vargas', '+57 315 555 4411'], ['Andrés Torres', '+57 320 777 8899'],
   ['Paola Suárez', '+57 301 222 3344'], ['Ricardo Mejía', '+57 313 444 5566'],
+  ['Natalia Restrepo', '+57 317 656 2211'], ['Óscar Cardona', '+57 314 909 8877'],
 ];
-function netPac(sidx, list) {
+/* `off` desplaza el pool para que distintas tareas de la MISMA sede muestren
+   pacientes distintos. */
+function netPac(sidx, off, list) {
   return list.map((x, i) => {
-    const p = NET_PAC[(sidx * 3 + i) % NET_PAC.length];
+    const p = NET_PAC[(sidx * 3 + off + i) % NET_PAC.length];
     return {
-      id: `P${sidx}${i}`, nombre: p[0], telefono: p[1], ultima_consulta: '2026-06-15',
+      id: `P${sidx}-${off}-${i}`, nombre: p[0], telefono: p[1], ultima_consulta: '2026-06-15',
       que_paso: x.q || '', accion: x.a || 'Contactar y reagendar',
       valor_pendiente_cop: x.v, estado: x.e || 'pendiente',
       monto_real_cop: (x.mr === undefined ? null : x.mr),
     };
   });
 }
-function netBuildTareas(p, sidx) {
+
+/* Tareas DERIVADAS de las métricas reales de cada sede (como haría la IA):
+   cada sede muestra las acciones que le corresponden según sus brechas — la
+   sede débil recibe tareas urgentes de no-shows/aceptación, la fuerte tareas
+   ligeras de capacidad. `m` = computeMetrics(sede.data). */
+function netBuildTareas(p, sidx, m) {
   const semana = netLunes();
-  const k = p.avgProd / 58;                       // escala por tamaño de sede
+  const k = p.avgProd / 58;
   const V = n => Math.round(n * k / 10000) * 10000;
-  const base = { practice_id: p.id, semana, fuente: 'ia_semanal', resultado: null, fecha_limite: null, completado_por: null, completado_en: null };
-  return [
-    {
-      ...base, id: sidx * 100 + 1, titulo: 'Llamar a pacientes inactivos de alto valor', descripcion: 'Pacientes sin cita en 6+ meses con tratamientos pendientes.', categoria: 'recall_inactivos', asignado_a: 'recepcionista', prioridad: 'alta', estado: 'en_proceso', valor_estimado_cop: V(3200000),
-      pacientes: netPac(sidx, [{ v: V(320000), e: 'agendo_cita', mr: V(320000), a: 'Agendar resina y control de higiene' }, { v: V(4200000), a: 'Ofrecer financiación de ortodoncia a cuotas' }, { v: V(680000), e: 'no_respondio', a: 'Reintentar llamada esta semana' }]),
-    },
-    {
-      ...base, id: sidx * 100 + 2, titulo: 'Reagendar no-shows recientes', descripcion: 'Pacientes que faltaron a su cita en las últimas 2 semanas.', categoria: 'no_shows', asignado_a: 'recepcionista', prioridad: 'alta', estado: 'pendiente', valor_estimado_cop: V(1800000),
-      pacientes: netPac(sidx, [{ v: V(850000), a: 'Reagendar endodoncia — caso prioritario por dolor' }, { v: V(180000), a: 'Reagendar y confirmar 24h antes' }]),
-    },
-    {
-      ...base, id: sidx * 100 + 3, titulo: 'Re-presentar planes de tratamiento no aceptados', descripcion: 'Planes de mayor valor presentados sin cerrar.', categoria: 'aceptacion_tratamiento', asignado_a: 'dueno', prioridad: 'media', estado: 'completada', resultado: 'agendo_cita', completado_por: 'dueno', valor_estimado_cop: V(2700000),
-      pacientes: netPac(sidx, [{ v: V(2700000), e: 'agendo_cita', mr: V(2700000), a: 'Cerró plan de 2 coronas' }, { v: V(450000), e: 'no_aplicaba', a: 'No interesado por ahora' }]),
-    },
-    {
-      ...base, id: sidx * 100 + 4, titulo: 'Gestionar cobro de cartera pendiente', descripcion: 'Saldos de tratamientos ya realizados sin cobrar.', categoria: 'otro', asignado_a: 'recepcionista', prioridad: 'media', estado: 'pendiente', valor_estimado_cop: V(4500000), pacientes: null,
-    },
-  ];
+  const ov = m.overheadRate, ac = m.acceptanceRate, ns = m.noShowRate;
+  const noShowsMes = Math.max(3, Math.round(m.totalNoShows / 12));
+  const planesNoAcMes = Math.max(2, Math.round((m.totalPlansPresented - m.totalPlansAccepted) / 12));
+  const gapMes = Math.round((m.totalProduction - m.totalCollections) / 12);
+  const inactivosMes = Math.max(6, Math.round(m.avgNewPatPerMonth * 0.6));
+  const base = { practice_id: p.id, semana, fuente: 'ia_semanal', resultado: null, fecha_limite: null, completado_por: null, completado_en: null, valor_real_cop: null };
+  const tasks = [];
+  let id = sidx * 100;
+  const push = o => tasks.push({ ...base, id: ++id, estado: 'pendiente', valor_estimado_cop: 0, pacientes: null, ...o });
+
+  // 1. Recall de inactivos — universal. Va COMPLETADA con citas agendadas para
+  //    que el overview muestre "Recuperado real" en cada sede.
+  push({
+    titulo: `Llamar a ${inactivosMes} pacientes inactivos de alto valor`,
+    descripcion: 'Pacientes sin cita en 6+ meses con tratamientos pendientes; recuperación de agenda.',
+    categoria: 'recall_inactivos', asignado_a: 'recepcionista', prioridad: 'alta',
+    estado: 'completada', resultado: 'agendo_cita', completado_por: 'recepcionista', valor_estimado_cop: V(3600000),
+    pacientes: netPac(sidx, 0, [
+      { v: V(2700000), e: 'agendo_cita', mr: V(2700000), a: 'Cerró valoración de implante con abono a favor' },
+      { v: V(320000), e: 'agendo_cita', mr: V(320000), a: 'Agendó resina y control de higiene' },
+      { v: V(680000), e: 'no_respondio', a: 'Reintentar llamada esta semana' }]),
+  });
+
+  // 2. No-shows — según el ausentismo real de la sede.
+  if (ns >= 8) {
+    const grave = ns >= 12;
+    push({
+      titulo: `Reagendar ${noShowsMes} no-shows del mes`,
+      descripcion: `Ausentismo en ${Math.round(ns)}% (meta <12%). Reagendar y activar confirmación por WhatsApp 24h antes.`,
+      categoria: 'no_shows', asignado_a: 'recepcionista', prioridad: grave ? 'alta' : 'media',
+      estado: grave ? 'pendiente' : 'en_proceso', valor_estimado_cop: V(grave ? 2400000 : 1400000),
+      pacientes: netPac(sidx, 3, [
+        { v: V(850000), a: 'Reagendar endodoncia — prioritario por dolor reportado' },
+        { v: V(1350000), e: grave ? 'pendiente' : 'agendo_cita', mr: grave ? undefined : V(1350000), a: 'Reagendar corona; verificar teléfono' },
+        ...(grave ? [{ v: V(180000), a: 'Segunda inasistencia — explicar política de confirmación' }] : [])]),
+    });
+  }
+
+  // 3. Aceptación de tratamientos — si está por debajo/cerca de la meta.
+  if (ac < 68) {
+    push({
+      titulo: `Re-presentar ${planesNoAcMes} planes de tratamiento no aceptados`,
+      descripcion: `Aceptación en ${Math.round(ac)}% (meta >65%). Re-presentar los planes de mayor valor y ofrecer financiación a cuotas.`,
+      categoria: 'aceptacion_tratamiento', asignado_a: 'dueno', prioridad: ac < 55 ? 'alta' : 'media',
+      estado: 'pendiente', valor_estimado_cop: V(ac < 55 ? 5200000 : 3400000),
+      pacientes: netPac(sidx, 6, [
+        { v: V(3800000), a: 'Re-presentar plan de implante con simulación' },
+        { v: V(2700000), a: 'Resolver dudas de costo del plan de 2 coronas' }]),
+    });
+  }
+
+  // 4. Cobro de cartera — universal (brecha producción vs. cobro).
+  push({
+    titulo: `Gestionar cobro de cartera (${netM(gapMes)}/mes sin cobrar)`,
+    descripcion: 'Saldos de tratamientos ya realizados sin cobrar; recordatorios y planes de pago.',
+    categoria: 'otro', asignado_a: 'recepcionista', prioridad: 'media',
+    estado: 'pendiente', valor_estimado_cop: Math.max(V(1500000), gapMes),
+  });
+
+  // 5. Gastos — solo si están por encima de la meta (sedes débiles).
+  if (ov >= 65) {
+    push({
+      titulo: `Revisar estructura de gastos (${Math.round(ov)}%, meta <65%)`,
+      descripcion: 'Comparar personal vs. producción e insumos contra las sedes más eficientes de la red.',
+      categoria: 'otro', asignado_a: 'dueno', prioridad: 'media', estado: 'pendiente', valor_estimado_cop: 0,
+    });
+  }
+
+  // 6. Capacidad — solo si la sede ya cumple todas las metas (sede fuerte).
+  if (ov < 55 && ac > 65 && ns < 8) {
+    push({
+      titulo: 'Evaluar ampliar capacidad — la sede va sobre meta',
+      descripcion: 'Cumple las 4 metas; el límite es capacidad instalada. Analizar una tercera silla o extender horario.',
+      categoria: 'otro', asignado_a: 'dueno', prioridad: 'baja', estado: 'pendiente', valor_estimado_cop: 0,
+    });
+  }
+
+  return tasks;
 }
 /* Carga las tareas de la sede en el tablero (copia fresca cada vez). */
 function netLoadTareas(i) {
