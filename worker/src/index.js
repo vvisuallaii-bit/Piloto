@@ -194,20 +194,34 @@ async function crearTarea(request, env, url) {
   }
 }
 
-/* ── GET /tareas ── */
+/* ── GET /tareas ── acepta practice_id (una sede, como siempre) o network_id
+   (agrega todas las sedes de la red). Sin filtro → 400 (comportamiento actual). */
 async function listarTareas(env, url) {
   const practiceId = url.searchParams.get('practice_id');
-  if (!practiceId) return json({ error: 'practice_id es obligatorio' }, 400);
+  const networkId = url.searchParams.get('network_id');
   const estado = url.searchParams.get('estado');
   const asignadoA = url.searchParams.get('asignado_a');
   if (estado && !ESTADOS.includes(estado)) return json({ error: `estado inválido (permitidos: ${ESTADOS.join(', ')})` }, 400);
   if (asignadoA && !ASIGNADOS.includes(asignadoA)) return json({ error: `asignado_a inválido (permitidos: ${ASIGNADOS.join(', ')})` }, 400);
 
+  // Resolver el conjunto de sedes: una (practice_id) o todas las de la red.
+  let practiceIds;
+  if (practiceId) {
+    practiceIds = [practiceId];
+  } else if (networkId) {
+    const { results: ps } = await env.DB.prepare(`SELECT practice_id FROM practices WHERE network_id = ?1`).bind(networkId).all();
+    practiceIds = (ps || []).map(p => p.practice_id);
+    if (!practiceIds.length) return json({ error: `Red sin sedes o inexistente: ${networkId}` }, 404);
+  } else {
+    return json({ error: 'practice_id o network_id es obligatorio' }, 400);
+  }
+
   const hoy = hoyBogota();
   const semana = lunesSemanaActual();
+  const inList = practiceIds.map((_, i) => `?${i + 1}`).join(',');
 
-  let sql = `SELECT * FROM tareas WHERE practice_id = ?1`;
-  const binds = [practiceId];
+  let sql = `SELECT * FROM tareas WHERE practice_id IN (${inList})`;
+  const binds = [...practiceIds];
   if (estado) { binds.push(estado); sql += ` AND estado = ?${binds.length}`; }
   if (asignadoA) { binds.push(asignadoA); sql += ` AND asignado_a = ?${binds.length}`; }
   binds.push(hoy);
@@ -220,6 +234,8 @@ async function listarTareas(env, url) {
 
   try {
     const { results } = await env.DB.prepare(sql).bind(...binds).all();
+    // Resumen de la semana (agrega sobre el mismo conjunto de sedes).
+    const rIn = practiceIds.map((_, i) => `?${i + 2}`).join(',');    // ?1 = hoy
     const r = await env.DB.prepare(
       `SELECT
          COUNT(*) AS total_semana,
@@ -230,8 +246,8 @@ async function listarTareas(env, url) {
                   THEN COALESCE(valor_real_cop, valor_estimado_cop, 0) ELSE 0 END) AS valor_real_cop,
          SUM(CASE WHEN fecha_limite IS NOT NULL AND fecha_limite < ?1
                   AND estado IN ('pendiente','en_proceso') THEN 1 ELSE 0 END) AS vencidas_count
-       FROM tareas WHERE practice_id = ?2 AND semana = ?3`
-    ).bind(hoy, practiceId, semana).first();
+       FROM tareas WHERE practice_id IN (${rIn}) AND semana = ?${practiceIds.length + 2}`
+    ).bind(hoy, ...practiceIds, semana).first();
     // Nota: este resumen es a nivel tarea (rápido, del servidor). El cliente lo
     // recalcula con precisión por paciente. valor_recuperado_cop se conserva
     // como alias del esperado por compatibilidad con clientes viejos.
@@ -565,6 +581,131 @@ async function generarEndpoint(request, env, url) {
   return json({ resultados });
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   MODELO MULTI-SEDE (Fase 3B) — networks → practices → doctors + agregados.
+   Retro-compatible: una sede única es una red de 1 sede. Mismos guardrails de
+   validación que la API de tareas (X-Admin-Key, campos requeridos, slugs).
+   ══════════════════════════════════════════════════════════════════════════ */
+const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+function requireAdmin(request, url, env) {
+  if (!env.ADMIN_KEY) return json({ error: 'ADMIN_KEY no configurada en el Worker' }, 500);
+  const clave = request.headers.get('X-Admin-Key') || url.searchParams.get('admin_key');
+  if (clave !== env.ADMIN_KEY) return json({ error: 'Clave de administración inválida' }, 401);
+  return null;
+}
+
+/* ── POST /networks ── crea una red (grupo/dueño). */
+async function crearNetwork(request, env, url) {
+  const err = requireAdmin(request, url, env); if (err) return err;
+  let b; try { b = await request.json(); } catch { return json({ error: 'Body JSON inválido' }, 400); }
+  const id = String(b.network_id || '').trim();
+  if (!SLUG_RE.test(id)) return json({ error: 'network_id inválido (slug: minúsculas, números y guiones)' }, 400);
+  if (!b.nombre || !String(b.nombre).trim()) return json({ error: 'Campo requerido: nombre' }, 400);
+  try {
+    const row = await env.DB.prepare(`INSERT INTO networks (network_id, nombre, plan) VALUES (?1, ?2, ?3) RETURNING *`)
+      .bind(id, String(b.nombre).trim(), b.plan ? String(b.plan).trim() : null).first();
+    return json(row, 201);
+  } catch (e) {
+    if (String(e.message).includes('UNIQUE')) return json({ error: 'La red ya existe' }, 409);
+    console.error('D1 network insert:', e.message); return json({ error: 'Error interno al crear la red' }, 500);
+  }
+}
+
+/* ── POST /practices ── crea una sede dentro de una red. */
+async function crearPractice(request, env, url) {
+  const err = requireAdmin(request, url, env); if (err) return err;
+  let b; try { b = await request.json(); } catch { return json({ error: 'Body JSON inválido' }, 400); }
+  const id = String(b.practice_id || '').trim(), nid = String(b.network_id || '').trim();
+  if (!SLUG_RE.test(id)) return json({ error: 'practice_id inválido (slug)' }, 400);
+  if (!SLUG_RE.test(nid)) return json({ error: 'network_id inválido (slug)' }, 400);
+  if (!b.nombre || !String(b.nombre).trim()) return json({ error: 'Campo requerido: nombre' }, 400);
+  const net = await env.DB.prepare(`SELECT 1 FROM networks WHERE network_id = ?1`).bind(nid).first();
+  if (!net) return json({ error: `Red inexistente: ${nid}` }, 400);
+  try {
+    const row = await env.DB.prepare(
+      `INSERT INTO practices (practice_id, network_id, nombre, ciudad, direccion, perfil, activo)
+       VALUES (?1, ?2, ?3, ?4, ?5, NULL, 1) RETURNING *`
+    ).bind(id, nid, String(b.nombre).trim(), b.ciudad ? String(b.ciudad).trim() : null, b.direccion ? String(b.direccion).trim() : null).first();
+    return json(row, 201);
+  } catch (e) {
+    if (String(e.message).includes('UNIQUE')) return json({ error: 'La sede ya existe' }, 409);
+    console.error('D1 practice insert:', e.message); return json({ error: 'Error interno al crear la sede' }, 500);
+  }
+}
+
+/* ── POST /doctors ── crea un odontólogo en una sede. */
+async function crearDoctor(request, env, url) {
+  const err = requireAdmin(request, url, env); if (err) return err;
+  let b; try { b = await request.json(); } catch { return json({ error: 'Body JSON inválido' }, 400); }
+  const pid = String(b.practice_id || '').trim();
+  if (!SLUG_RE.test(pid)) return json({ error: 'practice_id inválido (slug)' }, 400);
+  if (!b.nombre || !String(b.nombre).trim()) return json({ error: 'Campo requerido: nombre' }, 400);
+  if (b.fecha_ingreso && !/^\d{4}-\d{2}-\d{2}$/.test(b.fecha_ingreso)) return json({ error: 'fecha_ingreso debe ser fecha ISO' }, 400);
+  const pr = await env.DB.prepare(`SELECT 1 FROM practices WHERE practice_id = ?1`).bind(pid).first();
+  if (!pr) return json({ error: `Sede inexistente: ${pid}` }, 400);
+  try {
+    const row = await env.DB.prepare(`INSERT INTO doctors (practice_id, nombre, fecha_ingreso) VALUES (?1, ?2, ?3) RETURNING *`)
+      .bind(pid, String(b.nombre).trim(), b.fecha_ingreso || null).first();
+    return json(row, 201);
+  } catch (e) {
+    console.error('D1 doctor insert:', e.message); return json({ error: 'Error interno al crear el odontólogo' }, 500);
+  }
+}
+
+/* ── GET /practices?network_id= ── lista las sedes de una red (para el selector). */
+async function listarPractices(env, url) {
+  const nid = url.searchParams.get('network_id');
+  if (!nid) return json({ error: 'network_id es obligatorio' }, 400);
+  const net = await env.DB.prepare(`SELECT * FROM networks WHERE network_id = ?1`).bind(nid).first();
+  if (!net) return json({ error: `Red no encontrada: ${nid}` }, 404);
+  const { results } = await env.DB.prepare(
+    `SELECT p.practice_id, p.network_id, p.nombre, p.ciudad, p.direccion, p.activo,
+            (SELECT COUNT(1) FROM doctors d WHERE d.practice_id = p.practice_id) AS doctores
+     FROM practices p WHERE p.network_id = ?1 ORDER BY p.nombre`
+  ).bind(nid).all();
+  return json({ network_id: nid, nombre: net.nombre, plan: net.plan, sedes: results || [] });
+}
+
+/* ── GET /red/metricas?network_id= ── métricas agregadas de la red + por sede.
+   Reusa computeMetrics por sede y agrega con promedio ponderado por volumen. */
+async function metricasRed(env, url) {
+  const nid = url.searchParams.get('network_id');
+  if (!nid) return json({ error: 'network_id es obligatorio' }, 400);
+  const net = await env.DB.prepare(`SELECT * FROM networks WHERE network_id = ?1`).bind(nid).first();
+  if (!net) return json({ error: `Red no encontrada: ${nid}` }, 404);
+  const { results: practices } = await env.DB.prepare(`SELECT * FROM practices WHERE network_id = ?1 ORDER BY nombre`).bind(nid).all();
+  if (!practices || !practices.length) return json({ error: 'La red no tiene sedes' }, 404);
+
+  const acc = { col: 0, prod: 0, net: 0, ov: 0, newp: 0, sched: 0, comp: 0, noshow: 0, pres: 0, acc: 0, active: 0, meses: 0 };
+  const round1 = n => Math.round(n * 10) / 10;
+  const sedes = [];
+  for (const p of practices) {
+    const { results: rows } = await env.DB.prepare(`SELECT * FROM metricas_mensuales WHERE practice_id = ?1 ORDER BY month ASC`).bind(p.practice_id).all();
+    const m = computeMetrics(rows || []);
+    sedes.push({
+      practice_id: p.practice_id, nombre: p.nombre, ciudad: p.ciudad, meses: (rows || []).length,
+      recaudacion_cop: Math.round(m.totalCollections), produccion_cop: Math.round(m.totalProduction), ingreso_neto_cop: Math.round(m.totalNetIncome),
+      tasa_gastos: round1(m.overheadRate), tasa_aceptacion: round1(m.acceptanceRate), tasa_ausentismo: round1(m.noShowRate),
+      tasa_cobro: round1(m.totalProduction ? m.totalCollections / m.totalProduction * 100 : 0),
+      pacientes_nuevos: m.totalNewPat, pacientes_activos: m.activePatients,
+    });
+    acc.col += m.totalCollections; acc.prod += m.totalProduction; acc.net += m.totalNetIncome; acc.ov += m.totalOverhead;
+    acc.newp += m.totalNewPat; acc.sched += m.totalScheduled; acc.comp += m.totalCompleted; acc.noshow += m.totalNoShows;
+    acc.pres += m.totalPlansPresented; acc.acc += m.totalPlansAccepted; acc.active += m.activePatients; acc.meses = Math.max(acc.meses, (rows || []).length);
+  }
+  const red = {
+    sedes: practices.length, meses: acc.meses,
+    recaudacion_cop: Math.round(acc.col), produccion_cop: Math.round(acc.prod), ingreso_neto_cop: Math.round(acc.net),
+    tasa_gastos: round1(acc.col ? acc.ov / acc.col * 100 : 0),
+    tasa_aceptacion: round1(acc.pres ? acc.acc / acc.pres * 100 : 0),
+    tasa_ausentismo: round1(acc.sched ? acc.noshow / acc.sched * 100 : 0),
+    tasa_cobro: round1(acc.prod ? acc.col / acc.prod * 100 : 0),
+    pacientes_nuevos: acc.newp, pacientes_activos: acc.active,
+  };
+  return json({ network_id: nid, nombre: net.nombre, plan: net.plan, red, sedes });
+}
+
 export default {
   async scheduled(event, env, ctx) {
     // Cron semanal (lunes 7am Bogotá / 12:00 UTC). Genera para cada clínica activa.
@@ -601,6 +742,16 @@ export default {
       if (request.method === 'POST') return generarEndpoint(request, env, url);
       return json({ error: 'Método no permitido' }, 405);
     }
+
+    // ── Modelo multi-sede (Fase 3B) ──
+    if (path === '/networks' && request.method === 'POST') return crearNetwork(request, env, url);
+    if (path === '/practices') {
+      if (request.method === 'POST') return crearPractice(request, env, url);
+      if (request.method === 'GET') return listarPractices(env, url);
+      return json({ error: 'Método no permitido' }, 405);
+    }
+    if (path === '/doctors' && request.method === 'POST') return crearDoctor(request, env, url);
+    if (path === '/red/metricas' && request.method === 'GET') return metricasRed(env, url);
 
     const matchId = path.match(/^\/tareas\/(\d+)$/);
     if (matchId) {

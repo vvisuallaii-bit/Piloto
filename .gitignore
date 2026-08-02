@@ -3,3 +3,6 @@
 
 # Node
 node_modules/
+
+# Backups de D1 (dumps de datos; se regeneran con wrangler d1 export)
+worker/backups/

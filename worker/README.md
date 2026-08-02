@@ -157,6 +157,73 @@ real** que de verdad entró lo registra recepción al completar:
 El `GET /tareas` devuelve en `resumen` tanto `valor_esperado_cop` como
 `valor_real_cop` (el cliente los recalcula con precisión por paciente).
 
+## Modelo multi-sede (Fase 3B)
+
+Extiende el modelo para soportar redes de varias sedes **sin construir un sistema
+paralelo**: una clínica de sede única es simplemente una red con UNA sede adentro.
+
+```
+networks (red / dueño)
+  └─ practices (sede)              network_id → networks
+       ├─ doctors (odontólogos)    practice_id → practices
+       ├─ metricas_mensuales       practice_id  (una fila por sede+mes)
+       ├─ tareas                   practice_id
+       └─ pacientes                practice_id
+```
+
+- **`networks`**: `network_id` (slug, PK), `nombre`, `plan` (texto), `creado_en`.
+- **`practices`**: agrega `network_id` (FK), `ciudad`, `direccion` a las columnas de
+  Paso 2 (`practice_id` PK, `nombre`, `perfil`, `activo`, `creado_en`).
+- **`doctors`**: `id` (autoincrement), `practice_id` (FK), `nombre`, `fecha_ingreso`.
+- `metricas_mensuales`, `tareas` y `pacientes` **ya** llevaban `practice_id` desde
+  Paso 2, así que se filtran/agregan por sede sin ambigüedad.
+
+Convención de nombres: se mantiene la del schema existente (snake_case;
+`practice_id`/`nombre`/`creado_en` en español para dominio; columnas de métricas
+en inglés porque vienen del CSV). Coherente con `practices`/`tareas` ya creadas.
+
+**Migración de las sedes únicas existentes** (migración 0007): cada `practice` sin
+red se convierte en su propia red (`network_id = practice_id`), sin tocar métricas
+ni tareas. Retro-compatible: la clínica piloto sigue igual.
+
+### Endpoints (Fase 3B)
+
+```bash
+# Listar las sedes de una red (para el selector del dashboard)
+GET /practices?network_id=red-dental-sonrisa
+
+# Métricas agregadas de la red + desglose por sede (promedio ponderado por volumen)
+GET /red/metricas?network_id=red-dental-sonrisa
+# → { network_id, nombre, red:{recaudacion_cop, tasa_gastos, ...}, sedes:[{...}] }
+
+# Tareas: acepta practice_id (una sede, como siempre) O network_id (toda la red)
+GET /tareas?practice_id=smile-dental      # sede única — comportamiento sin cambios
+GET /tareas?network_id=red-dental-sonrisa # agrega todas las sedes de la red
+# Sin practice_id ni network_id → 400 (igual que antes)
+
+# Crear red / sede / odontólogo (requieren X-Admin-Key, mismos guardrails que /tareas)
+POST /networks   {network_id, nombre, plan?}
+POST /practices  {practice_id, network_id, nombre, ciudad?, direccion?}
+POST /doctors    {practice_id, nombre, fecha_ingreso?}
+```
+
+### Migraciones y seed
+
+```bash
+cd Piloto/worker
+# Backup no-destructivo previo (queda en worker/backups/, ignorado por git)
+npx wrangler d1 export smile-dental-tareas --remote --output backups/backup.sql
+# Esquema + migración de datos
+npx wrangler d1 execute smile-dental-tareas --remote --file migrations/0006_multi_sede.sql
+npx wrangler d1 execute smile-dental-tareas --remote --file migrations/0007_migrar_sedes_unicas.sql
+# Red demo (4 sedes + 8 doctores + 48 métricas), consistente con el demo 3A
+node scripts/seed-network.mjs
+npx wrangler d1 execute smile-dental-tareas --remote --file seed_network.sql
+```
+
+**Fuera de alcance (roadmap):** roles/permisos por sede y pricing dinámico por
+número de sedes/doctores — hoy el precio se calcula manual.
+
 ## Zona horaria
 
 "Hoy" (para marcar vencidas) y "semana actual" (para el resumen ROI) se
