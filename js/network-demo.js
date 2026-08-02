@@ -14,14 +14,19 @@
 const NET = {
   active: (() => {
     const p = new URLSearchParams(location.search);
-    return p.get('demo') === 'red' || p.get('red') === 'true';
+    return p.get('demo') === 'red' || p.get('red') === 'true' || !!p.get('network');
   })(),
+  networkId: new URLSearchParams(location.search).get('network') || 'red-dental-sonrisa',
   name: 'Red Dental Sonrisa',
   mode: 'red',        // 'red' = vista consolidada | 'sede' = drill a una sede
   sedeIdx: 0,
   currentName: null,  // lo lee getWhiteLabel() (mayor prioridad en modo red)
   sedes: [],
-  analysis: null,     // análisis cacheado de la red
+  fuente: 'd1',       // 'd1' = datos reales de D1 | 'sintetico' = fallback
+  filtroMes: '',      // filtro de mes/período de la vista Red
+  tareasRed: null,    // cache de tareas consolidadas de la red
+  tareaSedeFiltro: '',// filtro por sede en las tareas consolidadas
+  analysis: null,     // análisis cacheado de la red (fallback del Asesor IA)
 };
 
 /* Estacionalidad mensual (derivada de la forma del demo de sede única). Media
@@ -90,17 +95,40 @@ function netBuildData(p) {
   });
 }
 
+/* Fallback sintético — solo si D1 no responde (la demo nunca se rompe). */
 function netBuildSedes() {
   NET.sedes = NET_PROFILES.map((p, i) => {
     const data = netBuildData(p);
     const m = computeMetrics(data);
     const annualGross = data.reduce((s, r) => s + r.gross_production, 0);
-    const doctors = p.doctors.map(d => ({
+    const doctors = p.doctors.map((d, di) => ({
       name: d.name, sede: p.name,
       production: Math.round(annualGross * d.share),
       acceptance: Math.round(d.acceptR * 100),
+      ausentismo: Math.round(m.noShowRate * (di === 0 ? 0.9 : 1.1) * 10) / 10,
     }));
     return { id: p.id, name: p.name, city: p.city, data, metrics: m, doctors, analysis: NET_SEDE_ANALYSIS[p.id], tareas: netBuildTareas(p, i, m) };
+  });
+}
+
+/* Fuente REAL (Fase 3C): arma NET.sedes desde GET /red/datos (D1). El dashboard
+   reusa computeMetrics/computeHealthScore/render sobre estos datos igual que con
+   una sede única — sin lógica nueva. */
+function netBuildSedesFromDatos(payload) {
+  NET.name = payload.nombre || NET.name;
+  NET.networkId = payload.network_id || NET.networkId;
+  NET.sedes = payload.sedes.map(s => {
+    const data = (s.data || []).map(r => ({ ...r }));   // filas crudas de metricas_mensuales
+    return {
+      id: s.practice_id, name: s.nombre, city: s.ciudad || '', data, metrics: computeMetrics(data),
+      doctors: (s.doctors || []).map(d => ({
+        name: d.nombre, sede: s.nombre,
+        production: Number(d.produccion_cop) || 0,
+        acceptance: Number(d.aceptacion) || 0,
+        ausentismo: Number(d.ausentismo) || 0,
+      })),
+      analysis: NET_SEDE_ANALYSIS[s.practice_id] || null,
+    };
   });
 }
 
@@ -222,12 +250,28 @@ function netBuildTareas(p, sidx, m) {
   return tasks;
 }
 /* Carga las tareas de la sede en el tablero (copia fresca cada vez). */
-function netLoadTareas(i) {
+/* Carga el tablero de Pendientes de una sede. En modo D1 (3C) jala las tareas
+   reales del Worker por practice_id; en fallback sintético usa las de memoria. */
+async function netLoadTareas(i) {
   if (typeof TAREAS === 'undefined') return;
-  TAREAS = JSON.parse(JSON.stringify(NET.sedes[i].tareas));
-  TAREAS_RESUMEN = null;
-  if (typeof recomputarResumen === 'function') recomputarResumen();
-  if (typeof renderTareasUI === 'function') renderTareasUI();
+  const s = NET.sedes[i];
+  if (NET.fuente !== 'd1') {
+    TAREAS = JSON.parse(JSON.stringify(s.tareas || []));
+    TAREAS_RESUMEN = null;
+    recomputarResumen(); renderTareasUI(); return;
+  }
+  TAREAS_CARGANDO = true; TAREAS_ERROR = false; renderTareasUI();
+  try {
+    const resp = await fetch(`${WORKER_URL}/tareas?practice_id=${encodeURIComponent(s.id)}`);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const j = await resp.json();
+    TAREAS = Array.isArray(j.tareas) ? j.tareas : [];
+    TAREAS_RESUMEN = j.resumen || null;
+    TAREAS_CARGANDO = false;
+    recomputarResumen(); renderTareasUI();
+  } catch (e) {
+    TAREAS = []; TAREAS_CARGANDO = false; TAREAS_ERROR = true; renderTareasUI();
+  }
 }
 
 /* ── ANÁLISIS IA CACHEADOS (no llaman a la API — evita quemar tokens) ── */
@@ -291,15 +335,26 @@ const NET_SEDE_ANALYSIS = {
   },
 };
 
-/* ── INIT ── */
-function initNetworkDemo() {
-  netBuildSedes();
+/* ── INIT ── ── Fase 3C: jala los datos reales de la red desde D1 (con fallback
+   sintético para que nunca se rompa). */
+async function initNetworkDemo() {
+  try {
+    const resp = await fetch(`${WORKER_URL}/red/datos?network_id=${encodeURIComponent(NET.networkId)}`);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const payload = await resp.json();
+    if (!payload.sedes || !payload.sedes.length) throw new Error('sin sedes');
+    netBuildSedesFromDatos(payload);
+    NET.fuente = 'd1';
+  } catch (e) {
+    netBuildSedes();          // fallback: datos sintéticos idénticos
+    NET.fuente = 'sintetico';
+  }
   NET.analysis = NET_ANALYSIS;
 
   // Encabezado / marca de la red (sin romper el white-label existente).
   document.title = `${NET.name} — Intelligence Dashboard`;
   const badge = document.querySelector('.demo-badge');
-  if (badge) badge.lastChild.textContent = ' Demo de red — 4 sedes (datos ficticios)';
+  if (badge) badge.lastChild.textContent = ` Red · ${NET.sedes.length} sedes (datos de demostración)`;
 
   // Datos base para el drill/chat/forecast (la primera sede).
   ALL = NET.sedes[0].data;
@@ -347,6 +402,7 @@ function setNetworkMode(mode) {
   const tabTareas = document.getElementById('tab-btn-tareas'); if (tabTareas) tabTareas.style.display = red ? 'none' : '';
   if (red) {
     NET.currentName = NET.name;
+    NET.tareasRed = null;   // refresca las tareas consolidadas al entrar a la red
     applyWhiteLabel();
     renderNetworkView();
   } else {
@@ -389,12 +445,77 @@ function netAnalysisHTML(r) {
     ${r.actions.map(a => `<div class="ai-action"><span class="abadge ${pc[a.priority] || 'ab-b'}">${escapeHtml(a.priority)}</span><span>${escapeHtml(a.text)}</span></div>`).join('')}
     <div class="ai-conf"><span class="ai-conf-lbl">Confianza del análisis</span><div class="ai-conf-track"><div class="ai-conf-fill" style="width:${conf}%"></div></div><span class="ai-conf-pct">${conf}%</span></div>`;
 }
-function netRunAnalysis() {
+/* Contexto de red para el Asesor IA: métricas de cada sede + consolidado. */
+function netContextoRed() {
+  const cop = v => '$' + (Math.round(v / 1e5) / 10).toFixed(1) + 'M';
+  const lineas = NET.sedes.map(s => {
+    const m = netSedeMetrics(s);
+    return `- ${s.name.replace('Sede ', '')}: recaudación ${cop(m.totalCollections)}, gastos ${m.overheadRate.toFixed(0)}% (meta <65%), aceptación ${Math.round(m.acceptanceRate)}% (meta >65%), ausentismo ${m.noShowRate.toFixed(0)}% (meta <12%), pacientes nuevos/mes ${Math.round(m.avgNewPatPerMonth)}`;
+  }).join('\n');
+  const cm = computeMetrics(NET.sedes.flatMap(netSedeData));
+  const docs = NET.sedes.flatMap(s => s.doctors).sort((a, b) => b.production - a.production).slice(0, 3)
+    .map(d => `${d.name} (${d.sede.replace('Sede ', '')}, ${cop(d.production)}, aceptación ${Math.round(d.acceptance)}%)`).join('; ');
+  return `RED: ${NET.name} · ${NET.sedes.length} sedes${NET.filtroMes ? ' · ' + NET.filtroMes : ''}
+Por sede:
+${lineas}
+Consolidado red: recaudación ${cop(cm.totalCollections)}, gastos ${cm.overheadRate.toFixed(0)}%, aceptación ${Math.round(cm.acceptanceRate)}%, ausentismo ${cm.noShowRate.toFixed(0)}%.
+Top doctores por producción: ${docs}.`;
+}
+
+/* Análisis ejecutivo de la RED — llama a la API real con el contexto agregado
+   (Fase 3C). Si falla, cae al análisis cacheado para no mostrar error en vivo. */
+async function netRunAnalysis() {
+  const btn = document.getElementById('net-ai-btn');
   document.getElementById('net-ai-empty').style.display = 'none';
   const el = document.getElementById('net-ai-result');
-  el.innerHTML = netAnalysisHTML(NET.analysis);
   el.style.display = 'block';
-  document.getElementById('net-ai-btn').disabled = true;
+  if (btn) btn.disabled = true;
+  if (NET.fuente !== 'd1') { el.innerHTML = netAnalysisHTML(NET.analysis); return; }
+  el.innerHTML = `<div class="ai-loading" style="display:flex"><div class="ld"><span></span><span></span><span></span></div><span style="font-size:13px;color:var(--muted)">Comparando las ${NET.sedes.length} sedes…</span></div>`;
+  const prompt = `Eres analista de operaciones de una RED de clínicas dentales colombianas. Compara las sedes, identifica cuál necesita atención y por qué, y da acciones priorizadas para el DUEÑO de la red.
+
+${netContextoRed()}
+
+Responde ÚNICAMENTE con JSON válido (sin markdown): {"headline":"hallazgo principal con la sede y números reales","what_happened":"2-3 frases comparando las sedes","why_it_matters":"2-3 frases de implicación para el dueño de la red","opportunity":"1-2 frases sobre la mayor oportunidad o riesgo","actions":[{"priority":"URGENT","text":"acción esta semana"},{"priority":"MEDIUM","text":"acción en 30 días"},{"priority":"LOW","text":"acción estratégica"}],"confidence":85}
+En español, tono colombiano directo. Cita sedes y cifras reales.`;
+  try {
+    const resp = await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: MODEL_ID, max_tokens: 1100, messages: [{ role: 'user', content: prompt }] }) });
+    const j = await resp.json();
+    if (j.error) throw new Error(j.error.message || 'API');
+    const raw = (j.content || []).map(b => b.text || '').join('');
+    const r = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    if (!r.headline || !Array.isArray(r.actions)) throw new Error('formato');
+    el.innerHTML = netAnalysisHTML(r);
+  } catch (e) {
+    el.innerHTML = netAnalysisHTML(NET.analysis);   // fallback: nunca error en vivo
+  }
+}
+
+/* Q&A comparativo de la red: pregunta libre + contexto de las 4 sedes (API real). */
+async function netAskRed(ev) {
+  if (ev && ev.key && ev.key !== 'Enter') return;
+  const inp = document.getElementById('net-ask-input');
+  const out = document.getElementById('net-ask-answer');
+  const q = (inp.value || '').trim();
+  if (!q) return;
+  out.style.display = 'block';
+  out.innerHTML = `<div class="ai-loading" style="display:flex"><div class="ld"><span></span><span></span><span></span></div><span style="font-size:13px;color:var(--muted)">Analizando…</span></div>`;
+  const prompt = `Eres el asesor de operaciones del DUEÑO de una red de clínicas dentales. Responde su pregunta comparando las sedes con datos reales.
+
+${netContextoRed()}
+
+Pregunta del dueño: "${q}"
+
+Responde directo y específico, citando sedes y números. Máximo 130 palabras, español, **negrita** en cifras o sedes clave.`;
+  try {
+    const resp = await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: MODEL_ID, max_tokens: 400, messages: [{ role: 'user', content: prompt }] }) });
+    const j = await resp.json();
+    if (j.error) throw new Error(j.error.message || 'API');
+    const raw = (j.content || []).map(b => b.text || '').join('');
+    out.innerHTML = `<div class="ai-block-txt">${renderMarkdown(raw)}</div>`;
+  } catch (e) {
+    out.innerHTML = `<div class="ai-block-txt">No se pudo consultar ahora. Intenta de nuevo en un momento.</div>`;
+  }
 }
 
 /* ── IA OFFLINE PARA LA DEMO (chat + proyección, sin API) ──────────────────
@@ -494,11 +615,83 @@ function netDemoForecastAnswer(q) {
   return `Tu acción de mayor impacto en **${name}** es cerrar el indicador que hoy está más lejos de la meta y recuperar la brecha de cobro de **${netM(gap)}**. Ambas suben el ingreso neto sin sumar costos fijos.`;
 }
 
+/* ── PENDIENTES CONSOLIDADOS DE LA RED (criterio 3C) ── */
+function netTareaSedeNombre(pid) { const s = NET.sedes.find(x => x.id === pid); return s ? s.name.replace('Sede ', '') : pid; }
+async function netCargarTareasRed() {
+  if (NET.fuente !== 'd1') { NET.tareasRed = { tareas: [], resumen: null }; if (NET.mode === 'red') renderNetworkView(); return; }
+  try {
+    const resp = await fetch(`${WORKER_URL}/tareas?network_id=${encodeURIComponent(NET.networkId)}`);
+    const j = await resp.json();
+    NET.tareasRed = { tareas: Array.isArray(j.tareas) ? j.tareas : [], resumen: j.resumen || null };
+  } catch (e) { NET.tareasRed = { tareas: [], resumen: null, error: true }; }
+  if (NET.mode === 'red') renderNetworkView();
+}
+function netFiltrarSede(id) { NET.tareaSedeFiltro = id; renderNetworkView(); }
+function netAbrirSedeTarea(pid) {
+  const i = NET.sedes.findIndex(s => s.id === pid);
+  if (i < 0) return;
+  setNetworkMode('sede'); selectSede(i);
+  const btn = document.getElementById('tab-btn-tareas'); if (btn) switchTab('tareas', btn);
+}
+function netTareasRedCard() {
+  if (NET.tareasRed === null) { setTimeout(netCargarTareasRed, 0); return `<div class="card"><div class="card-title">Pendientes de la red</div><div class="tareas-loading"><div class="spinner" style="width:18px;height:18px;border-width:2px"></div>Cargando tareas…</div></div>`; }
+  const r = NET.tareasRed.resumen;
+  const abiertas = NET.tareasRed.tareas.filter(t => t.estado === 'pendiente' || t.estado === 'en_proceso');
+  const filtro = NET.tareaSedeFiltro || '';
+  const vis = filtro ? abiertas.filter(t => t.practice_id === filtro) : abiertas;
+  const chips = `<button class="tf-btn${!filtro ? ' active' : ''}" onclick="netFiltrarSede('')">Todas <span class="tf-count">${abiertas.length}</span></button>` +
+    NET.sedes.map(s => `<button class="tf-btn${filtro === s.id ? ' active' : ''}" onclick="netFiltrarSede('${s.id}')">${escapeHtml(s.name.replace('Sede ', ''))} <span class="tf-count">${abiertas.filter(t => t.practice_id === s.id).length}</span></button>`).join('');
+  const lista = vis.length ? vis.map(t => `
+    <div class="tarea-row clickable" role="button" tabindex="0" onclick="netAbrirSedeTarea('${t.practice_id}')">
+      <div class="tarea-main">
+        <div class="tarea-title">${escapeHtml(t.titulo)}</div>
+        <div class="tarea-meta">
+          <span class="net-pill blue">${escapeHtml(netTareaSedeNombre(t.practice_id))}</span>
+          <span class="tarea-badge prio-${t.prioridad}">${escapeHtml(T_PRIORIDAD_LBL[t.prioridad] || t.prioridad)}</span>
+          <span class="tarea-badge">${escapeHtml(T_ASIGNADO_LBL[t.asignado_a] || t.asignado_a)}</span>
+          ${t.valor_estimado_cop > 0 ? `<span class="tarea-valor">${fmtCOP(t.valor_estimado_cop)}</span>` : ''}
+        </div>
+      </div>
+      <div class="tarea-chevron" aria-hidden="true">›</div>
+    </div>`).join('') : `<div class="tareas-empty">Sin pendientes ${filtro ? 'en esta sede' : 'en la red'}. 🎉</div>`;
+  return `<div class="card">
+    <div class="card-title">Pendientes de la red <span class="net-hint">clic en una tarea para gestionarla en su sede</span></div>
+    <div class="roi-strip" style="margin-bottom:14px">
+      <div class="roi-card"><div class="roi-lbl">Recuperado real (semana)</div><div class="roi-val roi-val-money">${fmtCOP(r?.valor_real_cop || 0)}</div><div class="roi-sub">esperado ${fmtCOP(r?.valor_esperado_cop || 0)}</div></div>
+      <div class="roi-card"><div class="roi-lbl">Completadas</div><div class="roi-val">${r?.completadas_semana || 0} de ${r?.total_semana || 0}</div><div class="roi-sub">en toda la red</div></div>
+      <div class="roi-card${(r?.vencidas_count || 0) > 0 ? ' roi-alert' : ''}"><div class="roi-lbl">Vencidas</div><div class="roi-val">${r?.vencidas_count || 0}</div><div class="roi-sub">requieren atención</div></div>
+    </div>
+    <div class="tareas-toolbar"><div class="tarea-filters">${chips}</div></div>
+    <div class="tareas-list">${lista}</div>
+  </div>`;
+}
+
 /* ── VISTA RED COMPLETA ── */
+/* Datos de una sede aplicando el filtro de mes de la vista Red. */
+function netSedeData(s) { return NET.filtroMes ? s.data.filter(r => r.month === NET.filtroMes) : s.data; }
+function netSedeMetrics(s) { return computeMetrics(netSedeData(s)); }
+function netNoShowColor(pct) { return pct < 8 ? 'green' : pct < 12 ? 'amber' : 'red'; }
+function netSort(which, key) {
+  const st = which === 'comp' ? NET.sortComp : NET.sortDoc;
+  if (st && st.key === key) st.dir *= -1;
+  else { const s = { key, dir: (key === 'sede' || key === 'name') ? 1 : -1 }; if (which === 'comp') NET.sortComp = s; else NET.sortDoc = s; }
+  renderNetworkView();
+}
+function netSetMes(v) { NET.filtroMes = v; renderNetworkView(); }
+function netThSort(which, key, label, meta) {
+  const st = which === 'comp' ? NET.sortComp : NET.sortDoc;
+  const on = st && st.key === key;
+  const ind = on ? (st.dir < 0 ? ' ↓' : ' ↑') : '';
+  return `<th class="net-th-sort${on ? ' active' : ''}" onclick="netSort('${which}','${key}')">${label}${meta ? `<span class="net-meta">${meta}</span>` : ''}<span class="net-sort-ind">${ind}</span></th>`;
+}
+
 function renderNetworkView() {
   const sedes = NET.sedes;
-  // Salud consolidada: se calcula sobre los datos combinados de las 4 sedes.
-  const combined = sedes.flatMap(s => s.data);
+  if (!NET.sortComp) NET.sortComp = { key: 'recaud', dir: -1 };
+  if (!NET.sortDoc) NET.sortDoc = { key: 'production', dir: -1 };
+
+  // Salud consolidada sobre los datos combinados (respeta el filtro de mes).
+  const combined = sedes.flatMap(netSedeData);
   const hs = computeHealthScore(combined);
   const cm = computeMetrics(combined);
   const ringOffset = 289 - 289 * hs.total / 100;
@@ -510,31 +703,51 @@ function renderNetworkView() {
       <div class="hs-item-bench">${it.bench}</div>
     </div>`).join('');
 
-  // Tabla comparadora de sedes (semáforo en gastos/ausentismo/aceptación).
-  const rows = sedes.map(s => {
-    const m = s.metrics, st = benchmarkStates(m);
-    return `<tr>
-      <td class="net-sede-name">${escapeHtml(s.name.replace('Sede ', ''))}<span class="net-sede-city">${escapeHtml(s.city)}</span></td>
-      <td class="net-num">${fmtCOP(m.totalCollections)}</td>
-      <td><span class="net-pill ${STATE_COLOR[st.overhead]}">${m.overheadRate.toFixed(1)}%</span></td>
-      <td><span class="net-pill ${STATE_COLOR[st.noShow]}">${m.noShowRate.toFixed(1)}%</span></td>
-      <td><span class="net-pill ${STATE_COLOR[st.acceptance]}">${Math.round(m.acceptanceRate)}%</span></td>
-    </tr>`;
-  }).join('');
-
-  // Ranking de los 8 doctores por producción (aceptación con semáforo).
-  const docs = sedes.flatMap(s => s.doctors).sort((a, b) => b.production - a.production);
-  const maxProd = docs[0].production;
-  const docRows = docs.map((d, i) => `
-    <tr>
-      <td class="net-rank">${i + 1}</td>
-      <td class="net-doc-name">${escapeHtml(d.name)}</td>
-      <td class="net-doc-sede">${escapeHtml(d.sede.replace('Sede ', ''))}</td>
-      <td class="net-num"><div class="net-bar-cell"><span>${fmtCOP(d.production)}</span><div class="net-bar"><div class="net-bar-fill" style="width:${Math.round(d.production / maxProd * 100)}%"></div></div></div></td>
-      <td><span class="net-pill ${netAcceptColor(d.acceptance)}">${d.acceptance}%</span></td>
+  // Métricas + salud por sede. La sede que necesita atención = menor salud.
+  const filas = sedes.map(s => {
+    const m = netSedeMetrics(s), h = computeHealthScore(netSedeData(s));
+    return { s, m, st: benchmarkStates(m), salud: h.total, sede: s.name.replace('Sede ', ''),
+      recaud: m.totalCollections, produccion: m.totalProduction, gastos: m.overheadRate, ausentismo: m.noShowRate, aceptacion: m.acceptanceRate };
+  });
+  const peor = filas.reduce((a, b) => b.salud < a.salud ? b : a);
+  const ck = NET.sortComp.key;
+  filas.sort((a, b) => ck === 'sede' ? a.sede.localeCompare(b.sede) * NET.sortComp.dir : (a[ck] - b[ck]) * NET.sortComp.dir);
+  const rows = filas.map(f => `<tr${f.s === peor.s ? ' class="net-row-alert"' : ''}>
+      <td class="net-sede-name" data-label="Sede">${escapeHtml(f.sede)}<span class="net-sede-city">${escapeHtml(f.s.city)}</span></td>
+      <td class="net-num" data-label="Recaudación">${fmtCOP(f.recaud)}</td>
+      <td class="net-num" data-label="Producción">${fmtCOP(f.produccion)}</td>
+      <td data-label="Gastos"><span class="net-pill ${STATE_COLOR[f.st.overhead]}">${f.gastos.toFixed(1)}%</span></td>
+      <td data-label="Ausentismo"><span class="net-pill ${STATE_COLOR[f.st.noShow]}">${f.ausentismo.toFixed(1)}%</span></td>
+      <td data-label="Aceptación"><span class="net-pill ${STATE_COLOR[f.st.acceptance]}">${Math.round(f.aceptacion)}%</span></td>
     </tr>`).join('');
 
+  // Ranking de doctores (ordenable por producción / aceptación / ausentismo).
+  const docs = sedes.flatMap(s => s.doctors).slice();
+  const maxProd = Math.max(...docs.map(d => d.production), 1);
+  const dk = NET.sortDoc.key;
+  docs.sort((a, b) => (dk === 'name' || dk === 'sede') ? String(a[dk]).localeCompare(String(b[dk])) * NET.sortDoc.dir : (a[dk] - b[dk]) * NET.sortDoc.dir);
+  const docRows = docs.map((d, i) => `
+    <tr>
+      <td class="net-rank" data-label="#">${i + 1}</td>
+      <td class="net-doc-name" data-label="Doctor">${escapeHtml(d.name)}</td>
+      <td class="net-doc-sede" data-label="Sede">${escapeHtml(d.sede.replace('Sede ', ''))}</td>
+      <td class="net-num" data-label="Producción"><div class="net-bar-cell"><span>${fmtCOP(d.production)}</span><div class="net-bar"><div class="net-bar-fill" style="width:${Math.round(d.production / maxProd * 100)}%"></div></div></div></td>
+      <td data-label="Aceptación"><span class="net-pill ${netAcceptColor(d.acceptance)}">${Math.round(d.acceptance)}%</span></td>
+      <td data-label="Ausentismo"><span class="net-pill ${netNoShowColor(d.ausentismo)}">${Number(d.ausentismo).toFixed(1)}%</span></td>
+    </tr>`).join('');
+
+  // Opciones del filtro de mes (a partir de los meses disponibles).
+  const meses = (sedes[0]?.data || []).map(r => r.month);
+  const mesOpts = ['<option value="">Todos los meses</option>'].concat(meses.map(mo =>
+    `<option value="${mo}"${mo === NET.filtroMes ? ' selected' : ''}>${new Date(mo + '-02').toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })}</option>`)).join('');
+  const atencionFalla = ['overhead', 'noShow', 'acceptance', 'newPat', 'collection'].filter(k => peor.st[k] === 'bad').length;
+
   document.getElementById('network-view').innerHTML = `
+    <div class="net-filterbar">
+      <span class="filter-label">Período</span>
+      <select class="nb-sede-select" onchange="netSetMes(this.value)">${mesOpts}</select>
+      ${NET.filtroMes ? '<button class="filter-reset" onclick="netSetMes(\'\')">✕ Todos</button>' : ''}
+    </div>
     <div class="net-summary-row">
       <div class="hs-wrap net-health">
         <div class="hs-left">
@@ -546,36 +759,56 @@ function renderNetworkView() {
             <div class="hs-score-center"><div class="hs-score-num">${hs.total}</div><div class="hs-score-max">/100</div></div>
           </div>
           <div class="hs-label ${hs.labelClass}">${hs.label}</div>
-          <div class="net-health-sub">Salud consolidada · ${sedes.length} sedes</div>
+          <div class="net-health-sub">Salud consolidada · ${sedes.length} sedes${NET.filtroMes ? ' · ' + new Date(NET.filtroMes + '-02').toLocaleDateString('es-CO', { month: 'long', year: 'numeric' }) : ''}</div>
         </div>
         <div class="hs-right">${healthItems}</div>
       </div>
       <div class="net-kpi-col">
-        <div class="net-kpi"><div class="net-kpi-lbl">Recaudación de la red</div><div class="net-kpi-val">${fmtCOP(cm.totalCollections)}</div><div class="net-kpi-sub">últimos 12 meses</div></div>
+        <div class="net-attention">
+          <div class="net-attention-lbl"><i>⚠</i> Sede que necesita atención</div>
+          <div class="net-attention-sede">${escapeHtml(peor.sede)}</div>
+          <div class="net-attention-sub">Salud ${peor.salud}/100${atencionFalla ? ' · ' + atencionFalla + ' métrica' + (atencionFalla === 1 ? '' : 's') + ' bajo meta' : ''}</div>
+        </div>
+        <div class="net-kpi"><div class="net-kpi-lbl">Recaudación de la red</div><div class="net-kpi-val">${fmtCOP(cm.totalCollections)}</div><div class="net-kpi-sub">${NET.filtroMes ? 'el mes seleccionado' : 'últimos ' + (sedes[0]?.data.length || 12) + ' meses'}</div></div>
         <div class="net-kpi"><div class="net-kpi-lbl">Ingreso neto de la red</div><div class="net-kpi-val">${fmtCOP(cm.totalNetIncome)}</div><div class="net-kpi-sub">${cm.totalCollections ? Math.round(cm.totalNetIncome / cm.totalCollections * 100) : 0}% margen</div></div>
-        <div class="net-kpi"><div class="net-kpi-lbl">Pacientes nuevos / mes</div><div class="net-kpi-val">${Math.round(cm.avgNewPatPerMonth)}</div><div class="net-kpi-sub">sumando las 4 sedes</div></div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">Comparativa de sedes</div>
+      <div class="card-title">Comparativa de sedes <span class="net-hint">toca una columna para ordenar</span></div>
       <div class="net-table-wrap">
-        <table class="net-table">
-          <thead><tr><th>Sede</th><th>Recaudación</th><th>Gastos <span class="net-meta">meta &lt;65%</span></th><th>Ausentismo <span class="net-meta">meta &lt;12%</span></th><th>Aceptación <span class="net-meta">meta &gt;65%</span></th></tr></thead>
+        <table class="net-table net-table-cards">
+          <thead><tr>
+            ${netThSort('comp', 'sede', 'Sede')}
+            ${netThSort('comp', 'recaud', 'Recaudación')}
+            ${netThSort('comp', 'produccion', 'Producción')}
+            ${netThSort('comp', 'gastos', 'Gastos', 'meta &lt;65%')}
+            ${netThSort('comp', 'ausentismo', 'Ausentismo', 'meta &lt;12%')}
+            ${netThSort('comp', 'aceptacion', 'Aceptación', 'meta &gt;65%')}
+          </tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">Ranking de doctores · producción y aceptación</div>
+      <div class="card-title">Ranking de doctores <span class="net-hint">toca una columna para ordenar</span></div>
       <div class="net-table-wrap">
-        <table class="net-table">
-          <thead><tr><th>#</th><th>Doctor</th><th>Sede</th><th>Producción (12m)</th><th>Aceptación</th></tr></thead>
+        <table class="net-table net-table-cards">
+          <thead><tr>
+            <th>#</th>
+            ${netThSort('doc', 'name', 'Doctor')}
+            ${netThSort('doc', 'sede', 'Sede')}
+            ${netThSort('doc', 'production', 'Producción')}
+            ${netThSort('doc', 'acceptance', 'Aceptación')}
+            ${netThSort('doc', 'ausentismo', 'Ausentismo')}
+          </tr></thead>
           <tbody>${docRows}</tbody>
         </table>
       </div>
     </div>
+
+    ${netTareasRedCard()}
 
     <div class="ai-panel open">
       <div class="ai-panel-header">
@@ -586,8 +819,20 @@ function renderNetworkView() {
         </button>
       </div>
       <div class="ai-body">
-        <div class="ai-empty" id="net-ai-empty"><div class="ai-empty-icon">◈</div>Haz clic en <strong style="color:var(--accent)">Analizar con IA</strong> para el resumen ejecutivo de la red.</div>
+        <div class="ai-empty" id="net-ai-empty"><div class="ai-empty-icon">◈</div>Haz clic en <strong style="color:var(--accent)">Analizar con IA</strong> para el resumen ejecutivo de la red, o pregunta abajo.</div>
         <div class="ai-result" id="net-ai-result" style="display:none"></div>
+        <div class="net-ask">
+          <div class="net-ask-row">
+            <input type="text" id="net-ask-input" class="net-ask-input" placeholder="Pregunta comparativa: ¿qué sede tiene mayor oportunidad en aceptación?" onkeydown="netAskRed(event)">
+            <button class="ai-btn" onclick="netAskRed()">Preguntar</button>
+          </div>
+          <div class="net-ask-chips">
+            <button class="fc-ex-chip" onclick="document.getElementById('net-ask-input').value=this.textContent;netAskRed()">¿Qué sede necesita más atención?</button>
+            <button class="fc-ex-chip" onclick="document.getElementById('net-ask-input').value=this.textContent;netAskRed()">¿Dónde está la mayor oportunidad de ingresos?</button>
+            <button class="fc-ex-chip" onclick="document.getElementById('net-ask-input').value=this.textContent;netAskRed()">¿Qué doctor lidera la red?</button>
+          </div>
+          <div class="ai-result" id="net-ask-answer" style="display:none;margin-top:12px"></div>
+        </div>
       </div>
     </div>`;
 }

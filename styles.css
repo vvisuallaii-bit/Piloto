@@ -748,3 +748,41 @@ select:hover,select:focus{border-color:var(--accent)}
   #network-bar{padding:0 16px}
   .nb-inner{padding:12px 14px}
 }
+
+/* ══ FASE 3C — vista Red conectada a D1 ══════════════════════════════════ */
+.net-filterbar{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.net-hint{font-size:11px;font-weight:400;color:var(--faint);margin-left:8px}
+.net-th-sort{cursor:pointer;user-select:none;white-space:nowrap;transition:color .15s}
+.net-th-sort:hover{color:var(--text)}
+.net-th-sort.active{color:var(--accent)}
+.net-sort-ind{font-family:'JetBrains Mono',monospace;font-weight:600}
+.net-row-alert{background:rgba(248,81,73,.05)}
+.net-row-alert td:first-child{box-shadow:inset 3px 0 0 var(--red)}
+.net-attention{background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.25);border-radius:var(--radius);padding:12px 16px}
+.net-attention-lbl{font-size:10px;font-weight:600;color:var(--red);text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:5px}
+.net-attention-lbl i{font-style:normal}
+.net-attention-sede{font-size:20px;font-weight:700;color:var(--text);margin-top:4px}
+.net-attention-sub{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* Responsive: la tabla comparadora y el ranking colapsan a tarjetas apiladas */
+@media(max-width:720px){
+  .net-table-cards thead{display:none}
+  .net-table-cards tr{display:block;border:1px solid var(--border);border-radius:12px;margin-bottom:10px;padding:4px 2px;background:var(--surface)}
+  .net-table-cards tbody tr:hover{background:var(--surface)}
+  .net-table-cards td{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:9px 14px;border:none;text-align:right}
+  .net-table-cards td::before{content:attr(data-label);font-size:11px;color:var(--muted);font-weight:600;text-align:left}
+  .net-table-cards .net-sede-city{display:inline;margin-left:6px}
+  .net-table-cards .net-bar-cell{min-width:auto;flex-direction:row;align-items:center;gap:8px}
+  .net-table-cards .net-bar{width:70px}
+  .net-row-alert td:first-child{box-shadow:none}
+  .net-row-alert{border-color:rgba(248,81,73,.5)}
+  .net-summary-row{grid-template-columns:1fr}
+}
+
+/* Asesor IA de red — Q&A comparativo */
+.net-ask{margin-top:14px;border-top:1px solid var(--border);padding-top:14px}
+.net-ask-row{display:flex;gap:8px;flex-wrap:wrap}
+.net-ask-input{flex:1;min-width:260px;font-family:'Inter',sans-serif;font-size:13px;padding:10px 14px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);outline:none}
+.net-ask-input:focus{border-color:var(--accent)}
+.net-ask-input::placeholder{color:var(--faint)}
+.net-ask-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}

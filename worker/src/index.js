@@ -706,6 +706,28 @@ async function metricasRed(env, url) {
   return json({ network_id: nid, nombre: net.nombre, plan: net.plan, red, sedes });
 }
 
+/* ── GET /red/datos?network_id= ── datos CRUDOS por sede (métricas mensuales +
+   doctores con sus métricas). Es la fuente del frontend en modo Red (Fase 3C):
+   el dashboard reusa computeMetrics/computeHealthScore/render sobre estos datos,
+   igual que con una sede única — sin lógica nueva. */
+async function redDatos(env, url) {
+  const nid = url.searchParams.get('network_id');
+  if (!nid) return json({ error: 'network_id es obligatorio' }, 400);
+  const net = await env.DB.prepare(`SELECT * FROM networks WHERE network_id = ?1`).bind(nid).first();
+  if (!net) return json({ error: `Red no encontrada: ${nid}` }, 404);
+  const { results: practices } = await env.DB.prepare(`SELECT * FROM practices WHERE network_id = ?1 ORDER BY nombre`).bind(nid).all();
+  if (!practices || !practices.length) return json({ error: 'La red no tiene sedes' }, 404);
+  const sedes = [];
+  for (const p of practices) {
+    const { results: data } = await env.DB.prepare(`SELECT * FROM metricas_mensuales WHERE practice_id = ?1 ORDER BY month ASC`).bind(p.practice_id).all();
+    const { results: doctors } = await env.DB.prepare(
+      `SELECT id, nombre, produccion_cop, aceptacion, ausentismo, fecha_ingreso FROM doctors WHERE practice_id = ?1 ORDER BY produccion_cop DESC`
+    ).bind(p.practice_id).all();
+    sedes.push({ practice_id: p.practice_id, nombre: p.nombre, ciudad: p.ciudad, data: data || [], doctors: doctors || [] });
+  }
+  return json({ network_id: nid, nombre: net.nombre, plan: net.plan, sedes });
+}
+
 export default {
   async scheduled(event, env, ctx) {
     // Cron semanal (lunes 7am Bogotá / 12:00 UTC). Genera para cada clínica activa.
@@ -752,6 +774,7 @@ export default {
     }
     if (path === '/doctors' && request.method === 'POST') return crearDoctor(request, env, url);
     if (path === '/red/metricas' && request.method === 'GET') return metricasRed(env, url);
+    if (path === '/red/datos' && request.method === 'GET') return redDatos(env, url);
 
     const matchId = path.match(/^\/tareas\/(\d+)$/);
     if (matchId) {

@@ -416,7 +416,7 @@ async function setMontoReal(i,val){
    pendiente. Optimista: la vista ya se actualizó, esto persiste. */
 async function guardarPacientes(t){
   // Demo de red: guarda en memoria (t ya es la entrada de TAREAS), sin PATCH.
-  if(typeof NET!=='undefined'&&NET.active){
+  if(typeof NET!=='undefined'&&NET.active&&NET.fuente==='sintetico'){
     if(t.estado==='pendiente')t.estado='en_proceso';
     recomputarResumen();renderBellBadge();renderBellDropdown();return;
   }
@@ -442,7 +442,7 @@ async function completarTareaDetalle(){
   const resultado=ps.some(p=>p.estado==='agendo_cita')?'agendo_cita':ps.some(p=>p.estado==='no_respondio')?'no_respondio':'no_aplicaba';
   const m=document.getElementById('td-save-msg');if(m){m.className='td-save-msg';m.textContent='Guardando…';}
   // Demo de red: completa en memoria, sin PATCH.
-  if(typeof NET!=='undefined'&&NET.active){
+  if(typeof NET!=='undefined'&&NET.active&&NET.fuente==='sintetico'){
     t.estado='completada';t.resultado=resultado;t.completado_por=t.asignado_a;
     recomputarResumen();volverALista();return;
   }
@@ -474,7 +474,7 @@ async function completarTareaSinPac(){
   }
   if(m){m.className='td-save-msg';m.textContent='Guardando…';}
   // Demo de red: completa en memoria, sin PATCH.
-  if(typeof NET!=='undefined'&&NET.active){
+  if(typeof NET!=='undefined'&&NET.active&&NET.fuente==='sintetico'){
     t.estado='completada';t.resultado=sel.dataset.r;t.completado_por=t.asignado_a;
     if(body.valor_real_cop!==undefined)t.valor_real_cop=body.valor_real_cop;
     recomputarResumen();volverALista();return;
