@@ -698,3 +698,53 @@ select:hover,select:focus{border-color:var(--accent)}
 .rs-copy:hover{background:var(--accent2)}
 .rs-msg{font-size:12px;color:var(--green)}
 @media(max-width:600px){.rs-stats{grid-template-columns:1fr}}
+
+/* ══ DEMO MULTI-SEDE (Fase 3A) ═══════════════════════════════════════════
+   Reutiliza la paleta, tipografía y estilo de tarjetas del dashboard. */
+#network-bar{max-width:1180px;margin:0 auto 4px;padding:0 28px}
+.nb-inner{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px}
+.nb-title{font-size:14px;color:var(--text);font-weight:500}
+.nb-title strong{font-weight:700}
+.nb-badge{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--accent);background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.3);padding:2px 7px;border-radius:5px;letter-spacing:.08em;margin-right:4px}
+.nb-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.nb-seg{display:inline-flex;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:3px}
+.nb-seg-btn{font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:var(--muted);background:transparent;border:none;padding:6px 14px;border-radius:16px;cursor:pointer;transition:all .15s}
+.nb-seg-btn:hover{color:var(--text)}
+.nb-seg-btn.active{color:#0D1117;background:var(--accent)}
+.nb-sede-select{font-family:'Inter',sans-serif;font-size:12px;font-weight:500;padding:7px 12px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);cursor:pointer;outline:none}
+.nb-sede-select:focus{border-color:var(--accent)}
+
+.net-summary-row{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:18px}
+.net-health-sub{font-size:11px;color:var(--faint);margin-top:8px;text-align:center}
+.net-kpi-col{display:flex;flex-direction:column;gap:12px}
+.net-kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;flex:1;display:flex;flex-direction:column;justify-content:center}
+.net-kpi-lbl{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.net-kpi-val{font-size:22px;font-weight:700;color:var(--text);margin-top:4px;letter-spacing:-.01em}
+.net-kpi-sub{font-size:11px;color:var(--faint);margin-top:2px}
+
+.net-table-wrap{overflow-x:auto}
+.net-table{width:100%;border-collapse:collapse;font-size:13px}
+.net-table th{text-align:left;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;border-bottom:1px solid var(--border2);white-space:nowrap}
+.net-table td{padding:12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.net-table tbody tr:last-child td{border-bottom:none}
+.net-table tbody tr:hover{background:var(--surface2)}
+.net-meta{display:block;font-size:9px;font-weight:500;color:var(--faint);text-transform:none;letter-spacing:0;margin-top:2px}
+.net-sede-name{font-weight:600;color:var(--text)}
+.net-sede-city{display:block;font-size:11px;font-weight:400;color:var(--faint);margin-top:2px}
+.net-num{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--text);white-space:nowrap}
+.net-pill{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px}
+.net-pill.green{color:var(--green);background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.28)}
+.net-pill.amber{color:var(--amber);background:rgba(227,179,65,.1);border:1px solid rgba(227,179,65,.28)}
+.net-pill.red{color:var(--red);background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.28)}
+.net-rank{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--muted);width:28px}
+.net-doc-name{font-weight:600;color:var(--text);white-space:nowrap}
+.net-doc-sede{font-size:12px;color:var(--muted)}
+.net-bar-cell{display:flex;flex-direction:column;gap:5px;min-width:150px}
+.net-bar{height:4px;background:var(--border2);border-radius:2px;overflow:hidden}
+.net-bar-fill{height:4px;border-radius:2px;background:var(--accent)}
+
+@media(max-width:820px){
+  .net-summary-row{grid-template-columns:1fr}
+  #network-bar{padding:0 16px}
+  .nb-inner{padding:12px 14px}
+}

@@ -29,7 +29,8 @@ const URL_PARAMS=(()=>{
 })();
 
 function getWhiteLabel(){
-  // Priority: URL param > Perfil de la Clínica > default
+  // Priority: modo red (nombre de red o sede activa) > URL param > Perfil > default
+  if(typeof NET!=='undefined'&&NET&&NET.active&&NET.currentName) return NET.currentName;
   if(URL_PARAMS.active) return URL_PARAMS.name;
   if(PRACTICE_PROFILE?.name) return PRACTICE_PROFILE.name;
   return 'Smile Dental';

@@ -71,7 +71,14 @@
   </button>
 </nav>
 
+<!-- Barra de demo de red (solo visible con ?demo=red) -->
+<div id="network-bar" style="display:none"></div>
+
 <div class="page">
+
+<!-- Vista Red Completa (solo modo demo de red) -->
+<div id="network-view" style="display:none"></div>
+
 
 <!-- PRACTICE PERFORMANCE -->
 <div class="tab-pane active" id="tab-sales">
@@ -620,6 +627,7 @@
 <script defer src="js/profile.js"></script>
 <script defer src="js/chat.js"></script>
 <script defer src="js/forecast.js"></script>
+<script defer src="js/network-demo.js"></script>
 <!-- RESUMEN SEMANAL DEL DUEÑO (modal) -->
 <div class="rs-overlay" id="resumen-overlay" onclick="resumenOverlayClick(event)">
   <div class="rs-modal">

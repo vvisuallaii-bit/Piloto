@@ -5,4 +5,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(ta)ta.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';});
 });
 
-loadCSV();loadArticles();loadProfile();applyWhiteLabel();
+loadArticles();loadProfile();
+// Modo demo de red (?demo=red): bootstrap propio, sin cargar el CSV de sede única.
+// Aditivo: sin el parámetro, el comportamiento es idéntico al de siempre.
+if(typeof NET!=='undefined'&&NET.active){ initNetworkDemo(); }
+else{ loadCSV(); }
+applyWhiteLabel();

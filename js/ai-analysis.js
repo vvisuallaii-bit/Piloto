@@ -69,6 +69,12 @@ async function runAnalysis(){
   document.getElementById('ai-empty').style.display='none';
   document.getElementById('ai-result').style.display='none';
 
+  // Demo de red: devuelve el análisis PRE-GENERADO de la sede activa (sin API).
+  if(typeof NET!=='undefined'&&NET.active){
+    const r=(NET.mode==='sede'&&NET.sedes[NET.sedeIdx])?NET.sedes[NET.sedeIdx].analysis:NET.analysis;
+    showResult(r);LAST_RESULT=r;return;
+  }
+
   const data=CURRENT_DATA;
   const m=computeMetrics(data);
   const overheadRate=Math.round(m.overheadRate);
