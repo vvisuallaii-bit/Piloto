@@ -91,7 +91,7 @@ function netBuildData(p) {
 }
 
 function netBuildSedes() {
-  NET.sedes = NET_PROFILES.map(p => {
+  NET.sedes = NET_PROFILES.map((p, i) => {
     const data = netBuildData(p);
     const m = computeMetrics(data);
     const annualGross = data.reduce((s, r) => s + r.gross_production, 0);
@@ -100,8 +100,66 @@ function netBuildSedes() {
       production: Math.round(annualGross * d.share),
       acceptance: Math.round(d.acceptR * 100),
     }));
-    return { id: p.id, name: p.name, city: p.city, data, metrics: m, doctors, analysis: NET_SEDE_ANALYSIS[p.id] };
+    return { id: p.id, name: p.name, city: p.city, data, metrics: m, doctors, analysis: NET_SEDE_ANALYSIS[p.id], tareas: netBuildTareas(p, i) };
   });
+}
+
+/* ── TAREAS DE DEMO POR SEDE ───────────────────────────────────────────────
+   Reponen el tablero de Pendientes (con el overview mensual de "Recuperado
+   real") dentro del demo de red, sin backend. Se cargan al hacer drill a una
+   sede; las interacciones se guardan en memoria (ver guards en tareas.js). */
+function netLunes() {
+  const d = new Date();
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+const NET_PAC = [
+  ['María F. Ríos', '+57 310 456 7890'], ['Carlos A. Gómez', '+57 311 234 5678'],
+  ['Luisa Martínez', '+57 312 987 6543'], ['Jorge Patiño', '+57 300 111 2233'],
+  ['Diana Vargas', '+57 315 555 4411'], ['Andrés Torres', '+57 320 777 8899'],
+  ['Paola Suárez', '+57 301 222 3344'], ['Ricardo Mejía', '+57 313 444 5566'],
+];
+function netPac(sidx, list) {
+  return list.map((x, i) => {
+    const p = NET_PAC[(sidx * 3 + i) % NET_PAC.length];
+    return {
+      id: `P${sidx}${i}`, nombre: p[0], telefono: p[1], ultima_consulta: '2026-06-15',
+      que_paso: x.q || '', accion: x.a || 'Contactar y reagendar',
+      valor_pendiente_cop: x.v, estado: x.e || 'pendiente',
+      monto_real_cop: (x.mr === undefined ? null : x.mr),
+    };
+  });
+}
+function netBuildTareas(p, sidx) {
+  const semana = netLunes();
+  const k = p.avgProd / 58;                       // escala por tamaño de sede
+  const V = n => Math.round(n * k / 10000) * 10000;
+  const base = { practice_id: p.id, semana, fuente: 'ia_semanal', resultado: null, fecha_limite: null, completado_por: null, completado_en: null };
+  return [
+    {
+      ...base, id: sidx * 100 + 1, titulo: 'Llamar a pacientes inactivos de alto valor', descripcion: 'Pacientes sin cita en 6+ meses con tratamientos pendientes.', categoria: 'recall_inactivos', asignado_a: 'recepcionista', prioridad: 'alta', estado: 'en_proceso', valor_estimado_cop: V(3200000),
+      pacientes: netPac(sidx, [{ v: V(320000), e: 'agendo_cita', mr: V(320000), a: 'Agendar resina y control de higiene' }, { v: V(4200000), a: 'Ofrecer financiación de ortodoncia a cuotas' }, { v: V(680000), e: 'no_respondio', a: 'Reintentar llamada esta semana' }]),
+    },
+    {
+      ...base, id: sidx * 100 + 2, titulo: 'Reagendar no-shows recientes', descripcion: 'Pacientes que faltaron a su cita en las últimas 2 semanas.', categoria: 'no_shows', asignado_a: 'recepcionista', prioridad: 'alta', estado: 'pendiente', valor_estimado_cop: V(1800000),
+      pacientes: netPac(sidx, [{ v: V(850000), a: 'Reagendar endodoncia — caso prioritario por dolor' }, { v: V(180000), a: 'Reagendar y confirmar 24h antes' }]),
+    },
+    {
+      ...base, id: sidx * 100 + 3, titulo: 'Re-presentar planes de tratamiento no aceptados', descripcion: 'Planes de mayor valor presentados sin cerrar.', categoria: 'aceptacion_tratamiento', asignado_a: 'dueno', prioridad: 'media', estado: 'completada', resultado: 'agendo_cita', completado_por: 'dueno', valor_estimado_cop: V(2700000),
+      pacientes: netPac(sidx, [{ v: V(2700000), e: 'agendo_cita', mr: V(2700000), a: 'Cerró plan de 2 coronas' }, { v: V(450000), e: 'no_aplicaba', a: 'No interesado por ahora' }]),
+    },
+    {
+      ...base, id: sidx * 100 + 4, titulo: 'Gestionar cobro de cartera pendiente', descripcion: 'Saldos de tratamientos ya realizados sin cobrar.', categoria: 'otro', asignado_a: 'recepcionista', prioridad: 'media', estado: 'pendiente', valor_estimado_cop: V(4500000), pacientes: null,
+    },
+  ];
+}
+/* Carga las tareas de la sede en el tablero (copia fresca cada vez). */
+function netLoadTareas(i) {
+  if (typeof TAREAS === 'undefined') return;
+  TAREAS = JSON.parse(JSON.stringify(NET.sedes[i].tareas));
+  TAREAS_RESUMEN = null;
+  if (typeof recomputarResumen === 'function') recomputarResumen();
+  if (typeof renderTareasUI === 'function') renderTareasUI();
 }
 
 /* ── ANÁLISIS IA CACHEADOS (no llaman a la API — evita quemar tokens) ── */
@@ -185,13 +243,6 @@ function initNetworkDemo() {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('app').style.display = 'block';
 
-  // El tablero de Pendientes y la campana son por-clínica sobre D1 (Fase 3C);
-  // en el demo de red no hay datos por sede, así que se ocultan para no mostrar
-  // un tablero vacío. El resto del dashboard (Rendimiento, Tendencias, Asesor,
-  // Proyección) sí funciona por sede al hacer drill.
-  const bell = document.getElementById('bell-wrap'); if (bell) bell.style.display = 'none';
-  const tabTareas = document.getElementById('tab-btn-tareas'); if (tabTareas) tabTareas.style.display = 'none';
-
   // Barra de red (toggle Red/Sede + selector de sede).
   const bar = document.getElementById('network-bar');
   bar.innerHTML = `
@@ -222,6 +273,10 @@ function setNetworkMode(mode) {
   document.getElementById('network-view').style.display = red ? 'block' : 'none';
   document.querySelector('.tab-nav').style.display = red ? 'none' : '';
   document.querySelectorAll('.tab-pane').forEach(p => { p.style.display = red ? 'none' : ''; });
+  // Pendientes y la campana son por-clínica: se muestran al drillear una sede,
+  // se ocultan en la vista consolidada de red (las tareas consolidadas son 3C).
+  const bell = document.getElementById('bell-wrap'); if (bell) bell.style.display = red ? 'none' : '';
+  const tabTareas = document.getElementById('tab-btn-tareas'); if (tabTareas) tabTareas.style.display = red ? 'none' : '';
   if (red) {
     NET.currentName = NET.name;
     applyWhiteLabel();
@@ -244,6 +299,7 @@ function selectSede(i) {
   if (fm) fm.value = '';                 // filtro de mes en sync con la sede
   render(s.data);
   if (typeof initChat === 'function') initChat();  // re-arma el contexto del chat con la sede activa
+  netLoadTareas(i);                       // carga el tablero de Pendientes de la sede
   applyWhiteLabel();
 }
 

@@ -415,6 +415,11 @@ async function setMontoReal(i,val){
 /* PATCH de la lista de pacientes; sube la tarea a 'en_proceso' si estaba
    pendiente. Optimista: la vista ya se actualizó, esto persiste. */
 async function guardarPacientes(t){
+  // Demo de red: guarda en memoria (t ya es la entrada de TAREAS), sin PATCH.
+  if(typeof NET!=='undefined'&&NET.active){
+    if(t.estado==='pendiente')t.estado='en_proceso';
+    recomputarResumen();renderBellBadge();renderBellDropdown();return;
+  }
   try{
     const body={pacientes:t.pacientes};
     if(t.estado==='pendiente')body.estado='en_proceso';
@@ -436,6 +441,11 @@ async function completarTareaDetalle(){
   const ps=Array.isArray(t.pacientes)?t.pacientes:[];
   const resultado=ps.some(p=>p.estado==='agendo_cita')?'agendo_cita':ps.some(p=>p.estado==='no_respondio')?'no_respondio':'no_aplicaba';
   const m=document.getElementById('td-save-msg');if(m){m.className='td-save-msg';m.textContent='Guardando…';}
+  // Demo de red: completa en memoria, sin PATCH.
+  if(typeof NET!=='undefined'&&NET.active){
+    t.estado='completada';t.resultado=resultado;t.completado_por=t.asignado_a;
+    recomputarResumen();volverALista();return;
+  }
   try{
     const resp=await fetch(`${WORKER_URL}/tareas/${t.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({estado:'completada',resultado,completado_por:t.asignado_a,pacientes:ps})});
     const j=await resp.json().catch(()=>({}));
@@ -463,6 +473,12 @@ async function completarTareaSinPac(){
     body.valor_real_cop=Math.max(0,Math.round(Number(inp&&inp.value)||0));
   }
   if(m){m.className='td-save-msg';m.textContent='Guardando…';}
+  // Demo de red: completa en memoria, sin PATCH.
+  if(typeof NET!=='undefined'&&NET.active){
+    t.estado='completada';t.resultado=sel.dataset.r;t.completado_por=t.asignado_a;
+    if(body.valor_real_cop!==undefined)t.valor_real_cop=body.valor_real_cop;
+    recomputarResumen();volverALista();return;
+  }
   try{
     const resp=await fetch(`${WORKER_URL}/tareas/${t.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const j=await resp.json().catch(()=>({}));
