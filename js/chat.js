@@ -74,6 +74,14 @@ async function sendChat(){
   appendMsg('user',text);
   chatHistory.push({role:'user',content:text});
   const thinking=appendMsg('ai','',true);
+
+  // Demo de red: respuesta offline con los datos reales de la sede (sin API).
+  if(typeof NET!=='undefined'&&NET.active){
+    const reply=netDemoChatReply(text);
+    setTimeout(()=>{thinking.remove();appendMsg('ai',reply);chatHistory.push({role:'ai',content:reply});sendBtn.disabled=false;input.focus();},450);
+    return;
+  }
+
   try{
     const messages=[
       {role:'user',content:buildSystemPrompt(chatDataContext)+'\n\n[Sistema listo. Ahora estás en línea con el dueño de la clínica.]'},

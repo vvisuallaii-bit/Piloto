@@ -15,6 +15,8 @@ function fcDecisionText(){
 
 async function generateForecast(){
   if(!ALL.length)return;
+  // Demo de red: proyección determinista con los datos reales de la sede (sin API).
+  if(typeof NET!=='undefined'&&NET.active){ netDemoGenerateForecast(); return; }
   const btn=document.getElementById('fc-gen-btn');
   btn.disabled=true;btn.innerHTML='<svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Analizando...';
 
@@ -224,6 +226,12 @@ async function askForecastQuestion(question,label){
   qEl.textContent=label||question;
   body.innerHTML=`<div class="fc-answer-ld"><div class="ld"><span></span><span></span><span></span></div><span style="font-size:13px;color:var(--muted)">Analizando...</span></div>`;
   card.scrollIntoView({behavior:'smooth',block:'nearest'});
+
+  // Demo de red: respuesta offline (sin API).
+  if(typeof NET!=='undefined'&&NET.active){
+    setTimeout(()=>{body.innerHTML=`<div class="fc-answer-txt">${renderMarkdown(netDemoForecastAnswer(question))}</div>`;},400);
+    return;
+  }
 
   const dataCtx=buildForecastDataContext();
   const prompt=`Eres un asesor financiero de clínicas dentales colombianas. El dueño tiene estas proyecciones para ${FC_RESULT.next_month}:

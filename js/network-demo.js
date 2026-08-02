@@ -273,6 +273,103 @@ function netRunAnalysis() {
   document.getElementById('net-ai-btn').disabled = true;
 }
 
+/* ── IA OFFLINE PARA LA DEMO (chat + proyección, sin API) ──────────────────
+   El "Analizar con IA" ya usa análisis cacheados. Aquí hacemos lo mismo para el
+   Asesor IA (chat) y la Proyección: respuestas deterministas construidas con los
+   números REALES de la sede activa (ALL). Cero tokens, cero riesgo de error en
+   vivo, y coherente con cada sede. */
+const netM = v => '$' + (v / 1e6).toFixed(1) + 'M';
+
+/* Respuesta del chat: enruta por tema y responde con los datos de la sede. */
+function netDemoChatReply(q) {
+  const m = computeMetrics(ALL), name = getWhiteLabel();
+  const ov = Math.round(m.overheadRate), ac = Math.round(m.acceptanceRate), ns = Math.round(m.noShowRate), co = Math.round(m.collectionRate);
+  const gap = m.totalProduction - m.totalCollections;
+  const serv = [['higiene', m.hygieneRevenue], ['restaurativa', m.restorativeRevenue], ['estética', m.cosmeticRevenue], ['ortodoncia', m.orthoRevenue]].sort((a, b) => b[1] - a[1]);
+  const best = [...ALL].sort((a, b) => b.collections - a.collections).slice(0, 2)
+    .map(r => new Date(r.month + '-02').toLocaleDateString('es-CO', { month: 'long' }));
+  const t = (q || '').toLowerCase();
+  if (/ausent|no.?show|inasist|falta/.test(t))
+    return `El ausentismo de **${name}** está en **${ns}%** frente a la meta del sector (**<12%**). ${ns >= 12 ? 'Está por encima de la meta y drena agenda pagada: ' : 'Está en rango, pero '}activar confirmación por WhatsApp 24h antes y una lista de reemplazo para huecos suele bajarlo 3-4 puntos en un mes.`;
+  if (/acept|tratamiento|plan/.test(t))
+    return `La aceptación de tratamientos es **${ac}%** (meta **>65%**). ${ac < 65 ? 'Está debajo de la meta: ' : 'Buen nivel; para subirla aún más, '}re-presentar los planes de mayor valor no aceptados y ofrecer financiación a cuotas es lo que más mueve la aguja sin atender un paciente nuevo.`;
+  if (/cobro|cartera|recaud|deud|pend/.test(t))
+    return `**${name}** recaudó **${netM(m.totalCollections)}** de **${netM(m.totalProduction)}** producidos — una brecha de **${netM(gap)}** (${co}% de cobro). Esos ${netM(gap)} ya los produjiste: recuperarlos con recordatorios de cartera es la utilidad más directa del trimestre.`;
+  if (/gasto|overhead|costo|margen/.test(t))
+    return `La tasa de gastos es **${ov}%** (meta **<65%**). ${ov >= 65 ? 'Está por encima de la meta: revisar personal vs. producción e insumos es la palanca principal.' : 'Está controlada; el ingreso neto crece más por cobro y aceptación que por recortar gastos.'}`;
+  if (/rentable|servicio|línea|linea|produce/.test(t))
+    return `La línea más rentable de **${name}** es **${serv[0][0]}** (${netM(serv[0][1])} en el período), seguida de **${serv[1][0]}** (${netM(serv[1][1])}). Concentrar el recall y las campañas en las dos primeras rinde más que repartir el esfuerzo.`;
+  if (/mes|oportun|temporad|estacion|cuándo|cuando/.test(t))
+    return `Tus meses más fuertes son **${best[0]}** y **${best[1]}**. Conviene llenar la agenda con anticipación en esas ventanas y usar los meses bajos (inicio de año) para recall y reactivación de inactivos.`;
+  // General
+  return `En resumen, **${name}**: recaudación **${netM(m.totalCollections)}**, gastos **${ov}%** (meta <65%), aceptación **${ac}%** (meta >65%), ausentismo **${ns}%** (meta <12%). ${ov >= 65 || ac < 65 || ns >= 12 ? 'La mayor oportunidad está en el indicador que hoy está fuera de meta.' : 'Con las metas cumplidas, la palanca es cerrar la brecha de cobro de ' + netM(gap) + '.'} Pregúntame por ausentismo, aceptación, cobro o servicios para el detalle.`;
+}
+
+/* Proyección determinista a partir de los datos reales de la sede. */
+function netDemoForecast(decision) {
+  const m = computeMetrics(ALL), name = getWhiteLabel();
+  const avg = m.avgCollections;
+  const nd = new Date(); nd.setMonth(nd.getMonth() + 1);
+  const nextMonth = nd.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+  const ns = Math.round(m.noShowRate), ac = Math.round(m.acceptanceRate);
+  const dec = (decision || '').trim();
+  const base = Math.round(avg / 1e5) * 1e5;
+  const pess = Math.round(base * 0.88 / 1e5) * 1e5;
+  const opt = Math.round(base * 1.13 / 1e5) * 1e5;
+  return {
+    next_month: nextMonth,
+    decision_context: dec
+      ? `Sobre tu decisión ("${dec}"): con la base actual de ${name} (~${netM(avg)}/mes), el margen para moverla depende de cerrar la brecha operativa antes de sumar costos fijos.`
+      : `Proyección de panorama general para ${name} con base en sus últimos ${ALL.length} meses (~${netM(avg)}/mes).`,
+    pessimistic: {
+      collections: pess, confidence: 73, label: 'Pesimista', driver: 'Ausentismo y agenda floja',
+      factors: [`Ausentismo en ${ns}% erosiona citas pagadas`, 'Menos confirmaciones en un mes de temporada baja', 'Cartera sin gestionar se acumula'],
+      cost_of_inaction: `${netM(base - pess)} por debajo de tu promedio mensual`,
+      cta: 'Blindar la agenda de las próximas 2 semanas con confirmación 24h antes.',
+    },
+    base: {
+      collections: base, confidence: 69, label: 'Caso Base', driver: 'Se mantiene la tendencia actual',
+      factors: [`Aceptación estable en ${ac}%`, 'Recall de higiene funcionando', 'Sin cambios de capacidad'],
+      cost_of_inaction: null,
+      cta: 'Sostener el ritmo de recall y presentación de tratamientos.',
+    },
+    optimistic: {
+      collections: opt, confidence: 56, label: 'Optimista', driver: 'Se cierran brechas de aceptación y cobro',
+      factors: ['Re-presentar los planes de alto valor no aceptados', `Bajar el ausentismo del ${ns}% hacia 8%`, 'Cobrar la cartera pendiente del mes'],
+      cost_of_inaction: null,
+      cta: 'Esta semana: re-presentar los 3 planes de mayor valor sin aceptar.',
+    },
+    questions: [
+      { icon: '📉', text: `Si bajo el ausentismo de ${name} al 8%, ¿cuánto más recaudo?` },
+      { icon: '🎯', text: `¿Cuál es mi acción de mayor impacto para ${nextMonth}?` },
+      { icon: '💰', text: '¿Cuánto vale cerrar la brecha entre producción y cobro?' },
+      { icon: '📆', text: `¿Qué semana de ${nextMonth} debo presionar más la agenda?` },
+    ],
+  };
+}
+function netDemoGenerateForecast() {
+  const btn = document.getElementById('fc-gen-btn');
+  const r = netDemoForecast(typeof fcDecisionText === 'function' ? fcDecisionText() : '');
+  FC_RESULT = r;
+  renderForecast(r);
+  if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Regenerar'; }
+}
+/* Respuesta a las preguntas de seguimiento de la proyección (sin API). */
+function netDemoForecastAnswer(q) {
+  const m = computeMetrics(ALL), name = getWhiteLabel();
+  const ns = Math.round(m.noShowRate), gap = m.totalProduction - m.totalCollections;
+  const t = (q || '').toLowerCase();
+  if (/ausent|no.?show|8%|inasist/.test(t)) {
+    const recuperable = Math.round(m.avgCollections * Math.max(0, (ns - 8)) / 100 / 1e5) * 1e5;
+    return `Bajar el ausentismo del **${ns}%** al **8%** en ${name} recupera del orden de **${netM(recuperable)}/mes** en citas que hoy se pierden. La palanca es confirmación 24h antes y una lista de reemplazo para llenar los huecos.`;
+  }
+  if (/brecha|cobro|producci|cartera/.test(t))
+    return `La brecha entre producción y cobro es **${netM(gap)}**. Es dinero ya producido: gestionarlo con recordatorios de cartera equivale a casi un mes extra de utilidad sin atender un paciente nuevo.`;
+  if (/semana|agenda|presion/.test(t))
+    return `Concentra la presión de agenda en la **segunda y tercera semana** del mes, cuando históricamente cae la ocupación. Confirmar con anticipación esas semanas evita los huecos de última hora.`;
+  return `Tu acción de mayor impacto en **${name}** es cerrar el indicador que hoy está más lejos de la meta y recuperar la brecha de cobro de **${netM(gap)}**. Ambas suben el ingreso neto sin sumar costos fijos.`;
+}
+
 /* ── VISTA RED COMPLETA ── */
 function renderNetworkView() {
   const sedes = NET.sedes;
