@@ -595,6 +595,7 @@ function abrirResumen(){
       return `<div class="rs-item"><span class="rs-item-dot prio-${t.prioridad}"></span><div><div class="rs-item-t">${escapeHtml(t.titulo)}</div><div class="rs-item-sub">${escapeHtml(T_ASIGNADO_LBL[t.asignado_a]||t.asignado_a)}${ps.length?' · '+falta+' pacientes por contactar':''}</div></div></div>`;
     }).join('')}`:''}
     <div class="rs-foot">Generado automáticamente por ${escapeHtml(nombre)} · Intelligence</div>`;
+  const rt=document.querySelector('.rs-modal-title');if(rt)rt.textContent='📄 Resumen semanal del dueño';
   document.getElementById('resumen-msg').textContent='';
   document.getElementById('resumen-overlay').classList.add('open');
   document.body.style.overflow='hidden';
@@ -619,7 +620,9 @@ function resumenTexto(){
 }
 async function copiarResumen(){
   const msg=document.getElementById('resumen-msg');
-  try{await navigator.clipboard.writeText(resumenTexto());msg.textContent='✓ Copiado — pégalo en un correo o WhatsApp.';}
+  // En modo red se copia el resumen consolidado (lo arma abrirResumenRed).
+  const texto=(typeof NET!=='undefined'&&NET.active&&NET.mode==='red'&&window.__netResumenTexto)?window.__netResumenTexto:resumenTexto();
+  try{await navigator.clipboard.writeText(texto);msg.textContent='✓ Copiado — pégalo en un correo o WhatsApp.';}
   catch(e){msg.textContent='No se pudo copiar automáticamente.';}
 }
 

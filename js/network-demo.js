@@ -666,6 +666,134 @@ function netTareasRedCard() {
   </div>`;
 }
 
+/* ── EXPORT CONSOLIDADO DE RED (PDF + Resumen del dueño) ── */
+function netResumenDatos() {
+  const combined = NET.sedes.flatMap(netSedeData);
+  const cm = computeMetrics(combined), hs = computeHealthScore(combined);
+  const filas = NET.sedes.map(s => {
+    const m = netSedeMetrics(s), st = benchmarkStates(m), h = computeHealthScore(netSedeData(s));
+    return { nombre: s.name.replace('Sede ', ''), m, st, salud: h.total };
+  }).sort((a, b) => b.m.totalCollections - a.m.totalCollections);
+  const peor = filas.reduce((a, b) => b.salud < a.salud ? b : a);
+  const topDoc = NET.sedes.flatMap(s => s.doctors).sort((a, b) => b.production - a.production)[0];
+  return { cm, hs, filas, peor, topDoc, r: NET.tareasRed?.resumen, mesLbl: NET.filtroMes ? new Date(NET.filtroMes + '-02').toLocaleDateString('es-CO', { month: 'long', year: 'numeric' }) : `${NET.sedes[0]?.data.length || 12} meses` };
+}
+function netResumenTexto(d) {
+  const cop = v => fmtCOP(v);
+  const L = [];
+  L.push(`Resumen de red — ${NET.name}`);
+  L.push(`${NET.sedes.length} sedes · ${d.mesLbl}`); L.push('');
+  L.push(`Salud consolidada: ${d.hs.total}/100 (${d.hs.label})`);
+  L.push(`Recaudación: ${cop(d.cm.totalCollections)} · ingreso neto: ${cop(d.cm.totalNetIncome)}`);
+  L.push(`Gastos ${d.cm.overheadRate.toFixed(0)}% · aceptación ${Math.round(d.cm.acceptanceRate)}% · ausentismo ${d.cm.noShowRate.toFixed(0)}%`);
+  L.push(''); L.push(`Sede que necesita atención: ${d.peor.nombre} (salud ${d.peor.salud}/100)`);
+  L.push(''); L.push('Sedes:');
+  d.filas.forEach(f => L.push(`- ${f.nombre}: ${cop(f.m.totalCollections)} · gastos ${f.m.overheadRate.toFixed(0)}% · aceptación ${Math.round(f.m.acceptanceRate)}% · ausentismo ${f.m.noShowRate.toFixed(0)}%`));
+  if (d.topDoc) { L.push(''); L.push(`Doctor líder: ${d.topDoc.name} (${d.topDoc.sede.replace('Sede ', '')}, ${cop(d.topDoc.production)})`); }
+  if (d.r) { L.push(''); L.push(`Pendientes de la red: recuperado real ${cop(d.r.valor_real_cop || 0)} · ${d.r.completadas_semana || 0} de ${d.r.total_semana || 0} completadas${d.r.vencidas_count ? ` · ${d.r.vencidas_count} vencidas` : ''}`); }
+  L.push(''); L.push(`Generado por ${NET.name} Intelligence.`);
+  return L.join('\n');
+}
+function abrirResumenRed() {
+  const d = netResumenDatos();
+  const cop = v => fmtCOP(v);
+  const semColor = st => STATE_COLOR[st];
+  document.querySelector('.rs-modal-title').textContent = '📄 Resumen de red';
+  document.getElementById('resumen-body').innerHTML = `
+    <div class="rs-sub">${escapeHtml(NET.name)} · ${NET.sedes.length} sedes · ${d.mesLbl}</div>
+    <div class="rs-hero">
+      <div class="rs-hero-lbl">Salud consolidada de la red</div>
+      <div class="rs-hero-val">${d.hs.total}<span style="font-size:16px;color:var(--muted)">/100</span></div>
+      <div class="rs-hero-sub">${d.hs.label} · recaudación ${cop(d.cm.totalCollections)} · ingreso neto ${cop(d.cm.totalNetIncome)}</div>
+    </div>
+    <div class="rs-stats">
+      <div class="rs-stat"><div class="rs-stat-num ${semColor(d.cm.overheadRate < 55 ? 'good' : d.cm.overheadRate < 65 ? 'warn' : 'bad')}">${d.cm.overheadRate.toFixed(0)}%</div><div class="rs-stat-lbl">Gastos · meta &lt;65%</div></div>
+      <div class="rs-stat"><div class="rs-stat-num ${semColor(d.cm.acceptanceRate > 65 ? 'good' : d.cm.acceptanceRate > 55 ? 'warn' : 'bad')}">${Math.round(d.cm.acceptanceRate)}%</div><div class="rs-stat-lbl">Aceptación · meta &gt;65%</div></div>
+      <div class="rs-stat"><div class="rs-stat-num ${semColor(d.cm.noShowRate < 8 ? 'good' : d.cm.noShowRate < 12 ? 'warn' : 'bad')}">${d.cm.noShowRate.toFixed(0)}%</div><div class="rs-stat-lbl">Ausentismo · meta &lt;12%</div></div>
+    </div>
+    <div class="rs-section-t">Sede que necesita atención</div>
+    <div class="rs-item"><span class="rs-item-dot prio-alta"></span><div><div class="rs-item-t">${escapeHtml(d.peor.nombre)} · salud ${d.peor.salud}/100</div><div class="rs-item-sub">gastos ${d.peor.m.overheadRate.toFixed(0)}% · aceptación ${Math.round(d.peor.m.acceptanceRate)}% · ausentismo ${d.peor.m.noShowRate.toFixed(0)}%</div></div></div>
+    <div class="rs-section-t">Todas las sedes</div>
+    ${d.filas.map(f => `<div class="rs-item"><span class="rs-item-dot ${f.salud >= 70 ? 'done' : 'prio-media'}"></span><div><div class="rs-item-t">${escapeHtml(f.nombre)}</div><div class="rs-item-sub">${cop(f.m.totalCollections)} · gastos ${f.m.overheadRate.toFixed(0)}% · aceptación ${Math.round(f.m.acceptanceRate)}% · ausentismo ${f.m.noShowRate.toFixed(0)}%</div></div></div>`).join('')}
+    ${d.r ? `<div class="rs-section-t">Pendientes de la red</div><div class="rs-item"><span class="rs-item-dot done"></span><div><div class="rs-item-t">Recuperado real ${cop(d.r.valor_real_cop || 0)}</div><div class="rs-item-sub">${d.r.completadas_semana || 0} de ${d.r.total_semana || 0} completadas${d.r.vencidas_count ? ` · ${d.r.vencidas_count} vencidas` : ''}</div></div></div>` : ''}
+    <div class="rs-foot">Generado automáticamente por ${escapeHtml(NET.name)} · Intelligence</div>`;
+  window.__netResumenTexto = netResumenTexto(d);
+  document.getElementById('resumen-msg').textContent = '';
+  document.getElementById('resumen-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+/* PDF consolidado de la red — mismo lenguaje visual que el informe de sede. */
+function exportRedPDF() {
+  const d = netResumenDatos();
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210, M = 18; let y = 0;
+  const C = { teal: [0, 212, 170], dark: [13, 17, 23], surface: [22, 27, 34], text: [230, 237, 243], muted: [125, 133, 144], white: [255, 255, 255], amber: [227, 179, 65], red: [248, 81, 73], green: [63, 185, 80] };
+  const rgb = c => doc.setTextColor(c[0], c[1], c[2]), fill = c => doc.setFillColor(c[0], c[1], c[2]);
+  const semC = st => st === 'good' ? C.green : st === 'warn' ? C.amber : C.red;
+  const cop = v => '$' + (v / 1e6).toFixed(1) + 'M';
+  fill(C.dark); doc.rect(0, 0, W, 38, 'F'); fill(C.teal); doc.rect(0, 0, W, 2.5, 'F');
+  fill(C.teal); doc.circle(M, 19, 3, 'F');
+  rgb(C.white); doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text(NET.name, M + 7, 16);
+  rgb(C.muted); doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.text(`Red de ${NET.sedes.length} sedes · Inteligencia consolidada`, M + 7, 22);
+  rgb(C.muted); doc.setFontSize(8); doc.text('Generado el ' + new Date().toLocaleDateString('es-CO', { month: 'long', day: 'numeric', year: 'numeric' }), W - M, 19, { align: 'right' });
+  y = 48;
+  // KPIs consolidados
+  const kpis = [
+    { l: 'Salud de la red', v: d.hs.total + '/100', s: d.hs.label },
+    { l: 'Recaudación', v: cop(d.cm.totalCollections), s: d.mesLbl },
+    { l: 'Ingreso neto', v: cop(d.cm.totalNetIncome), s: (d.cm.totalCollections ? Math.round(d.cm.totalNetIncome / d.cm.totalCollections * 100) : 0) + '% margen' },
+    { l: 'Gastos', v: d.cm.overheadRate.toFixed(0) + '%', s: 'Meta: <65%', warn: d.cm.overheadRate >= 65 },
+    { l: 'Aceptación', v: Math.round(d.cm.acceptanceRate) + '%', s: 'Meta: >65%', warn: d.cm.acceptanceRate < 65 },
+    { l: 'Ausentismo', v: d.cm.noShowRate.toFixed(0) + '%', s: 'Meta: <12%', warn: d.cm.noShowRate >= 12 },
+    { l: 'Sede en riesgo', v: d.peor.nombre, s: 'Salud ' + d.peor.salud + '/100', warn: true },
+    { l: 'Doctor líder', v: (d.topDoc?.name || '—').replace('Dra. ', '').replace('Dr. ', ''), s: d.topDoc ? cop(d.topDoc.production) : '' },
+  ];
+  const kW = (W - M * 2 - 9) / 4, kH = 22;
+  kpis.forEach((k, i) => {
+    const kx = M + (i % 4) * (kW + 3), ky = y + Math.floor(i / 4) * (kH + 4);
+    fill(C.surface); doc.roundedRect(kx, ky, kW, kH, 1.5, 1.5, 'F'); fill(k.warn ? C.red : C.teal); doc.rect(kx, ky, kW, 1.5, 'F');
+    rgb(C.muted); doc.setFont('helvetica', 'normal'); doc.setFontSize(6.3); doc.text(k.l.toUpperCase(), kx + 4, ky + 7);
+    rgb(k.warn ? C.amber : C.white); doc.setFont('helvetica', 'bold'); doc.setFontSize(k.v.length > 9 ? 9 : 12); doc.text(String(k.v), kx + 4, ky + 15);
+    rgb(C.muted); doc.setFont('helvetica', 'normal'); doc.setFontSize(6); doc.text(k.s, kx + 4, ky + 20);
+  });
+  y += kH * 2 + 4 + 12;
+  // Tabla comparadora
+  rgb(C.muted); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.text('COMPARATIVA DE SEDES', M, y); y += 4;
+  doc.setDrawColor(40, 46, 56); doc.setLineWidth(0.2); doc.line(M, y, W - M, y); y += 6;
+  const cols = [M, M + 46, M + 86, M + 120, M + 158];
+  rgb(C.muted); doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5);
+  ['SEDE', 'RECAUDACIÓN', 'GASTOS', 'AUSENTISMO', 'ACEPTACIÓN'].forEach((h, i) => doc.text(h, cols[i], y));
+  y += 5;
+  d.filas.forEach(f => {
+    rgb(C.text); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.text(f.nombre, cols[0], y);
+    rgb(C.text); doc.setFont('helvetica', 'normal'); doc.text(cop(f.m.totalCollections), cols[1], y);
+    rgb(semC(f.st.overhead)); doc.setFont('helvetica', 'bold'); doc.text(f.m.overheadRate.toFixed(1) + '%', cols[2], y);
+    rgb(semC(f.st.noShow)); doc.text(f.m.noShowRate.toFixed(1) + '%', cols[3], y);
+    rgb(semC(f.st.acceptance)); doc.text(Math.round(f.m.acceptanceRate) + '%', cols[4], y);
+    y += 7;
+  });
+  y += 4;
+  // Ranking de doctores
+  rgb(C.muted); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.text('RANKING DE DOCTORES', M, y); y += 4;
+  doc.line(M, y, W - M, y); y += 6;
+  const docs = NET.sedes.flatMap(s => s.doctors).sort((a, b) => b.production - a.production);
+  docs.forEach((dr, i) => {
+    rgb(C.muted); doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.text(String(i + 1), M, y);
+    rgb(C.text); doc.text(dr.name, M + 6, y);
+    rgb(C.muted); doc.setFont('helvetica', 'normal'); doc.text(dr.sede.replace('Sede ', ''), M + 72, y);
+    rgb(C.text); doc.text(cop(dr.production), M + 110, y);
+    rgb(C.muted); doc.text('aceptación ' + Math.round(dr.acceptance) + '%', M + 138, y);
+    y += 6.5;
+  });
+  // Footer
+  const pages = doc.getNumberOfPages();
+  for (let p = 1; p <= pages; p++) { doc.setPage(p); fill(C.dark); doc.rect(0, 285, W, 12, 'F'); fill(C.teal); doc.rect(0, 285, W, 0.8, 'F'); rgb(C.muted); doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.text(`${NET.name} — Informe consolidado de la red`, M, 291); doc.text(`Página ${p} de ${pages}`, W - M, 291, { align: 'right' }); }
+  const slug = NET.name.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'Red';
+  doc.save(`${slug}_Informe_Red_${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
 /* ── VISTA RED COMPLETA ── */
 /* Datos de una sede aplicando el filtro de mes de la vista Red. */
 function netSedeData(s) { return NET.filtroMes ? s.data.filter(r => r.month === NET.filtroMes) : s.data; }
@@ -747,6 +875,10 @@ function renderNetworkView() {
       <span class="filter-label">Período</span>
       <select class="nb-sede-select" onchange="netSetMes(this.value)">${mesOpts}</select>
       ${NET.filtroMes ? '<button class="filter-reset" onclick="netSetMes(\'\')">✕ Todos</button>' : ''}
+      <div class="net-export-btns">
+        <button class="tareas-resumen" onclick="abrirResumenRed()" title="Resumen consolidado de la red">📄 Resumen del dueño</button>
+        <button class="tareas-refresh" onclick="exportRedPDF()" title="Exportar informe de red en PDF">⬇ Exportar PDF</button>
+      </div>
     </div>
     <div class="net-summary-row">
       <div class="hs-wrap net-health">

@@ -786,3 +786,5 @@ select:hover,select:focus{border-color:var(--accent)}
 .net-ask-input:focus{border-color:var(--accent)}
 .net-ask-input::placeholder{color:var(--faint)}
 .net-ask-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.net-export-btns{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+@media(max-width:600px){.net-export-btns{margin-left:0;width:100%}}
