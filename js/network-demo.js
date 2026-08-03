@@ -18,6 +18,9 @@ const NET = {
   })(),
   networkId: new URLSearchParams(location.search).get('network') || 'red-dental-sonrisa',
   name: 'Red Dental Sonrisa',
+  rol: (new URLSearchParams(location.search).get('rol') || 'dueno').toLowerCase(),  // 'dueno' | 'gerente'
+  rolSede: (new URLSearchParams(location.search).get('sede') || '').toLowerCase(),  // practice_id del gerente
+  gerenteIdx: 0,
   mode: 'red',        // 'red' = vista consolidada | 'sede' = drill a una sede
   sedeIdx: 0,
   currentName: null,  // lo lee getWhiteLabel() (mayor prioridad en modo red)
@@ -366,33 +369,49 @@ async function initNetworkDemo() {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('app').style.display = 'block';
 
-  // Barra de red (toggle Red/Sede + selector de sede).
+  // Rol (simulado por URL para el demo): gerente ve SOLO su sede; dueño ve todo.
+  if (NET.rol === 'gerente') {
+    const i = NET.sedes.findIndex(s => s.id === NET.rolSede);
+    NET.gerenteIdx = i >= 0 ? i : 0;
+  }
   const bar = document.getElementById('network-bar');
-  bar.innerHTML = `
-    <div class="nb-inner">
-      <div class="nb-title"><span class="nb-badge">RED</span> <strong>${escapeHtml(NET.name)}</strong> · ${NET.sedes.length} sedes</div>
-      <div class="nb-controls">
-        <div class="nb-seg" role="tablist">
-          <button class="nb-seg-btn active" id="nb-seg-red" onclick="setNetworkMode('red')">Red completa</button>
-          <button class="nb-seg-btn" id="nb-seg-sede" onclick="setNetworkMode('sede')">Sede individual</button>
+  if (NET.rol === 'gerente') {
+    const sede = NET.sedes[NET.gerenteIdx];
+    bar.innerHTML = `
+      <div class="nb-inner">
+        <div class="nb-title"><span class="nb-badge nb-badge-rol"><i>🔒</i> Gerente</span> <strong>${escapeHtml(sede.name)}</strong></div>
+        <div class="nb-rol-note">Ves solo tu sede · el dueño de la red ve todas</div>
+      </div>`;
+    bar.style.display = 'block';
+    setNetworkMode('sede');
+  } else {
+    bar.innerHTML = `
+      <div class="nb-inner">
+        <div class="nb-title"><span class="nb-badge">RED</span> <strong>${escapeHtml(NET.name)}</strong> · ${NET.sedes.length} sedes <span class="nb-rol-chip">Dueño</span></div>
+        <div class="nb-controls">
+          <div class="nb-seg" role="tablist">
+            <button class="nb-seg-btn active" id="nb-seg-red" onclick="setNetworkMode('red')">Red completa</button>
+            <button class="nb-seg-btn" id="nb-seg-sede" onclick="setNetworkMode('sede')">Sede individual</button>
+          </div>
+          <select class="nb-sede-select" id="nb-sede-select" style="display:none" onchange="selectSede(this.selectedIndex)">
+            ${NET.sedes.map(s => `<option>${escapeHtml(s.name)}</option>`).join('')}
+          </select>
         </div>
-        <select class="nb-sede-select" id="nb-sede-select" style="display:none" onchange="selectSede(this.selectedIndex)">
-          ${NET.sedes.map(s => `<option>${escapeHtml(s.name)}</option>`).join('')}
-        </select>
-      </div>
-    </div>`;
-  bar.style.display = 'block';
-
-  setNetworkMode('red');
+      </div>`;
+    bar.style.display = 'block';
+    setNetworkMode('red');
+  }
 }
 
-/* Alterna entre la vista consolidada (red) y el drill a una sede. */
+/* Alterna entre la vista consolidada (red) y el drill a una sede. Un gerente
+   queda bloqueado en su sede (no puede ver la red ni otras sedes). */
 function setNetworkMode(mode) {
+  if (NET.rol === 'gerente') mode = 'sede';
   NET.mode = mode;
   const red = mode === 'red';
-  document.getElementById('nb-seg-red').classList.toggle('active', red);
-  document.getElementById('nb-seg-sede').classList.toggle('active', !red);
-  document.getElementById('nb-sede-select').style.display = red ? 'none' : '';
+  const segR = document.getElementById('nb-seg-red'); if (segR) segR.classList.toggle('active', red);
+  const segS = document.getElementById('nb-seg-sede'); if (segS) segS.classList.toggle('active', !red);
+  const selEl = document.getElementById('nb-sede-select'); if (selEl) selEl.style.display = red ? 'none' : '';
   document.getElementById('network-view').style.display = red ? 'block' : 'none';
   document.querySelector('.tab-nav').style.display = red ? 'none' : '';
   document.querySelectorAll('.tab-pane').forEach(p => { p.style.display = red ? 'none' : ''; });
@@ -406,12 +425,13 @@ function setNetworkMode(mode) {
     applyWhiteLabel();
     renderNetworkView();
   } else {
-    selectSede(NET.sedeIdx || 0);
+    selectSede(NET.rol === 'gerente' ? NET.gerenteIdx : (NET.sedeIdx || 0));
   }
 }
 
 /* Drill a una sede: reusa el dashboard existente con los datos de esa sede. */
 function selectSede(i) {
+  if (NET.rol === 'gerente') i = NET.gerenteIdx;   // gerente: siempre su sede
   NET.sedeIdx = i;
   const s = NET.sedes[i];
   ALL = s.data;
@@ -664,6 +684,88 @@ function netTareasRedCard() {
     <div class="tareas-toolbar"><div class="tarea-filters">${chips}</div></div>
     <div class="tareas-list">${lista}</div>
   </div>`;
+}
+
+/* ── PROYECCIÓN DE RED CON ESCENARIOS ── */
+let NET_FC_CHART = null;
+function netForecastSeries() {
+  const acc = {};
+  NET.sedes.forEach(s => netSedeData(s).forEach(r => { acc[r.month] = (acc[r.month] || 0) + r.collections; }));
+  const months = Object.keys(acc).sort();
+  return { months, series: months.map(m => acc[m]) };
+}
+function netForecastFallback(avg, nextMonth, decision) {
+  const R = f => Math.round(avg * f / 1e5) * 1e5;
+  return {
+    next_month: nextMonth,
+    decision_context: decision ? `Sobre tu decisión ("${decision}"): con la base de la red (~${netM(avg)}/mes), el margen depende de cerrar la brecha de Kennedy antes de sumar costos fijos.` : `Proyección de panorama general de ${NET.name} (~${netM(avg)}/mes de recaudación consolidada).`,
+    pessimistic: { collections: R(0.88), confidence: 72, label: 'Pesimista', driver: 'Ausentismo de Kennedy sin control', factors: ['Kennedy arrastra la red con 16% de ausentismo', 'Menos confirmaciones en temporada baja', 'Cartera sin gestionar en las 4 sedes'], cost_of_inaction: `${netM(avg - R(0.88))} bajo el promedio de la red`, cta: 'Auditar la agenda y confirmación de Kennedy esta semana.' },
+    base: { collections: R(1.0), confidence: 68, label: 'Caso Base', driver: 'Se mantiene la tendencia de las 4 sedes', factors: ['Chapinero sostiene el nivel de la red', 'Recall de higiene funcionando', 'Sin cambios de capacidad'], cost_of_inaction: null, cta: 'Sostener el ritmo de recall en toda la red.' },
+    optimistic: { collections: R(1.13), confidence: 55, label: 'Optimista', driver: 'Kennedy sube al promedio de la red', factors: ['Kennedy pasa aceptación de 52% a 65%', 'Ausentismo de la red baja hacia 8%', 'Se cobra la cartera pendiente'], cost_of_inaction: null, cta: 'Replicar el guion de Chapinero en Kennedy y Suba.' },
+    questions: [{ icon: '🏥', text: '¿Cuánto sube la red si Kennedy llega al promedio?' }, { icon: '📉', text: '¿Qué sede tiene el mayor ausentismo por corregir?' }, { icon: '🎯', text: '¿Cuál es la acción de mayor impacto para la red?' }],
+  };
+}
+async function netForecast() {
+  const btn = document.getElementById('net-fc-btn');
+  if (btn) { btn.disabled = true; btn.innerHTML = 'Analizando…'; }
+  const decision = (document.getElementById('net-fc-decision')?.value || '').trim();
+  const { months, series } = netForecastSeries();
+  const avg = series.reduce((a, b) => a + b, 0) / (series.length || 1);
+  const nd = new Date(); nd.setMonth(nd.getMonth() + 1);
+  const nextMonth = nd.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+  let r = null;
+  if (NET.fuente === 'd1') {
+    const prompt = `Eres analista financiero de una RED de ${NET.sedes.length} clínicas dentales colombianas. Proyecta la RECAUDACIÓN CONSOLIDADA de la red para ${nextMonth} en 3 escenarios.
+
+${netContextoRed()}
+Promedio mensual de recaudación de la red: ${netM(avg)}.
+${decision ? `El dueño evalúa: "${decision}".` : ''}
+
+Responde ÚNICAMENTE con JSON válido: {"next_month":"${nextMonth}","decision_context":"1-2 frases","pessimistic":{"collections":numero,"confidence":72,"label":"Pesimista","driver":"frase corta","factors":["f1","f2","f3"],"cost_of_inaction":"ej: $XM bajo el promedio","cta":"acción"},"base":{"collections":numero,"confidence":68,"label":"Caso Base","driver":"...","factors":["f1","f2","f3"],"cost_of_inaction":null,"cta":"..."},"optimistic":{"collections":numero,"confidence":55,"label":"Optimista","driver":"...","factors":["f1","f2","f3"],"cost_of_inaction":null,"cta":"..."},"questions":[{"icon":"🏥","text":"..."},{"icon":"📉","text":"..."},{"icon":"🎯","text":"..."}]}
+Pesimista ~10-15% bajo el promedio, base ~0-5%, optimista ~10-15% arriba. Cita sedes reales (Kennedy, Chapinero). Español, tono colombiano directo.`;
+    try {
+      const resp = await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: MODEL_ID, max_tokens: 1200, messages: [{ role: 'user', content: prompt }] }) });
+      const j = await resp.json();
+      if (j.error) throw new Error('api');
+      const raw = (j.content || []).map(b => b.text || '').join('');
+      r = JSON.parse(raw.replace(/```json|```/g, '').trim());
+      if (!r.base || !r.pessimistic || !r.optimistic) throw new Error('formato');
+    } catch (e) { r = null; }
+  }
+  if (!r) r = netForecastFallback(avg, nextMonth, decision);
+  netRenderForecast(r, months, series);
+  if (btn) { btn.disabled = false; btn.innerHTML = '↻ Regenerar'; }
+}
+function netRenderForecast(r, months, series) {
+  const cont = document.getElementById('net-fc-result'); if (!cont) return;
+  cont.style.display = 'block';
+  const scen = [['bad', r.pessimistic], ['base', r.base], ['opt', r.optimistic]];
+  const cards = scen.map(([k, s]) => `<div class="fc-scenario sc-${k}">
+    <div class="fc-sc-top"><span class="fc-sc-label">${escapeHtml(s.label)}</span><div class="fc-sc-conf"><div class="fc-sc-conf-bar"><div class="fc-sc-conf-fill" style="width:${Number(s.confidence) || 0}%"></div></div>${Number(s.confidence) || 0}%</div></div>
+    <div><div class="fc-sc-amount">$${(s.collections / 1e6).toFixed(1)}M</div><div class="fc-sc-period">${escapeHtml(r.next_month)} · red</div></div>
+    <div style="font-size:11px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.06em">${escapeHtml(s.driver || '')}</div>
+    ${s.cost_of_inaction ? `<div class="fc-sc-cost">⚠ ${escapeHtml(s.cost_of_inaction)}</div>` : ''}
+    <div class="fc-sc-factors">${(s.factors || []).map(f => `<div class="fc-sc-factor">${escapeHtml(f)}</div>`).join('')}</div>
+  </div>`).join('');
+  cont.innerHTML = `${r.decision_context ? `<div class="net-fc-context">${escapeHtml(r.decision_context)}</div>` : ''}
+    <div class="fc-chart-card" style="margin-bottom:14px"><div style="position:relative;height:200px"><canvas id="net-fc-chart"></canvas></div></div>
+    <div class="fc-scenarios" style="display:grid">${cards}</div>`;
+  const labels = months.map(m => new Date(m + '-02').toLocaleDateString('es-CO', { month: 'short', year: '2-digit' }));
+  const fLabel = r.next_month.split(' ')[0].slice(0, 3);
+  const last = series[series.length - 1];
+  if (NET_FC_CHART) NET_FC_CHART.destroy();
+  NET_FC_CHART = new Chart(document.getElementById('net-fc-chart'), {
+    type: 'line',
+    data: {
+      labels: [...labels, fLabel], datasets: [
+        { label: 'Histórico red', data: [...series, null], borderColor: CHART_TEAL, backgroundColor: 'rgba(0,168,139,.08)', tension: .35, fill: true, pointRadius: 3, borderWidth: 2 },
+        { label: 'Pesimista', data: [...Array(series.length - 1).fill(null), last, r.pessimistic.collections], borderColor: CHART_RED, borderDash: [3, 3], tension: .2, pointRadius: [...Array(series.length - 1).fill(0), 3, 5], borderWidth: 2 },
+        { label: 'Base', data: [...Array(series.length - 1).fill(null), last, r.base.collections], borderColor: CHART_AMBER, borderDash: [8, 5], tension: .2, pointRadius: [...Array(series.length - 1).fill(0), 3, 5], borderWidth: 2 },
+        { label: 'Optimista', data: [...Array(series.length - 1).fill(null), last, r.optimistic.collections], borderColor: CHART_GREEN, borderDash: [14, 4], tension: .2, pointRadius: [...Array(series.length - 1).fill(0), 3, 5], borderWidth: 2 },
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: true, labels: { font: { size: 10 }, boxWidth: 10 } } }, scales: { x: { ticks: { font: { size: 10 } }, grid: { color: '#21262D' } }, y: { ticks: { font: { size: 10 }, callback: v => '$' + Math.round(v / 1e6) + 'M' }, grid: { color: '#21262D' } } } },
+  });
 }
 
 /* ── EXPORT CONSOLIDADO DE RED (PDF + Resumen del dueño) ── */
@@ -966,5 +1068,17 @@ function renderNetworkView() {
           <div class="ai-result" id="net-ask-answer" style="display:none;margin-top:12px"></div>
         </div>
       </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Proyección de red · próximo mes</div>
+      <div class="net-fc-bar">
+        <input type="text" id="net-fc-decision" class="net-ask-input" placeholder="¿Qué estás evaluando? Ej: abrir una 5ª sede, subir precios de ortodoncia…" onkeydown="if(event.key==='Enter'){event.preventDefault();netForecast();}">
+        <button class="ai-btn" id="net-fc-btn" onclick="netForecast()">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          Generar proyección
+        </button>
+      </div>
+      <div class="ai-result" id="net-fc-result" style="display:none;margin-top:14px"></div>
     </div>`;
 }

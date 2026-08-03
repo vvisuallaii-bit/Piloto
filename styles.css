@@ -788,3 +788,13 @@ select:hover,select:focus{border-color:var(--accent)}
 .net-ask-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .net-export-btns{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
 @media(max-width:600px){.net-export-btns{margin-left:0;width:100%}}
+
+/* Roles (simulados por URL en el demo) */
+.nb-badge-rol{color:var(--amber);background:rgba(227,179,65,.12);border-color:rgba(227,179,65,.35)}
+.nb-badge-rol i{font-style:normal}
+.nb-rol-note{font-size:11px;color:var(--faint)}
+.nb-rol-chip{font-size:10px;font-weight:600;color:var(--accent);background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.3);padding:2px 8px;border-radius:20px;margin-left:6px}
+
+/* Proyección de red */
+.net-fc-bar{display:flex;gap:8px;flex-wrap:wrap}
+.net-fc-context{background:rgba(56,139,253,.07);border:1px solid rgba(56,139,253,.2);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:14px}
