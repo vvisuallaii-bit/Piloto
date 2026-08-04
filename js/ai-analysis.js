@@ -83,7 +83,7 @@ async function runAnalysis(){
   const noShowRate=Math.round(m.noShowRate);
   const months=data.length;
   const fmtMonth=mo=>new Date(mo+'-02').toLocaleDateString('es-CO',{month:'long',year:'numeric'});
-  const period=data.length?`${fmtMonth(data[0].month)} – ${fmtMonth(data[data.length-1].month)}`:'desconocido';
+  const period=data.length?(data[0].month===data[data.length-1].month?fmtMonth(data[0].month):`${fmtMonth(data[0].month)} – ${fmtMonth(data[data.length-1].month)}`):'desconocido';
 
   // Test mode: skip the network entirely — no loading state needed either.
   if(AI_TEST_MODE){

@@ -39,7 +39,7 @@ function exportPDF(){
   // ── ANALYSIS PERIOD ──
   const data=CURRENT_DATA;
   const fmtM=mo=>new Date(mo+'-02').toLocaleDateString('es-CO',{month:'short',year:'numeric'});
-  const period=data.length?`${fmtM(data[0].month)} – ${fmtM(data[data.length-1].month)}`:'-';
+  const period=data.length?(data[0].month===data[data.length-1].month?fmtM(data[0].month):`${fmtM(data[0].month)} – ${fmtM(data[data.length-1].month)}`):'-';
   rgb(C.muted);doc.setFont('helvetica','normal');doc.setFontSize(8.5);
   doc.text(`Período de análisis: ${period}  ·  ${data.length} meses de datos`,M,y);
   y+=8;
