@@ -472,7 +472,7 @@ function netContextoRed() {
     const m = netSedeMetrics(s);
     return `- ${s.name.replace('Sede ', '')}: recaudación ${cop(m.totalCollections)}, gastos ${m.overheadRate.toFixed(0)}% (meta <65%), aceptación ${Math.round(m.acceptanceRate)}% (meta >65%), ausentismo ${m.noShowRate.toFixed(0)}% (meta <12%), pacientes nuevos/mes ${Math.round(m.avgNewPatPerMonth)}`;
   }).join('\n');
-  const cm = computeMetrics(NET.sedes.flatMap(netSedeData));
+  const cm = computeMetrics(netMonthlyCombined());
   const docs = NET.sedes.flatMap(s => s.doctors).sort((a, b) => b.production - a.production).slice(0, 3)
     .map(d => `${d.name} (${d.sede.replace('Sede ', '')}, ${cop(d.production)}, aceptación ${Math.round(d.acceptance)}%)`).join('; ');
   return `RED: ${NET.name} · ${NET.sedes.length} sedes${NET.filtroMes ? ' · ' + NET.filtroMes : ''}
@@ -499,15 +499,12 @@ ${netContextoRed()}
 Responde ÚNICAMENTE con JSON válido (sin markdown): {"headline":"hallazgo principal con la sede y números reales","what_happened":"2-3 frases comparando las sedes","why_it_matters":"2-3 frases de implicación para el dueño de la red","opportunity":"1-2 frases sobre la mayor oportunidad o riesgo","actions":[{"priority":"URGENT","text":"acción esta semana"},{"priority":"MEDIUM","text":"acción en 30 días"},{"priority":"LOW","text":"acción estratégica"}],"confidence":85}
 En español, tono colombiano directo. Cita sedes y cifras reales.`;
   try {
-    const resp = await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: MODEL_ID, max_tokens: 1100, messages: [{ role: 'user', content: prompt }] }) });
-    const j = await resp.json();
-    if (j.error) throw new Error(j.error.message || 'API');
-    const raw = (j.content || []).map(b => b.text || '').join('');
+    const raw = await netFetchIA(prompt, 1100);
     const r = JSON.parse(raw.replace(/```json|```/g, '').trim());
     if (!r.headline || !Array.isArray(r.actions)) throw new Error('formato');
     el.innerHTML = netAnalysisHTML(r);
   } catch (e) {
-    el.innerHTML = netAnalysisHTML(NET.analysis);   // fallback: nunca error en vivo
+    el.innerHTML = netAnalysisHTML(NET.analysis);   // fallback: nunca error ni loading infinito
   }
 }
 
@@ -528,10 +525,7 @@ Pregunta del dueño: "${q}"
 
 Responde directo y específico, citando sedes y números. Máximo 130 palabras, español, **negrita** en cifras o sedes clave.`;
   try {
-    const resp = await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: MODEL_ID, max_tokens: 400, messages: [{ role: 'user', content: prompt }] }) });
-    const j = await resp.json();
-    if (j.error) throw new Error(j.error.message || 'API');
-    const raw = (j.content || []).map(b => b.text || '').join('');
+    const raw = await netFetchIA(prompt, 400);
     out.innerHTML = `<div class="ai-block-txt">${renderMarkdown(raw)}</div>`;
   } catch (e) {
     out.innerHTML = `<div class="ai-block-txt">No se pudo consultar ahora. Intenta de nuevo en un momento.</div>`;
@@ -724,10 +718,7 @@ ${decision ? `El dueño evalúa: "${decision}".` : ''}
 Responde ÚNICAMENTE con JSON válido: {"next_month":"${nextMonth}","decision_context":"1-2 frases","pessimistic":{"collections":numero,"confidence":72,"label":"Pesimista","driver":"frase corta","factors":["f1","f2","f3"],"cost_of_inaction":"ej: $XM bajo el promedio","cta":"acción"},"base":{"collections":numero,"confidence":68,"label":"Caso Base","driver":"...","factors":["f1","f2","f3"],"cost_of_inaction":null,"cta":"..."},"optimistic":{"collections":numero,"confidence":55,"label":"Optimista","driver":"...","factors":["f1","f2","f3"],"cost_of_inaction":null,"cta":"..."},"questions":[{"icon":"🏥","text":"..."},{"icon":"📉","text":"..."},{"icon":"🎯","text":"..."}]}
 Pesimista ~10-15% bajo el promedio, base ~0-5%, optimista ~10-15% arriba. Cita sedes reales (Kennedy, Chapinero). Español, tono colombiano directo.`;
     try {
-      const resp = await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: MODEL_ID, max_tokens: 1200, messages: [{ role: 'user', content: prompt }] }) });
-      const j = await resp.json();
-      if (j.error) throw new Error('api');
-      const raw = (j.content || []).map(b => b.text || '').join('');
+      const raw = await netFetchIA(prompt, 1200);
       r = JSON.parse(raw.replace(/```json|```/g, '').trim());
       if (!r.base || !r.pessimistic || !r.optimistic) throw new Error('formato');
     } catch (e) { r = null; }
@@ -770,8 +761,8 @@ function netRenderForecast(r, months, series) {
 
 /* ── EXPORT CONSOLIDADO DE RED (PDF + Resumen del dueño) ── */
 function netResumenDatos() {
-  const combined = NET.sedes.flatMap(netSedeData);
-  const cm = computeMetrics(combined), hs = computeHealthScore(combined);
+  const monthly = netMonthlyCombined();
+  const cm = computeMetrics(monthly), hs = computeHealthScore(monthly);
   const filas = NET.sedes.map(s => {
     const m = netSedeMetrics(s), st = benchmarkStates(m), h = computeHealthScore(netSedeData(s));
     return { nombre: s.name.replace('Sede ', ''), m, st, salud: h.total };
@@ -899,6 +890,32 @@ function exportRedPDF() {
 /* ── VISTA RED COMPLETA ── */
 /* Datos de una sede aplicando el filtro de mes de la vista Red. */
 function netSedeData(s) { return NET.filtroMes ? s.data.filter(r => r.month === NET.filtroMes) : s.data; }
+
+/* Filas MENSUALES de la red: suma todas las sedes por mes. Se usa para las
+   métricas/salud consolidadas para que computeMetrics use el nº de meses REAL
+   (12), no filas×sedes (48). Sin esto, pacientes-nuevos/mes y los activos
+   consolidados salían ÷4 (bug de auditoría F1). */
+const NET_MCOLS = ['gross_production', 'collections', 'new_patients', 'active_patients', 'appointments_scheduled', 'appointments_completed', 'cancellations', 'no_shows', 'treatment_plans_presented', 'treatment_plans_accepted', 'hygiene_revenue', 'restorative_revenue', 'cosmetic_revenue', 'orthodontic_revenue', 'overhead_costs', 'staff_costs', 'supplies_costs', 'net_income'];
+function netMonthlyCombined() {
+  const byMonth = {};
+  NET.sedes.forEach(s => netSedeData(s).forEach(r => {
+    const m = byMonth[r.month] || (byMonth[r.month] = { month: r.month });
+    NET_MCOLS.forEach(k => { m[k] = (m[k] || 0) + (Number(r[k]) || 0); });
+  }));
+  return Object.keys(byMonth).sort().map(k => byMonth[k]);
+}
+
+/* Fetch a la API de IA con timeout (evita loading infinito si la API cuelga). */
+async function netFetchIA(prompt, maxTokens) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 30000);
+  try {
+    const resp = await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: MODEL_ID, max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] }), signal: ctrl.signal });
+    const j = await resp.json();
+    if (j.error) throw new Error(j.error.message || 'API');
+    return (j.content || []).map(b => b.text || '').join('');
+  } finally { clearTimeout(timer); }
+}
 function netSedeMetrics(s) { return computeMetrics(netSedeData(s)); }
 function netNoShowColor(pct) { return pct < 8 ? 'green' : pct < 12 ? 'amber' : 'red'; }
 function netSort(which, key) {
@@ -920,10 +937,11 @@ function renderNetworkView() {
   if (!NET.sortComp) NET.sortComp = { key: 'recaud', dir: -1 };
   if (!NET.sortDoc) NET.sortDoc = { key: 'production', dir: -1 };
 
-  // Salud consolidada sobre los datos combinados (respeta el filtro de mes).
-  const combined = sedes.flatMap(netSedeData);
-  const hs = computeHealthScore(combined);
-  const cm = computeMetrics(combined);
+  // Salud consolidada sobre las filas MENSUALES de la red (suma por mes, no
+  // filas×sedes) para que meses=12 y pacientes-nuevos/mes salga correcto.
+  const monthly = netMonthlyCombined();
+  const hs = computeHealthScore(monthly);
+  const cm = computeMetrics(monthly);
   const ringOffset = 289 - 289 * hs.total / 100;
 
   const healthItems = hs.items.map(it => `
