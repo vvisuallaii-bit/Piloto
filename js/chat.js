@@ -75,8 +75,9 @@ async function sendChat(){
   chatHistory.push({role:'user',content:text});
   const thinking=appendMsg('ai','',true);
 
-  // Demo de red: respuesta offline con los datos reales de la sede (sin API).
-  if(typeof NET!=='undefined'&&NET.active&&NET.fuente==='sintetico'){
+  // Demo de red (o fallback): respuesta offline con los datos reales de la sede
+  // (sin API). La IA real solo con ?live en una red real.
+  if(typeof NET!=='undefined'&&NET.active&&!(NET.live&&NET.fuente==='d1')){
     const reply=netDemoChatReply(text);
     setTimeout(()=>{thinking.remove();appendMsg('ai',reply);chatHistory.push({role:'ai',content:reply});sendBtn.disabled=false;input.focus();},450);
     return;

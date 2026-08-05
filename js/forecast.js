@@ -15,8 +15,9 @@ function fcDecisionText(){
 
 async function generateForecast(){
   if(!ALL.length)return;
-  // Demo de red: proyección determinista con los datos reales de la sede (sin API).
-  if(typeof NET!=='undefined'&&NET.active&&NET.fuente==='sintetico'){ netDemoGenerateForecast(); return; }
+  // Demo de venta (o fallback): proyección determinista con los datos reales de la
+  // sede (sin API). La IA real solo con ?live en una red real.
+  if(typeof NET!=='undefined'&&NET.active&&!(NET.live&&NET.fuente==='d1')){ netDemoGenerateForecast(); return; }
   const btn=document.getElementById('fc-gen-btn');
   btn.disabled=true;btn.innerHTML='<svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Analizando...';
 
@@ -97,7 +98,12 @@ Promedio mensual: $${Math.round(ALL.reduce((s,r)=>s+r.collections,0)/ALL.length)
     FC_RESULT=r;
     renderForecast(r);
   }catch(e){
-    alert('Error en la proyección: '+e.message);
+    // Error manejado con gracia (inline, no alert crudo), consistente con el chat.
+    const empty=document.getElementById('fc-chart-empty');
+    if(empty){ empty.style.display='flex'; empty.innerHTML='<div class="fc-empty-icon">⚠️</div>No se pudo generar la proyección en este momento. Revisa tu conexión e inténtalo de nuevo.'; }
+    const cv=document.getElementById('fc-chart'); if(cv) cv.style.display='none';
+    document.getElementById('fc-scenarios').style.display='none';
+    document.getElementById('fc-questions-card').style.display='none';
   }
   btn.disabled=false;
   btn.innerHTML='<svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Regenerar';
@@ -227,8 +233,8 @@ async function askForecastQuestion(question,label){
   body.innerHTML=`<div class="fc-answer-ld"><div class="ld"><span></span><span></span><span></span></div><span style="font-size:13px;color:var(--muted)">Analizando...</span></div>`;
   card.scrollIntoView({behavior:'smooth',block:'nearest'});
 
-  // Demo de red: respuesta offline (sin API).
-  if(typeof NET!=='undefined'&&NET.active&&NET.fuente==='sintetico'){
+  // Demo de venta (o fallback): respuesta offline (sin API). IA real solo con ?live.
+  if(typeof NET!=='undefined'&&NET.active&&!(NET.live&&NET.fuente==='d1')){
     setTimeout(()=>{body.innerHTML=`<div class="fc-answer-txt">${renderMarkdown(netDemoForecastAnswer(question))}</div>`;},400);
     return;
   }

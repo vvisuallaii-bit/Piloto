@@ -20,6 +20,7 @@ const NET = {
   name: 'Red Dental Sonrisa',
   rol: (new URLSearchParams(location.search).get('rol') || 'dueno').toLowerCase(),  // 'dueno' | 'gerente'
   rolSede: (new URLSearchParams(location.search).get('sede') || '').toLowerCase(),  // practice_id del gerente
+  live: new URLSearchParams(location.search).has('live'),  // ?live → IA real (red real); sin él = demo de venta token-free
   gerenteIdx: 0,
   mode: 'red',        // 'red' = vista consolidada | 'sede' = drill a una sede
   sedeIdx: 0,
@@ -31,6 +32,14 @@ const NET = {
   tareaSedeFiltro: '',// filtro por sede en las tareas consolidadas
   analysis: null,     // análisis cacheado de la red (fallback del Asesor IA)
 };
+
+/* ¿Servir respuestas cacheadas/offline (token-free) en vez de llamar a la API?
+   SÍ en el demo de venta (?demo=red SIN &live) y en el fallback sintético.
+   La IA real solo se activa para una red REAL con ?demo=red&live (o ?live).
+   Así el link de demo que se envía a prospectos nunca consume créditos. */
+function netDemoCache() {
+  return typeof NET !== 'undefined' && NET.active && !(NET.live && NET.fuente === 'd1');
+}
 
 /* Estacionalidad mensual (derivada de la forma del demo de sede única). Media
    ≈ 1.0 → escala la producción de cada sede mes a mes. 12 meses: ago→jul. */
@@ -490,7 +499,8 @@ async function netRunAnalysis() {
   const el = document.getElementById('net-ai-result');
   el.style.display = 'block';
   if (btn) btn.disabled = true;
-  if (NET.fuente !== 'd1') { el.innerHTML = netAnalysisHTML(NET.analysis); return; }
+  // Demo de venta (o fallback sintético): análisis cacheado, sin llamar a la API.
+  if (netDemoCache()) { el.innerHTML = netAnalysisHTML(NET.analysis); if (btn) btn.disabled = false; return; }
   el.innerHTML = `<div class="ai-loading" style="display:flex"><div class="ld"><span></span><span></span><span></span></div><span style="font-size:13px;color:var(--muted)">Comparando las ${NET.sedes.length} sedes…</span></div>`;
   const prompt = `Eres analista de operaciones de una RED de clínicas dentales colombianas. Compara las sedes, identifica cuál necesita atención y por qué, y da acciones priorizadas para el DUEÑO de la red.
 
@@ -516,6 +526,8 @@ async function netAskRed(ev) {
   const q = (inp.value || '').trim();
   if (!q) return;
   out.style.display = 'block';
+  // Demo de venta (o fallback): respuesta comparativa cacheada, sin API.
+  if (netDemoCache()) { out.innerHTML = `<div class="ai-block-txt">${renderMarkdown(netDemoRedReply(q))}</div>`; if (inp) inp.value = ''; return; }
   out.innerHTML = `<div class="ai-loading" style="display:flex"><div class="ld"><span></span><span></span><span></span></div><span style="font-size:13px;color:var(--muted)">Analizando…</span></div>`;
   const prompt = `Eres el asesor de operaciones del DUEÑO de una red de clínicas dentales. Responde su pregunta comparando las sedes con datos reales.
 
@@ -629,6 +641,51 @@ function netDemoForecastAnswer(q) {
   return `Tu acción de mayor impacto en **${name}** es cerrar el indicador que hoy está más lejos de la meta y recuperar la brecha de cobro de **${netM(gap)}**. Ambas suben el ingreso neto sin sumar costos fijos.`;
 }
 
+/* Asesor IA de RED cacheado (token-free): compara las sedes con sus métricas
+   REALES y enruta por tema. Espejo consolidado de netDemoChatReply. Cero tokens,
+   coherente con los datos de la red — se usa en el demo de venta (sin ?live). */
+function netDemoRedReply(q) {
+  const cop = v => '$' + (Math.round(v / 1e5) / 10).toFixed(1) + 'M';
+  const S = NET.sedes.map(s => ({ n: s.name.replace('Sede ', ''), m: netSedeMetrics(s), s }));
+  const cm = computeMetrics(netMonthlyCombined());
+  const salud = s => computeHealthScore(netSedeData(s)).total;
+  const worst = k => [...S].sort((a, b) => b.m[k] - a.m[k])[0];   // mayor primero
+  const best = k => [...S].sort((a, b) => a.m[k] - b.m[k])[0];    // menor primero
+  const peor = [...S].sort((a, b) => salud(a.s) - salud(b.s))[0];
+  const mejor = [...S].sort((a, b) => salud(b.s) - salud(a.s))[0];
+  const t = (q || '').toLowerCase();
+
+  if (/ausent|no.?show|inasist|falta/.test(t)) {
+    const w = worst('noShowRate'), b = best('noShowRate');
+    return `El ausentismo más alto de la red es el de **${w.n}** con **${Math.round(w.m.noShowRate)}%** (meta <12%), muy por encima de **${b.n}** (${Math.round(b.m.noShowRate)}%). La red promedia **${Math.round(cm.noShowRate)}%**. Blindar la agenda de ${w.n} con confirmación por WhatsApp 24h antes y una lista de reemplazo es la palanca más rápida.`;
+  }
+  if (/acept|tratamiento|plan/.test(t)) {
+    const low = best('acceptanceRate'), top = worst('acceptanceRate');
+    return `En aceptación de tratamientos lidera **${top.n}** (**${Math.round(top.m.acceptanceRate)}%**) y la más baja es **${low.n}** (**${Math.round(low.m.acceptanceRate)}%**, meta >65%). Replicar el guion de presentación de ${top.n} en ${low.n} sube la conversión sin atender un paciente nuevo; el promedio de la red es **${Math.round(cm.acceptanceRate)}%**.`;
+  }
+  if (/gasto|overhead|costo|margen/.test(t)) {
+    const w = worst('overheadRate'), b = best('overheadRate');
+    return `La sede con gastos más altos es **${w.n}** (**${Math.round(w.m.overheadRate)}%**, meta <65%) frente a **${b.n}** (${Math.round(b.m.overheadRate)}%). Comparar personal vs. producción e insumos de ${w.n} contra ${b.n} es donde está el margen; la red consolida **${Math.round(cm.overheadRate)}%**.`;
+  }
+  if (/cobro|cartera|recaud|deud|pend/.test(t)) {
+    const gap = cm.totalProduction - cm.totalCollections;
+    return `La red produjo **${cop(cm.totalProduction)}** y cobró **${cop(cm.totalCollections)}** — una brecha de **${cop(gap)}** ya producida sin cobrar. Gestionar cartera por sede con recordatorios y planes de pago recupera utilidad directa, sin invertir en marketing.`;
+  }
+  if (/doctor|odontolog|profesional|equipo/.test(t)) {
+    const docs = NET.sedes.flatMap(s => s.doctors).sort((a, b) => b.production - a.production);
+    const top = docs[0], low = [...docs].sort((a, b) => a.acceptance - b.acceptance)[0];
+    return `El doctor de mayor producción es **${top.name}** (${top.sede.replace('Sede ', '')}, ${cop(top.production)}, aceptación ${Math.round(top.acceptance)}%). El de menor aceptación arrastra a su sede: **${low.name}** (${Math.round(low.acceptance)}%). Acompañar a los de baja aceptación con el guion de los mejores es la mejora más directa.`;
+  }
+  if (/mejor|fuerte|top|lidera|referencia|model/.test(t)) {
+    return `La sede más fuerte es **${mejor.n}** (salud **${salud(mejor.s)}/100**): gastos ${Math.round(mejor.m.overheadRate)}%, aceptación ${Math.round(mejor.m.acceptanceRate)}%, ausentismo ${Math.round(mejor.m.noShowRate)}%. Documentar sus protocolos de confirmación y presentación de tratamientos para exportarlos al resto de la red es la jugada de mayor retorno.`;
+  }
+  if (/atenci|peor|débil|debil|problema|preocup|sede|foco|priori|invertir|abrir/.test(t)) {
+    return `La sede que más necesita atención es **${peor.n}**: salud **${salud(peor.s)}/100**, gastos ${Math.round(peor.m.overheadRate)}%, aceptación ${Math.round(peor.m.acceptanceRate)}% y ausentismo ${Math.round(peor.m.noShowRate)}%. En contraste, **${mejor.n}** (salud ${salud(mejor.s)}/100) es el modelo a replicar. Enfocar a ${peor.n} rinde más que abrir una sede nueva.`;
+  }
+  // General
+  return `La red **${NET.name}** recaudó **${cop(cm.totalCollections)}** en las ${NET.sedes.length} sedes: gastos **${Math.round(cm.overheadRate)}%**, aceptación **${Math.round(cm.acceptanceRate)}%**, ausentismo **${Math.round(cm.noShowRate)}%**. La sede a vigilar es **${peor.n}** (salud ${salud(peor.s)}/100) y el modelo a replicar es **${mejor.n}**. Pregúntame por ausentismo, aceptación, gastos, cobro o doctores para el detalle por sede.`;
+}
+
 /* ── PENDIENTES CONSOLIDADOS DE LA RED (criterio 3C) ── */
 function netTareaSedeNombre(pid) { const s = NET.sedes.find(x => x.id === pid); return s ? s.name.replace('Sede ', '') : pid; }
 async function netCargarTareasRed() {
@@ -708,7 +765,8 @@ async function netForecast() {
   const nd = new Date(); nd.setMonth(nd.getMonth() + 1);
   const nextMonth = nd.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
   let r = null;
-  if (NET.fuente === 'd1') {
+  // Demo de venta usa la proyección determinista (fallback); la IA real solo con ?live.
+  if (NET.live && NET.fuente === 'd1') {
     const prompt = `Eres analista financiero de una RED de ${NET.sedes.length} clínicas dentales colombianas. Proyecta la RECAUDACIÓN CONSOLIDADA de la red para ${nextMonth} en 3 escenarios.
 
 ${netContextoRed()}

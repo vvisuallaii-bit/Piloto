@@ -69,9 +69,34 @@ function tiaProfileText(){
   return parts.length?parts.join('\n'):'(perfil mínimo)';
 }
 
+/* Propuestas DETERMINISTAS para el demo (token-free): mismas reglas metric-driven
+   que usaría la IA, con pacientes reales del dataset. Se usan cuando netDemoCache()
+   está activo (demo de venta o fallback), para no consumir créditos. */
+function tiaDemoPropuestas(){
+  const m=computeMetrics(ALL);
+  const ov=Math.round(m.overheadRate), ac=Math.round(m.acceptanceRate), ns=Math.round(m.noShowRate);
+  const gap=Math.max(0,m.totalProduction-m.totalCollections);
+  const pac=(typeof PACIENTES!=='undefined'&&Array.isArray(PACIENTES))?PACIENTES:[];
+  const pick=(n,off)=>pac.slice(off,off+n).map(p=>({id:p.id,nombre:p.nombre,telefono:p.telefono,ultima_consulta:p.ultima_consulta,que_paso:p.que_paso,accion:p.proximos_pasos||'Contactar y reagendar',valor_pendiente_cop:Number(p.valor_pendiente_cop)||0}));
+  const props=[];
+  props.push({titulo:`Gestionar cobro de cartera ($${(gap/1e6).toFixed(1)}M sin cobrar en el período)`,descripcion:'Contactar pacientes con saldos de tratamientos ya realizados; recordatorio y plan de pago.',categoria:'otro',asignado_a:'recepcionista',prioridad:'alta',valor_estimado_cop:Math.round(gap/12/1e5)*1e5,justificacion:`La brecha entre producción y cobro del período es $${(gap/1e6).toFixed(1)}M ya producido.`,_pacientes:pick(3,0)});
+  props.push({titulo:'Reactivar pacientes inactivos de alto valor',descripcion:'Llamar a pacientes sin cita en 6+ meses con tratamientos pendientes para recuperar agenda.',categoria:'recall_inactivos',asignado_a:'recepcionista',prioridad:'alta',valor_estimado_cop:3600000,justificacion:'Recuperar inactivos es la vía más rápida de ingresos sin marketing.',_pacientes:pick(3,3)});
+  if(ns>=10)props.push({titulo:`Reagendar los no-shows del mes (ausentismo en ${ns}%)`,descripcion:'Reagendar inasistencias y activar confirmación por WhatsApp 24h antes.',categoria:'no_shows',asignado_a:'recepcionista',prioridad:ns>=12?'alta':'media',valor_estimado_cop:2000000,justificacion:`Ausentismo en ${ns}% frente a la meta del sector (<12%).`,_pacientes:pick(2,6)});
+  if(ac<68)props.push({titulo:'Re-presentar los planes de tratamiento de mayor valor no aceptados',descripcion:'Re-presentar con simulación y ofrecer financiación a cuotas.',categoria:'aceptacion_tratamiento',asignado_a:'dueno',prioridad:ac<55?'alta':'media',valor_estimado_cop:3400000,justificacion:`Aceptación en ${ac}% frente a la meta (>65%).`,_pacientes:[]});
+  if(ov>=65)props.push({titulo:`Revisar la estructura de gastos (${ov}%, meta <65%)`,descripcion:'Comparar personal vs. producción e insumos para bajar la tasa de gastos.',categoria:'otro',asignado_a:'dueno',prioridad:'media',valor_estimado_cop:0,justificacion:`Gastos operativos en ${ov}% frente a la meta (<65%).`,_pacientes:[]});
+  return props.slice(0,5);
+}
+
 async function generarTareasIA(){
   if(TIA_GENERANDO)return;
   if(typeof ALL==='undefined'||!ALL.length){tiaStatus('⚠ Los datos de la clínica aún no han cargado. Espera un momento y reintenta.','error');return;}
+  // Demo de venta (o fallback): propuestas deterministas, sin llamar a la API.
+  if(typeof netDemoCache==='function'&&netDemoCache()){
+    TIA_PROPUESTAS=tiaDemoPropuestas();
+    renderPropuestas();
+    tiaStatus('Propuestas de demostración generadas con tus métricas (sin consumir créditos).','');
+    return;
+  }
   TIA_GENERANDO=true;
   document.getElementById('tia-gen-btn').disabled=true;
   document.getElementById('tia-propuestas').innerHTML='';

@@ -69,9 +69,9 @@ async function runAnalysis(){
   document.getElementById('ai-empty').style.display='none';
   document.getElementById('ai-result').style.display='none';
 
-  // Fallback sintético: análisis pre-generado (sin API). En modo D1 (3C) sigue
-  // el flujo normal y llama a la API real con los datos de la sede.
-  if(typeof NET!=='undefined'&&NET.active&&NET.fuente==='sintetico'){
+  // Demo de venta o fallback sintético: análisis pre-generado (sin API). La IA
+  // real solo se activa para una red real con ?live (netDemoCache()=false).
+  if(typeof NET!=='undefined'&&NET.active&&!(NET.live&&NET.fuente==='d1')){
     const r=(NET.mode==='sede'&&NET.sedes[NET.sedeIdx])?NET.sedes[NET.sedeIdx].analysis:NET.analysis;
     showResult(r);LAST_RESULT=r;return;
   }
