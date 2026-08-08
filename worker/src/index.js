@@ -224,6 +224,11 @@ async function loginEndpoint(request, env) {
     console.error('D1 sesion insert:', e.message);
     return json({ error: 'Error interno al iniciar sesión' }, 500);
   }
+  // Limpieza probabilística de sesiones expiradas (evita que la tabla crezca sin
+  // fin; mismo patrón que rate_limit). Fail-open: si falla, no afecta el login.
+  if (Math.random() < 0.1) {
+    await env.DB.prepare(`DELETE FROM sesiones WHERE expira_en < datetime('now')`).run().catch(() => {});
+  }
   return json({ token, rol: u.rol, nombre: u.nombre, network_id: u.network_id, practice_id: u.practice_id });
 }
 
@@ -266,12 +271,33 @@ async function practiceEnRedPublica(env, practiceId) {
 }
 
 /* network_id efectivo para lecturas de red: una sesión SIEMPRE usa el suyo (ignora
-   la query); ADMIN_KEY usa el parámetro (paridad con hoy).
-   TODO: confirmar con Cristian — ¿'admin_sede'/'recepcionista' deberían poder ver
-   /red/metricas y /red/datos (métricas de las sedes hermanas), o eso es solo 'dueno'?
-   Hoy se les deja con el alcance de SU red, según el brief. */
+   la query); ADMIN_KEY usa el parámetro (paridad con hoy). */
 function networkDeActor(actor, url) {
   return actor.tipo === 'sesion' ? actor.usuario.network_id : url.searchParams.get('network_id');
+}
+
+/* Autoriza una lectura de la vista de RED (/red/datos, /red/metricas). Regla de
+   control de acceso (Fase 4C — decidido): el consolidado de la red es SOLO para el
+   dueño; un rol de sede (admin_sede/recepcionista) NO ve las sedes hermanas aunque
+   tenga sesión válida. Excepciones: ADMIN_KEY (superusuario) y la red demo pública
+   (datos ficticios, lectura anónima para el demo de venta).
+   Devuelve { nid } efectivo o { err: Response }. */
+async function guardVistaRed(request, env, url) {
+  const nidQuery = url.searchParams.get('network_id');
+  const actor = await autorizar(request, env, url);
+  if (!actor) {
+    // Anónimo: SOLO la red demo pública (la excepción es exclusiva de anónimos —
+    // un rol de sede no puede colar un network público para leer SU consolidado).
+    if (!REDES_PUBLICAS.has(nidQuery)) return { err: json({ error: 'No autenticado' }, 401) };
+    return nidQuery ? { nid: nidQuery } : { err: json({ error: 'network_id es obligatorio' }, 400) };
+  }
+  // Con sesión: el consolidado de la red es SOLO del dueño (ADMIN_KEY = superusuario).
+  if (actor.tipo === 'sesion' && actor.usuario.rol !== 'dueno') {
+    return { err: json({ error: 'Tu rol no tiene acceso a la vista de red' }, 403) };
+  }
+  const nid = networkDeActor(actor, url);   // dueño → su red (ignora query); ADMIN_KEY → query
+  if (!nid) return { err: json({ error: 'network_id es obligatorio' }, 400) };
+  return { nid };
 }
 
 /* ── Proxy hacia la API de Claude — con blindaje (ver constantes arriba) ── */
@@ -900,10 +926,9 @@ async function crearDoctor(request, env, url) {
 
 /* ── GET /practices?network_id= ── lista las sedes de una red (para el selector). */
 async function listarPractices(request, env, url) {
-  const actor = await autorizar(request, env, url);
-  if (!actor) return json({ error: 'No autenticado' }, 401);
-  const nid = networkDeActor(actor, url);
-  if (!nid) return json({ error: 'network_id es obligatorio' }, 400);
+  // Enumerar las sedes de la red es info de nivel red → mismas reglas que /red/*
+  // (solo dueño / ADMIN_KEY / demo pública; un rol de sede no lista sus hermanas).
+  const { nid, err } = await guardVistaRed(request, env, url); if (err) return err;
   const net = await env.DB.prepare(`SELECT * FROM networks WHERE network_id = ?1`).bind(nid).first();
   if (!net) return json({ error: `Red no encontrada: ${nid}` }, 404);
   const { results } = await env.DB.prepare(
@@ -917,11 +942,7 @@ async function listarPractices(request, env, url) {
 /* ── GET /red/metricas?network_id= ── métricas agregadas de la red + por sede.
    Reusa computeMetrics por sede y agrega con promedio ponderado por volumen. */
 async function metricasRed(request, env, url) {
-  const nidQuery = url.searchParams.get('network_id');
-  const actor = await autorizar(request, env, url);
-  if (!actor && !REDES_PUBLICAS.has(nidQuery)) return json({ error: 'No autenticado' }, 401);  // demo pública sin sesión
-  const nid = actor ? networkDeActor(actor, url) : nidQuery;
-  if (!nid) return json({ error: 'network_id es obligatorio' }, 400);
+  const { nid, err } = await guardVistaRed(request, env, url); if (err) return err;
   const net = await env.DB.prepare(`SELECT * FROM networks WHERE network_id = ?1`).bind(nid).first();
   if (!net) return json({ error: `Red no encontrada: ${nid}` }, 404);
   const { results: practices } = await env.DB.prepare(`SELECT * FROM practices WHERE network_id = ?1 ORDER BY nombre`).bind(nid).all();
@@ -961,11 +982,7 @@ async function metricasRed(request, env, url) {
    el dashboard reusa computeMetrics/computeHealthScore/render sobre estos datos,
    igual que con una sede única — sin lógica nueva. */
 async function redDatos(request, env, url) {
-  const nidQuery = url.searchParams.get('network_id');
-  const actor = await autorizar(request, env, url);
-  if (!actor && !REDES_PUBLICAS.has(nidQuery)) return json({ error: 'No autenticado' }, 401);  // demo pública sin sesión
-  const nid = actor ? networkDeActor(actor, url) : nidQuery;
-  if (!nid) return json({ error: 'network_id es obligatorio' }, 400);
+  const { nid, err } = await guardVistaRed(request, env, url); if (err) return err;
   const net = await env.DB.prepare(`SELECT * FROM networks WHERE network_id = ?1`).bind(nid).first();
   if (!net) return json({ error: `Red no encontrada: ${nid}` }, 404);
   const { results: practices } = await env.DB.prepare(`SELECT * FROM practices WHERE network_id = ?1 ORDER BY nombre`).bind(nid).all();
