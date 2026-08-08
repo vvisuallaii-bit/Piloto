@@ -18,7 +18,7 @@
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Key',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Key, Authorization',
   'Access-Control-Max-Age': '86400',
 };
 
@@ -108,6 +108,172 @@ function hydrateTarea(t) {
   return t;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   AUTENTICACIÓN (Fase 4B) — usuarios + sesiones en D1.
+   Sin dependencias npm: hashing con Web Crypto (PBKDF2-SHA256) nativo del
+   runtime de Workers. El mismo contrato de hashing lo replica
+   scripts/seed-usuarios.mjs — si cambias los parámetros de abajo, cámbialos
+   allá también o los seeds no validarán.
+   ══════════════════════════════════════════════════════════════════════════ */
+const PBKDF2_ITER = 100000;      // ≥100k (guía de la fase)
+const PBKDF2_KEYLEN = 32;        // bytes derivados (256 bits)
+const SESION_DIAS = 7;           // vigencia del token de sesión
+
+/* Redes cuyas LECTURAS son públicas (sin sesión): la red demo de venta que ven
+   los prospectos. Son datos 100% ficticios de showcase — exponerlos no filtra
+   nada real. Las redes de clientes reales NO van aquí: siguen exigiendo sesión.
+   (Fase 4C — así el demo `?demo=red` sigue funcionando sin login.) */
+const REDES_PUBLICAS = new Set(['red-dental-sonrisa']);
+
+function bufToHex(buf) {
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function hexToBuf(hex) {
+  const a = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < a.length; i++) a[i] = parseInt(hex.substr(i * 2, 2), 16);
+  return a;
+}
+async function derivarPBKDF2(password, saltBytes) {
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: saltBytes, iterations: PBKDF2_ITER, hash: 'SHA-256' },
+    key, PBKDF2_KEYLEN * 8
+  );
+  return new Uint8Array(bits);
+}
+async function hashPassword(password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const hash = await derivarPBKDF2(password, salt);
+  return { hash: bufToHex(hash), salt: bufToHex(salt) };
+}
+async function verifyPassword(password, saltHex, hashHex) {
+  if (!saltHex || !hashHex) return false;
+  const hash = await derivarPBKDF2(password, hexToBuf(saltHex));
+  const esperado = hexToBuf(hashHex);
+  if (hash.length !== esperado.length) return false;
+  let diff = 0;                                   // comparación en tiempo ~constante
+  for (let i = 0; i < hash.length; i++) diff |= hash[i] ^ esperado[i];
+  return diff === 0;
+}
+
+/* expira_en en UTC 'YYYY-MM-DD HH:MM:SS' — comparable con datetime('now') de D1. */
+function expiracionSesionUTC() {
+  return new Date(Date.now() + SESION_DIAS * 86400 * 1000).toISOString().replace('T', ' ').slice(0, 19);
+}
+
+/* Lee 'Authorization: Bearer <token>' y devuelve el usuario de la sesión válida
+   (no expirada, usuario activo), o null. Reusado por /auth/me y por autorizar(). */
+async function resolverSesion(request, env) {
+  const auth = request.headers.get('Authorization') || '';
+  const m = auth.match(/^Bearer\s+(.+)$/i);
+  if (!m) return null;
+  const token = m[1].trim();
+  if (!token) return null;
+  try {
+    return await env.DB.prepare(
+      `SELECT u.* FROM sesiones s JOIN usuarios u ON u.id = s.usuario_id
+       WHERE s.token = ?1 AND s.expira_en > datetime('now') AND u.activo = 1`
+    ).bind(token).first();
+  } catch (e) {
+    console.error('resolverSesion:', e.message);
+    return null;
+  }
+}
+
+/* Resuelve QUIÉN hace la petición, aceptando dos mecanismos EN PARALELO:
+     - ADMIN_KEY (header X-Admin-Key o ?admin_key=) → actor 'admin' (superusuario,
+       paridad con el comportamiento previo a la Fase 4B; NO se retira aquí).
+     - Sesión válida (Bearer token) → actor 'sesion' con el usuario y su rol.
+   Devuelve null si ninguno aplica. */
+async function autorizar(request, env, url) {
+  const clave = request.headers.get('X-Admin-Key') || url.searchParams.get('admin_key');
+  if (clave && env.ADMIN_KEY && clave === env.ADMIN_KEY) return { tipo: 'admin', usuario: null };
+  const usuario = await resolverSesion(request, env);
+  if (usuario) return { tipo: 'sesion', usuario };
+  return null;
+}
+
+/* ── POST /auth/login ── {email, password} → {token, rol, nombre, network_id, practice_id} */
+async function loginEndpoint(request, env) {
+  // Mismo rate-limit por IP que el proxy: frena el fuerza-bruta de contraseñas.
+  const ip = request.headers.get('CF-Connecting-IP') || '';
+  if (await rateLimited(env, ip)) return json({ error: 'Demasiados intentos. Intenta de nuevo en un minuto.' }, 429);
+
+  let b;
+  try { b = await request.json(); } catch { return json({ error: 'Body JSON inválido' }, 400); }
+  const email = String(b.email || '').trim().toLowerCase();
+  const password = String(b.password || '');
+  if (!email || !password) return json({ error: 'email y password son requeridos' }, 400);
+
+  const u = await env.DB.prepare(`SELECT * FROM usuarios WHERE email = ?1 AND activo = 1`).bind(email).first();
+  // Mismo mensaje para usuario inexistente y contraseña incorrecta: no filtra qué
+  // correos existen. Si no hay usuario, igual verificamos contra un hash dummy para
+  // no dar una pista de tiempo (usuario válido tarda ~PBKDF2, inválido respondería al instante).
+  if (!u) {
+    await verifyPassword(password, '00', 'ff').catch(() => {});
+    return json({ error: 'Credenciales inválidas' }, 401);
+  }
+  const ok = await verifyPassword(password, u.password_salt, u.password_hash);
+  if (!ok) return json({ error: 'Credenciales inválidas' }, 401);
+
+  const token = crypto.randomUUID();
+  try {
+    await env.DB.prepare(`INSERT INTO sesiones (token, usuario_id, expira_en) VALUES (?1, ?2, ?3)`)
+      .bind(token, u.id, expiracionSesionUTC()).run();
+  } catch (e) {
+    console.error('D1 sesion insert:', e.message);
+    return json({ error: 'Error interno al iniciar sesión' }, 500);
+  }
+  return json({ token, rol: u.rol, nombre: u.nombre, network_id: u.network_id, practice_id: u.practice_id });
+}
+
+/* ── POST /auth/logout ── Authorization: Bearer <token> → borra la sesión. */
+async function logoutEndpoint(request, env) {
+  const auth = request.headers.get('Authorization') || '';
+  const m = auth.match(/^Bearer\s+(.+)$/i);
+  if (!m) return json({ error: 'Token requerido' }, 401);
+  try {
+    await env.DB.prepare(`DELETE FROM sesiones WHERE token = ?1`).bind(m[1].trim()).run();
+  } catch (e) {
+    console.error('D1 sesion delete:', e.message);
+    return json({ error: 'Error interno al cerrar sesión' }, 500);
+  }
+  return json({ ok: true });
+}
+
+/* ── GET /auth/me ── Authorization: Bearer <token> → {rol, nombre, network_id, practice_id} */
+async function meEndpoint(request, env) {
+  const u = await resolverSesion(request, env);
+  if (!u) return json({ error: 'No autenticado' }, 401);
+  return json({ rol: u.rol, nombre: u.nombre, network_id: u.network_id, practice_id: u.practice_id });
+}
+
+/* Verifica que una sede (practice_id) pertenezca a una red (network_id). Se usa
+   para acotar a un 'dueno' a su propia red cuando pide una sede puntual. */
+async function practiceEnRed(env, practiceId, networkId) {
+  if (!practiceId || !networkId) return false;
+  const row = await env.DB.prepare(`SELECT 1 FROM practices WHERE practice_id = ?1 AND network_id = ?2`)
+    .bind(practiceId, networkId).first();
+  return !!row;
+}
+
+/* ¿La sede pertenece a una red pública (demo)? Habilita la lectura anónima de las
+   tareas de una sede del demo cuando el prospecto hace drill a esa sede. */
+async function practiceEnRedPublica(env, practiceId) {
+  if (!practiceId) return false;
+  const row = await env.DB.prepare(`SELECT network_id FROM practices WHERE practice_id = ?1`).bind(practiceId).first();
+  return !!(row && REDES_PUBLICAS.has(row.network_id));
+}
+
+/* network_id efectivo para lecturas de red: una sesión SIEMPRE usa el suyo (ignora
+   la query); ADMIN_KEY usa el parámetro (paridad con hoy).
+   TODO: confirmar con Cristian — ¿'admin_sede'/'recepcionista' deberían poder ver
+   /red/metricas y /red/datos (métricas de las sedes hermanas), o eso es solo 'dueno'?
+   Hoy se les deja con el alcance de SU red, según el brief. */
+function networkDeActor(actor, url) {
+  return actor.tipo === 'sesion' ? actor.usuario.network_id : url.searchParams.get('network_id');
+}
+
 /* ── Proxy hacia la API de Claude — con blindaje (ver constantes arriba) ── */
 async function handleProxy(request, env) {
   // 1. Solo desde nuestros orígenes.
@@ -148,14 +314,23 @@ async function handleProxy(request, env) {
   });
 }
 
-/* ── POST /tareas ── */
+/* ── POST /tareas ── crear tarea. Acepta ADMIN_KEY (paridad) o sesión con rol
+   'dueno'/'admin_sede'. 'recepcionista' NO puede crear tareas. */
 async function crearTarea(request, env, url) {
-  if (!env.ADMIN_KEY) return json({ error: 'ADMIN_KEY no configurada en el Worker' }, 500);
-  const clave = request.headers.get('X-Admin-Key') || url.searchParams.get('admin_key');
-  if (clave !== env.ADMIN_KEY) return json({ error: 'Clave de administración inválida' }, 401);
+  const actor = await autorizar(request, env, url);
+  if (!actor) return json({ error: 'No autenticado' }, 401);
+  if (actor.tipo === 'sesion' && !['dueno', 'admin_sede'].includes(actor.usuario.rol)) {
+    return json({ error: 'Tu rol no puede crear tareas' }, 403);
+  }
 
   let b;
   try { b = await request.json(); } catch { return json({ error: 'Body JSON inválido' }, 400); }
+
+  // El Administrador de sede solo puede crear en SU sede: se fija antes de validar,
+  // ignorando cualquier practice_id que venga en el body.
+  if (actor.tipo === 'sesion' && actor.usuario.rol === 'admin_sede') {
+    b.practice_id = actor.usuario.practice_id;
+  }
 
   for (const campo of ['practice_id', 'semana', 'titulo', 'categoria', 'asignado_a', 'prioridad']) {
     if (!b[campo] || typeof b[campo] !== 'string' || !b[campo].trim()) {
@@ -179,6 +354,12 @@ async function crearTarea(request, env, url) {
     if (pacientesJson.length > 30000) return json({ error: 'la lista de pacientes es demasiado grande' }, 400);
   }
 
+  // El dueño solo puede crear en sedes de SU red.
+  if (actor.tipo === 'sesion' && actor.usuario.rol === 'dueno' &&
+      !(await practiceEnRed(env, b.practice_id.trim(), actor.usuario.network_id))) {
+    return json({ error: 'Esa sede no pertenece a tu red' }, 403);
+  }
+
   try {
     const tarea = await env.DB.prepare(
       `INSERT INTO tareas (practice_id, semana, titulo, descripcion, categoria, asignado_a, prioridad, valor_estimado_cop, fecha_limite, fuente, pacientes)
@@ -196,9 +377,30 @@ async function crearTarea(request, env, url) {
 
 /* ── GET /tareas ── acepta practice_id (una sede, como siempre) o network_id
    (agrega todas las sedes de la red). Sin filtro → 400 (comportamiento actual). */
-async function listarTareas(env, url) {
-  const practiceId = url.searchParams.get('practice_id');
-  const networkId = url.searchParams.get('network_id');
+async function listarTareas(request, env, url) {
+  let practiceId = url.searchParams.get('practice_id');
+  let networkId = url.searchParams.get('network_id');
+
+  const actor = await autorizar(request, env, url);
+  if (!actor) {
+    // Excepción demo: la red pública (o una de sus sedes) se lee sin sesión.
+    const publico = (networkId && REDES_PUBLICAS.has(networkId)) || (await practiceEnRedPublica(env, practiceId));
+    if (!publico) return json({ error: 'No autenticado' }, 401);
+    // anónimo demo → usa los parámetros tal cual (sin acotar).
+  } else if (actor.tipo === 'sesion') {
+    const u = actor.usuario;
+    if (u.rol === 'admin_sede' || u.rol === 'recepcionista') {
+      practiceId = u.practice_id; networkId = null;
+    } else if (u.rol === 'dueno') {
+      if (practiceId) {
+        if (!(await practiceEnRed(env, practiceId, u.network_id))) return json({ error: 'Esa sede no pertenece a tu red' }, 403);
+        networkId = null;
+      } else {
+        networkId = u.network_id;
+      }
+    }
+  }
+
   const estado = url.searchParams.get('estado');
   const asignadoA = url.searchParams.get('asignado_a');
   if (estado && !ESTADOS.includes(estado)) return json({ error: `estado inválido (permitidos: ${ESTADOS.join(', ')})` }, 400);
@@ -270,8 +472,12 @@ async function listarTareas(env, url) {
   }
 }
 
-/* ── PATCH /tareas/:id ── */
-async function actualizarTarea(request, env, id) {
+/* ── PATCH /tareas/:id ── actualizar/completar. Requiere sesión (o ADMIN_KEY);
+   la tarea debe estar dentro del alcance del actor. La recepcionista SÍ puede
+   (completar tareas, marcar contactado) dentro de su sede. */
+async function actualizarTarea(request, env, url, id) {
+  const actor = await autorizar(request, env, url);
+  if (!actor) return json({ error: 'No autenticado' }, 401);
   if (!/^\d+$/.test(id)) return json({ error: 'id inválido' }, 400);
   let b;
   try { b = await request.json(); } catch { return json({ error: 'Body JSON inválido' }, 400); }
@@ -286,6 +492,16 @@ async function actualizarTarea(request, env, id) {
   try {
     const existente = await env.DB.prepare(`SELECT * FROM tareas WHERE id = ?1`).bind(Number(id)).first();
     if (!existente) return json({ error: 'Tarea no encontrada' }, 404);
+
+    // Alcance: una sesión solo toca tareas de su sede (admin_sede/recepcionista)
+    // o de su red (dueno). ADMIN_KEY pasa sin restricción (paridad).
+    if (actor.tipo === 'sesion') {
+      const u = actor.usuario;
+      const ok = u.rol === 'dueno'
+        ? await practiceEnRed(env, existente.practice_id, u.network_id)
+        : existente.practice_id === u.practice_id;
+      if (!ok) return json({ error: 'Esa tarea no pertenece a tu alcance' }, 403);
+    }
 
     const sets = [];
     const binds = [];
@@ -555,20 +771,33 @@ async function generarParaPractica(env, practice, opts = {}) {
    ?dry_run=1   devuelve las propuestas sin insertarlas
    ?force=1     ignora el anti-duplicados de la semana */
 async function generarEndpoint(request, env, url) {
-  if (!env.ADMIN_KEY) return json({ error: 'ADMIN_KEY no configurada en el Worker' }, 500);
-  const clave = request.headers.get('X-Admin-Key') || url.searchParams.get('admin_key');
-  if (clave !== env.ADMIN_KEY) return json({ error: 'Clave de administración inválida' }, 401);
+  const actor = await autorizar(request, env, url);
+  if (!actor) return json({ error: 'No autenticado' }, 401);
+  if (actor.tipo === 'sesion' && !['dueno', 'admin_sede'].includes(actor.usuario.rol)) {
+    return json({ error: 'Tu rol no puede generar tareas' }, 403);
+  }
 
-  const practiceId = url.searchParams.get('practice_id');
+  let practiceId = url.searchParams.get('practice_id');
   const dryRun = url.searchParams.get('dry_run') === '1';
   const force = url.searchParams.get('force') === '1';
+
+  // El Administrador de sede solo genera para SU sede.
+  if (actor.tipo === 'sesion' && actor.usuario.rol === 'admin_sede') practiceId = actor.usuario.practice_id;
 
   let practices;
   if (practiceId) {
     const p = await env.DB.prepare(`SELECT * FROM practices WHERE practice_id = ?1`).bind(practiceId).first();
     if (!p) return json({ error: `Clínica no encontrada: ${practiceId}` }, 404);
+    if (actor.tipo === 'sesion' && actor.usuario.rol === 'dueno' && p.network_id !== actor.usuario.network_id) {
+      return json({ error: 'Esa sede no pertenece a tu red' }, 403);
+    }
     practices = [p];
+  } else if (actor.tipo === 'sesion' && actor.usuario.rol === 'dueno') {
+    // Dueño sin practice_id → todas las sedes activas de SU red (no globales).
+    const { results } = await env.DB.prepare(`SELECT * FROM practices WHERE activo = 1 AND network_id = ?1`).bind(actor.usuario.network_id).all();
+    practices = results || [];
   } else {
+    // ADMIN_KEY → todas las clínicas activas (comportamiento del cron, sin cambios).
     const { results } = await env.DB.prepare(`SELECT * FROM practices WHERE activo = 1`).all();
     practices = results || [];
   }
@@ -588,16 +817,22 @@ async function generarEndpoint(request, env, url) {
    ══════════════════════════════════════════════════════════════════════════ */
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-function requireAdmin(request, url, env) {
-  if (!env.ADMIN_KEY) return json({ error: 'ADMIN_KEY no configurada en el Worker' }, 500);
-  const clave = request.headers.get('X-Admin-Key') || url.searchParams.get('admin_key');
-  if (clave !== env.ADMIN_KEY) return json({ error: 'Clave de administración inválida' }, 401);
-  return null;
+/* Autoriza y exige actor ADMIN_KEY o sesión con rol 'dueno'. Devuelve
+   { actor } o { err: Response }. Usado por las escrituras de red/sede/doctor. */
+async function requireDueno(request, env, url) {
+  const actor = await autorizar(request, env, url);
+  if (!actor) return { err: json({ error: 'No autenticado' }, 401) };
+  if (actor.tipo === 'sesion' && actor.usuario.rol !== 'dueno') {
+    return { err: json({ error: 'Solo el dueño de la red puede hacer esto' }, 403) };
+  }
+  return { actor };
 }
 
 /* ── POST /networks ── crea una red (grupo/dueño). */
 async function crearNetwork(request, env, url) {
-  const err = requireAdmin(request, url, env); if (err) return err;
+  // TODO: confirmar con Cristian — ¿un 'dueno' debería poder crear redes NUEVAS
+  // (además de la suya), o eso es exclusivo de ADMIN_KEY? Hoy el brief lo permite.
+  const { err } = await requireDueno(request, env, url); if (err) return err;
   let b; try { b = await request.json(); } catch { return json({ error: 'Body JSON inválido' }, 400); }
   const id = String(b.network_id || '').trim();
   if (!SLUG_RE.test(id)) return json({ error: 'network_id inválido (slug: minúsculas, números y guiones)' }, 400);
@@ -614,11 +849,15 @@ async function crearNetwork(request, env, url) {
 
 /* ── POST /practices ── crea una sede dentro de una red. */
 async function crearPractice(request, env, url) {
-  const err = requireAdmin(request, url, env); if (err) return err;
+  const { actor, err } = await requireDueno(request, env, url); if (err) return err;
   let b; try { b = await request.json(); } catch { return json({ error: 'Body JSON inválido' }, 400); }
   const id = String(b.practice_id || '').trim(), nid = String(b.network_id || '').trim();
   if (!SLUG_RE.test(id)) return json({ error: 'practice_id inválido (slug)' }, 400);
   if (!SLUG_RE.test(nid)) return json({ error: 'network_id inválido (slug)' }, 400);
+  // Un 'dueno' solo puede crear sedes en SU propia red (ADMIN_KEY, cualquier red).
+  if (actor.tipo === 'sesion' && nid !== actor.usuario.network_id) {
+    return json({ error: 'Solo puedes crear sedes en tu propia red' }, 403);
+  }
   if (!b.nombre || !String(b.nombre).trim()) return json({ error: 'Campo requerido: nombre' }, 400);
   const net = await env.DB.prepare(`SELECT 1 FROM networks WHERE network_id = ?1`).bind(nid).first();
   if (!net) return json({ error: `Red inexistente: ${nid}` }, 400);
@@ -636,10 +875,16 @@ async function crearPractice(request, env, url) {
 
 /* ── POST /doctors ── crea un odontólogo en una sede. */
 async function crearDoctor(request, env, url) {
-  const err = requireAdmin(request, url, env); if (err) return err;
+  // TODO: confirmar con Cristian — ¿debería un 'admin_sede' poder crear doctores de
+  // SU propia sede? Hoy, por el brief, crear doctores queda solo para 'dueno'.
+  const { actor, err } = await requireDueno(request, env, url); if (err) return err;
   let b; try { b = await request.json(); } catch { return json({ error: 'Body JSON inválido' }, 400); }
   const pid = String(b.practice_id || '').trim();
   if (!SLUG_RE.test(pid)) return json({ error: 'practice_id inválido (slug)' }, 400);
+  // Un 'dueno' solo puede crear doctores en sedes de SU red.
+  if (actor.tipo === 'sesion' && !(await practiceEnRed(env, pid, actor.usuario.network_id))) {
+    return json({ error: 'Esa sede no pertenece a tu red' }, 403);
+  }
   if (!b.nombre || !String(b.nombre).trim()) return json({ error: 'Campo requerido: nombre' }, 400);
   if (b.fecha_ingreso && !/^\d{4}-\d{2}-\d{2}$/.test(b.fecha_ingreso)) return json({ error: 'fecha_ingreso debe ser fecha ISO' }, 400);
   const pr = await env.DB.prepare(`SELECT 1 FROM practices WHERE practice_id = ?1`).bind(pid).first();
@@ -654,8 +899,10 @@ async function crearDoctor(request, env, url) {
 }
 
 /* ── GET /practices?network_id= ── lista las sedes de una red (para el selector). */
-async function listarPractices(env, url) {
-  const nid = url.searchParams.get('network_id');
+async function listarPractices(request, env, url) {
+  const actor = await autorizar(request, env, url);
+  if (!actor) return json({ error: 'No autenticado' }, 401);
+  const nid = networkDeActor(actor, url);
   if (!nid) return json({ error: 'network_id es obligatorio' }, 400);
   const net = await env.DB.prepare(`SELECT * FROM networks WHERE network_id = ?1`).bind(nid).first();
   if (!net) return json({ error: `Red no encontrada: ${nid}` }, 404);
@@ -669,8 +916,11 @@ async function listarPractices(env, url) {
 
 /* ── GET /red/metricas?network_id= ── métricas agregadas de la red + por sede.
    Reusa computeMetrics por sede y agrega con promedio ponderado por volumen. */
-async function metricasRed(env, url) {
-  const nid = url.searchParams.get('network_id');
+async function metricasRed(request, env, url) {
+  const nidQuery = url.searchParams.get('network_id');
+  const actor = await autorizar(request, env, url);
+  if (!actor && !REDES_PUBLICAS.has(nidQuery)) return json({ error: 'No autenticado' }, 401);  // demo pública sin sesión
+  const nid = actor ? networkDeActor(actor, url) : nidQuery;
   if (!nid) return json({ error: 'network_id es obligatorio' }, 400);
   const net = await env.DB.prepare(`SELECT * FROM networks WHERE network_id = ?1`).bind(nid).first();
   if (!net) return json({ error: `Red no encontrada: ${nid}` }, 404);
@@ -710,8 +960,11 @@ async function metricasRed(env, url) {
    doctores con sus métricas). Es la fuente del frontend en modo Red (Fase 3C):
    el dashboard reusa computeMetrics/computeHealthScore/render sobre estos datos,
    igual que con una sede única — sin lógica nueva. */
-async function redDatos(env, url) {
-  const nid = url.searchParams.get('network_id');
+async function redDatos(request, env, url) {
+  const nidQuery = url.searchParams.get('network_id');
+  const actor = await autorizar(request, env, url);
+  if (!actor && !REDES_PUBLICAS.has(nidQuery)) return json({ error: 'No autenticado' }, 401);  // demo pública sin sesión
+  const nid = actor ? networkDeActor(actor, url) : nidQuery;
   if (!nid) return json({ error: 'network_id es obligatorio' }, 400);
   const net = await env.DB.prepare(`SELECT * FROM networks WHERE network_id = ?1`).bind(nid).first();
   if (!net) return json({ error: `Red no encontrada: ${nid}` }, 404);
@@ -754,9 +1007,14 @@ export default {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
     }
 
+    // ── Autenticación (Fase 4B) ──
+    if (path === '/auth/login' && request.method === 'POST') return loginEndpoint(request, env);
+    if (path === '/auth/logout' && request.method === 'POST') return logoutEndpoint(request, env);
+    if (path === '/auth/me' && request.method === 'GET') return meEndpoint(request, env);
+
     if (path === '/tareas') {
       if (request.method === 'POST') return crearTarea(request, env, url);
-      if (request.method === 'GET') return listarTareas(env, url);
+      if (request.method === 'GET') return listarTareas(request, env, url);
       return json({ error: 'Método no permitido' }, 405);
     }
 
@@ -769,16 +1027,16 @@ export default {
     if (path === '/networks' && request.method === 'POST') return crearNetwork(request, env, url);
     if (path === '/practices') {
       if (request.method === 'POST') return crearPractice(request, env, url);
-      if (request.method === 'GET') return listarPractices(env, url);
+      if (request.method === 'GET') return listarPractices(request, env, url);
       return json({ error: 'Método no permitido' }, 405);
     }
     if (path === '/doctors' && request.method === 'POST') return crearDoctor(request, env, url);
-    if (path === '/red/metricas' && request.method === 'GET') return metricasRed(env, url);
-    if (path === '/red/datos' && request.method === 'GET') return redDatos(env, url);
+    if (path === '/red/metricas' && request.method === 'GET') return metricasRed(request, env, url);
+    if (path === '/red/datos' && request.method === 'GET') return redDatos(request, env, url);
 
     const matchId = path.match(/^\/tareas\/(\d+)$/);
     if (matchId) {
-      if (request.method === 'PATCH') return actualizarTarea(request, env, matchId[1]);
+      if (request.method === 'PATCH') return actualizarTarea(request, env, url, matchId[1]);
       return json({ error: 'Método no permitido' }, 405);
     }
 

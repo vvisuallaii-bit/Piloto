@@ -78,13 +78,16 @@ Ninguna bloquea el uso en producción; son mejoras de pulido:
 
 Estos **no** son bugs — son límites de diseño que solo importan al escalar:
 
-1. **Los roles por sede son solo de fachada (frontend).** 🟠 *Media urgencia antes de
-   vender "roles" como característica de seguridad.* Hoy un gerente bloqueado a su
-   sede podría ver el resto cambiando la URL a mano — no hay login ni validación en el
-   servidor. Para una demo o una red pequeña de confianza está bien; **antes de
-   vender control de acceso real por sede**, hay que agregar autenticación y checks en
-   el Worker. No urgente para vender el dashboard; sí urgente si prometes "cada
-   gerente solo ve lo suyo" como garantía.
+1. ~~**Los roles por sede son solo de fachada (frontend).**~~ ✅ **RESUELTO (2026-08-07,
+   Fase 4A→4C).** Hay autenticación real: `POST /auth/login` valida contra usuarios en
+   D1 (contraseñas PBKDF2 + salt), emite un token de sesión, y el Worker exige ese
+   token en `/tareas`, `/red/datos`, `/red/metricas`, `/practices` y las escrituras.
+   Para `admin_sede`/`recepcionista` el backend **ignora** el `practice_id`/`network_id`
+   de la query y usa el de la sesión — un token de una sede ya **no puede** leer otra
+   aunque cambien la URL a mano (verificado). La red demo pública (`red-dental-sonrisa`,
+   datos ficticios) queda legible sin sesión a propósito, para el demo de venta.
+   *Nota de despliegue:* al momento de escribir esto, la migración + usuarios ya están
+   en D1 producción; el deploy del Worker + frontend se coordina (ver worker/README.md).
 
 2. **Escalabilidad de la carga de la red.** 🟢 *Baja urgencia.* La vista de red hace
    ~1+2N consultas a la base (N = número de sedes). Con 4 sedes es instantáneo; a
@@ -98,6 +101,6 @@ Estos **no** son bugs — son límites de diseño que solo importan al escalar:
    pagando, sin acción inmediata.
 
 **Veredicto para escalar ventas:** puedes vender **ya** a clínicas individuales y a
-redes multi-sede con demo. Antes de escalar a **muchas** redes grandes con promesa de
-control de acceso, resuelve el riesgo #1 (roles server-side). Los riesgos #2 y #3 son
-de monitoreo, no de bloqueo.
+redes multi-sede con demo. El riesgo #1 (control de acceso server-side) quedó
+**resuelto** en la Fase 4 — ya puedes prometer "cada gerente solo ve lo suyo" como
+garantía real, no de fachada. Los riesgos #2 y #3 son de monitoreo, no de bloqueo.

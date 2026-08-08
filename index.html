@@ -430,6 +430,10 @@
     <!-- Creación manual -->
     <div class="ta-manual-title">O crear una tarea manual</div>
     <div class="ta-grid">
+      <!-- Selector de sede — visible solo para el Gerente en la vista Red (Fase 4A) -->
+      <label class="ta-full" id="ta-sede-field" style="display:none">Sede *
+        <select id="ta-sede"></select>
+      </label>
       <label class="ta-full">Título *<input type="text" id="ta-titulo" maxlength="120" placeholder="ej. Llamar a 12 pacientes inactivos"/></label>
       <label class="ta-full">Descripción<input type="text" id="ta-desc" maxlength="300" placeholder="detalle opcional"/></label>
       <label>Categoría
@@ -617,6 +621,52 @@
   </div>
 </div>
 
+<!-- LOGIN (Fase 4A — mock de UX, frontend puro) -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="login-dot"></div>
+      <div>
+        <div class="login-title">Smile Dental</div>
+        <div class="login-sub">Inicia sesión para continuar</div>
+      </div>
+    </div>
+    <form id="login-form" onsubmit="return authLogin(event)">
+      <label class="login-field">Correo
+        <input type="email" id="login-email" autocomplete="username" placeholder="tu@clinica.com" required/>
+      </label>
+      <label class="login-field">Contraseña
+        <input type="password" id="login-pass" autocomplete="current-password" placeholder="••••••••" required/>
+      </label>
+      <div class="login-error" id="login-error"></div>
+      <button type="submit" class="login-btn">Iniciar sesión</button>
+    </form>
+    <details class="login-demo">
+      <summary>Usuarios de demostración</summary>
+      <div class="login-demo-list">
+        <div><strong>gerente@smiledental.demo</strong> — Gerente (toda la red)</div>
+        <div><strong>admin.sede@smiledental.demo</strong> — Administrador de sede</div>
+        <div><strong>recepcion@smiledental.demo</strong> — Recepcionista</div>
+        <div class="login-demo-pass">Contraseña para todos: <strong>demo2026</strong></div>
+      </div>
+    </details>
+  </div>
+</div>
+
+<!-- CREAR TAREA (Gerente) — overlay que reutiliza el formulario #tarea-admin (Fase 4A) -->
+<div class="pp-overlay" id="ct-overlay" onclick="if(event.target===this)authCerrarCrear()">
+  <div class="pp-modal" style="max-width:600px">
+    <div class="pp-modal-header">
+      <div class="pp-modal-top">
+        <div class="pp-modal-title">＋ Crear tarea</div>
+        <button class="pp-close" onclick="authCerrarCrear()">✕</button>
+      </div>
+      <div class="pp-modal-sub">Asigna una tarea a cualquiera de las sedes de la red.</div>
+    </div>
+    <div class="pp-body" id="ct-slot"></div>
+  </div>
+</div>
+
 <script defer src="js/core.js"></script>
 <script defer src="js/metrics.js"></script>
 <script defer src="js/dashboard.js"></script>
@@ -643,6 +693,7 @@
   </div>
 </div>
 
+<script defer src="js/auth.js"></script>
 <script defer src="js/main.js"></script>
 <script defer src="js/tareas.js"></script>
 <script defer src="js/tareas-ia.js"></script>

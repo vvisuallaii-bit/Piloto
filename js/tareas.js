@@ -29,6 +29,12 @@ const T_RESULTADO_LBL={agendo_cita:'✓ Agendó cita',no_respondio:'No respondi�
 
 /* ── helpers ── */
 function tareasPracticeId(){
+  // Fase 4A: si hay una sesi\u00f3n con sede fija (Administrador de sede / Recepci\u00f3n),
+  // esa sede manda sobre el slug del nombre. El Gerente (practice_id vac\u00edo) y el
+  // demo de venta (sin sesi\u00f3n, o con link ?practice=/?demo=red) siguen derivando
+  // el slug de getWhiteLabel().
+  if(typeof SESSION!=='undefined'&&SESSION&&SESSION.practice_id&&
+     !(typeof authIsSalesDemo==='function'&&authIsSalesDemo()))return SESSION.practice_id;
   const slug=getWhiteLabel().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
     .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
   return slug||'smile-dental';
@@ -50,9 +56,23 @@ function fmtFechaCorta(iso){
 
 /* ── carga ── */
 async function fetchTareas(){
+  // Demo de venta single-site (o acceso interno ?admin) SIN sesión: el endpoint
+  // GET /tareas exige sesión. Evita el 401 (ruido en consola) y muestra la lista
+  // vacía directamente. El demo de RED usa netLoadTareas, no esto.
+  const sinSesion=!(typeof SESSION!=='undefined'&&SESSION&&SESSION.token);
+  const contextoSinToken=(typeof authIsSalesDemo==='function'&&authIsSalesDemo())||
+                         (typeof authIsAdminInterno==='function'&&authIsAdminInterno());
+  if(sinSesion&&contextoSinToken){
+    TAREAS=[];TAREAS_RESUMEN=null;TAREAS_CARGANDO=false;TAREAS_ERROR=false;recomputarResumen();renderTareasUI();return;
+  }
   TAREAS_CARGANDO=true;TAREAS_ERROR=false;renderTareasStatus();
   try{
-    const resp=await fetch(`${WORKER_URL}/tareas?practice_id=${encodeURIComponent(tareasPracticeId())}`);
+    const resp=await authFetch(`${WORKER_URL}/tareas?practice_id=${encodeURIComponent(tareasPracticeId())}`);
+    if(resp.status===401){
+      // Sesión expirada (authFetch ya redirige al login) o demo sin sesión: sin
+      // tareas, sin error crudo — deja la vista limpia.
+      TAREAS=[];TAREAS_RESUMEN=null;TAREAS_CARGANDO=false;recomputarResumen();renderTareasUI();return;
+    }
     if(!resp.ok)throw new Error(`HTTP ${resp.status}`);
     const json=await resp.json();
     if(!Array.isArray(json.tareas))throw new Error('Respuesta inesperada del servidor');
@@ -423,7 +443,7 @@ async function guardarPacientes(t){
   try{
     const body={pacientes:t.pacientes};
     if(t.estado==='pendiente')body.estado='en_proceso';
-    const resp=await fetch(`${WORKER_URL}/tareas/${t.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const resp=await authFetch(`${WORKER_URL}/tareas/${t.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const j=await resp.json().catch(()=>({}));
     if(!resp.ok)throw new Error(j.error||`HTTP ${resp.status}`);
     const idx=TAREAS.findIndex(x=>x.id===t.id);if(idx>=0)TAREAS[idx]=j;
@@ -447,7 +467,7 @@ async function completarTareaDetalle(){
     recomputarResumen();volverALista();return;
   }
   try{
-    const resp=await fetch(`${WORKER_URL}/tareas/${t.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({estado:'completada',resultado,completado_por:t.asignado_a,pacientes:ps})});
+    const resp=await authFetch(`${WORKER_URL}/tareas/${t.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({estado:'completada',resultado,completado_por:t.asignado_a,pacientes:ps})});
     const j=await resp.json().catch(()=>({}));
     if(!resp.ok)throw new Error(j.error||`HTTP ${resp.status}`);
     const idx=TAREAS.findIndex(x=>x.id===t.id);if(idx>=0)TAREAS[idx]=j;
@@ -480,7 +500,7 @@ async function completarTareaSinPac(){
     recomputarResumen();volverALista();return;
   }
   try{
-    const resp=await fetch(`${WORKER_URL}/tareas/${t.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const resp=await authFetch(`${WORKER_URL}/tareas/${t.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const j=await resp.json().catch(()=>({}));
     if(!resp.ok)throw new Error(j.error||`HTTP ${resp.status}`);
     const idx=TAREAS.findIndex(x=>x.id===t.id);if(idx>=0)TAREAS[idx]=j;
@@ -488,32 +508,65 @@ async function completarTareaSinPac(){
   }catch(e){if(m){m.className='td-save-msg err';m.textContent='⚠ '+e.message;}}
 }
 
-/* ── formulario de administración (uso interno) ──────────────────────────
-   Visible solo con ?admin en la URL. Pide la ADMIN_KEY una vez y la guarda
-   en sessionStorage (se borra al cerrar la pestaña); viaja en el header
-   X-Admin-Key — nunca en la URL. */
+/* ── formulario de creación de tareas ─────────────────────────────────────
+   Dos modos:
+   - SESIÓN (Fase 4C): el Gerente / Administrador de sede lo ven autorizados por
+     su token — sin clave manual. Se ocultan las piezas internas (clave admin y
+     generador IA); crearTareaAdmin manda Authorization: Bearer.
+   - INTERNO (?admin): acceso de debugging/mantenimiento tuyo. Pide la ADMIN_KEY
+     y viaja en X-Admin-Key (ver worker/README.md → "uso interno / debugging").
+   La Recepcionista NUNCA lo ve, ni con ?admin. */
 const T_ADMIN_KEY_STORE='smile_dental_admin_key';
 function initTareasAdmin(){
-  if(!new URLSearchParams(window.location.search).has('admin'))return;
+  if(typeof SESSION!=='undefined'&&SESSION&&SESSION.rol==='recepcionista')return;
   const box=document.getElementById('tarea-admin');
   if(!box)return;
+  const sesionCreadora=typeof SESSION!=='undefined'&&SESSION&&(SESSION.rol==='admin_sede'||SESSION.rol==='dueno');
+  const interno=new URLSearchParams(window.location.search).has('admin');
+  if(!sesionCreadora&&!interno)return;
+
   box.style.display='block';
   document.getElementById('ta-semana').value=tareasLunes();
-  const saved=sessionStorage.getItem(T_ADMIN_KEY_STORE);
-  if(saved)document.getElementById('ta-key').value=saved;
+
+  // Modo sesión puro: el token autoriza → oculta lo interno (clave + generador IA).
+  const soloSesion=sesionCreadora&&!interno;
+  const keyField=box.querySelector('.ta-keyfield');
+  const tiaBox=box.querySelector('.tia-box');
+  const divider=box.querySelector('.ta-divider');
+  const titulo=box.querySelector('.tarea-admin-title');
+  const manualTitle=box.querySelector('.ta-manual-title');
+  if(soloSesion){
+    if(keyField)keyField.style.display='none';
+    if(tiaBox)tiaBox.style.display='none';
+    if(divider)divider.style.display='none';
+    if(manualTitle)manualTitle.style.display='none';
+    if(titulo)titulo.textContent='＋ Crear tarea';
+  }else{
+    const saved=sessionStorage.getItem(T_ADMIN_KEY_STORE);
+    if(saved)document.getElementById('ta-key').value=saved;
+  }
 }
 
 async function crearTareaAdmin(){
   const msg=document.getElementById('ta-msg');
   const val=id=>document.getElementById(id).value.trim();
+  // Con sesión (Gerente / Administrador de sede) el token autoriza — sin clave.
+  // Sin sesión (acceso interno ?admin) se usa la ADMIN_KEY como siempre.
+  const usarSesion=typeof SESSION!=='undefined'&&SESSION&&!!SESSION.token;
   const clave=val('ta-key');
   const titulo=val('ta-titulo');
-  if(!clave){msg.textContent='⚠ Ingresa la clave de administración.';return;}
+  if(!usarSesion&&!clave){msg.textContent='⚠ Ingresa la clave de administración.';return;}
   if(!titulo){msg.textContent='⚠ El título es requerido.';return;}
-  sessionStorage.setItem(T_ADMIN_KEY_STORE,clave);
+  if(!usarSesion)sessionStorage.setItem(T_ADMIN_KEY_STORE,clave);
+
+  // Gerente (vista Red): el selector de sede define a qué clínica va la tarea.
+  // Administrador de sede: el selector está oculto y manda tareasPracticeId().
+  const sedeField=document.getElementById('ta-sede-field');
+  const sedeSel=document.getElementById('ta-sede');
+  const gerenteSede=(sedeField&&sedeField.style.display!=='none'&&sedeSel&&sedeSel.value)?sedeSel.value:null;
 
   const body={
-    practice_id:tareasPracticeId(),
+    practice_id:gerenteSede||tareasPracticeId(),
     semana:val('ta-semana')||tareasLunes(),
     titulo,
     descripcion:val('ta-desc'),
@@ -528,11 +581,9 @@ async function crearTareaAdmin(){
   const btn=document.getElementById('ta-crear');
   btn.disabled=true;msg.textContent='Creando...';
   try{
-    const resp=await fetch(`${WORKER_URL}/tareas`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','X-Admin-Key':clave},
-      body:JSON.stringify(body),
-    });
+    const headers={'Content-Type':'application/json'};
+    if(!usarSesion)headers['X-Admin-Key']=clave;   // authFetch añade Authorization si hay sesión
+    const resp=await authFetch(`${WORKER_URL}/tareas`,{method:'POST',headers,body:JSON.stringify(body)});
     const json=await resp.json().catch(()=>({}));
     if(!resp.ok)throw new Error(json.error||`HTTP ${resp.status}`);
     msg.textContent=`✓ Tarea #${json.id} creada.`;
@@ -540,7 +591,14 @@ async function crearTareaAdmin(){
     document.getElementById('ta-desc').value='';
     document.getElementById('ta-valor').value='';
     document.getElementById('ta-limite').value='';
-    fetchTareas();
+    if(gerenteSede&&typeof NET!=='undefined'&&NET.active){
+      // Refresca las tareas consolidadas de la red y cierra el overlay del Gerente.
+      NET.tareasRed=null;
+      if(NET.mode==='red'&&typeof renderNetworkView==='function')renderNetworkView();
+      if(typeof authCerrarCrear==='function')authCerrarCrear();
+    }else{
+      fetchTareas();
+    }
   }catch(e){
     msg.textContent=`⚠ ${e.message}`;
   }finally{btn.disabled=false;}
@@ -626,8 +684,13 @@ async function copiarResumen(){
   catch(e){msg.textContent='No se pudo copiar automáticamente.';}
 }
 
-/* ── init ── */
-initTareasAdmin();
-loadPacientes();
-// En el demo de red no hay tareas por sede (Fase 3C); evita la llamada al Worker.
-if(!(typeof NET!=='undefined'&&NET.active))fetchTareas();
+/* ── init ──
+   El bootstrap de tareas lo dispara auth.js (authBootTareas), después de resolver
+   el gate de login y el rol de la sesión. Fallback defensivo si auth.js no cargó:
+   conserva el comportamiento pre-Fase-4 (arranque inmediato, sin login). */
+if(typeof authBoot!=='function'){
+  initTareasAdmin();
+  loadPacientes();
+  // En el demo de red no hay tareas por sede (Fase 3C); evita la llamada al Worker.
+  if(!(typeof NET!=='undefined'&&NET.active))fetchTareas();
+}

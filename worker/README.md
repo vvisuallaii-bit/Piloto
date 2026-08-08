@@ -104,13 +104,28 @@ curl -X PATCH "https://claude-proxy.vvisuall-aii.workers.dev/tareas/1" \
 # → 404 si el id no existe
 ```
 
-## Formulario de administración en el dashboard
+## Crear tareas desde el dashboard
 
-En el dashboard, abre el tab **Pendientes** agregando `?admin` a la URL
-(ej. `https://vvisuallaii-bit.github.io/Piloto/?admin`). Aparece un formulario
-mínimo para crear tareas; pide la `ADMIN_KEY` una vez y la guarda en
-`sessionStorage` (se borra al cerrar la pestaña). La clave viaja en el header
-`X-Admin-Key`, nunca en la URL.
+**Uso normal (Fase 4C):** el Gerente y el Administrador de sede crean tareas
+directamente autenticados con su sesión — **no escriben ninguna clave**. El token
+de la sesión (`Authorization: Bearer …`) autoriza el `POST /tareas`. El Gerente usa
+el botón "＋ Crear tarea" de la vista Red (con selector de sede); el Administrador de
+sede, el formulario del tab **Pendientes** (fijado a su sede).
+
+### `?admin` + `X-Admin-Key` — uso interno / debugging
+
+El flujo viejo se **mantiene** como acceso interno tuyo (operador), no para clientes.
+Agregando `?admin` a la URL aparece el formulario con el campo "Clave admin"; la
+`ADMIN_KEY` viaja en el header `X-Admin-Key` (nunca en la URL) y se guarda en
+`sessionStorage`. `?admin` no exige login (es tu atajo de mantenimiento).
+
+Notas post-4C:
+- `X-Admin-Key` sigue siendo **superusuario** en el Worker: autoriza escrituras en
+  cualquier sede/red, en paralelo con el login por sesión (no se retiró).
+- La **lectura** de tareas (`GET /tareas`) ahora exige sesión, así que el formulario
+  `?admin` sin login es sobre todo una herramienta de **escritura** (crear/generar);
+  para ver y gestionar la lista completa, inicia sesión como dueño.
+- Para scripting/debug sin navegador, usa `curl` con `X-Admin-Key` (ejemplos arriba).
 
 ## Generación automática de tareas (Paso 2 — cron)
 
@@ -221,8 +236,80 @@ node scripts/seed-network.mjs
 npx wrangler d1 execute smile-dental-tareas --remote --file seed_network.sql
 ```
 
-**Fuera de alcance (roadmap):** roles/permisos por sede y pricing dinámico por
-número de sedes/doctores — hoy el precio se calcula manual.
+**Fuera de alcance (roadmap):** pricing dinámico por número de sedes/doctores —
+hoy el precio se calcula manual.
+
+## Autenticación por usuario y rol (Fase 4B)
+
+Reemplaza el login mock del frontend (Fase 4A) por credenciales reales en D1,
+resolviendo el Riesgo #1 de la auditoría (los roles por sede eran solo de
+fachada en el frontend). El backend ahora verifica quién hace cada petición.
+
+- **`usuarios`** (migración 0009): `email` (único), `password_hash` + `password_salt`
+  (PBKDF2-SHA256, 100k iteraciones, salt por usuario — sin dependencias npm, con
+  Web Crypto nativo), `rol` (`dueno` | `admin_sede` | `recepcionista`),
+  `network_id`, `practice_id` (NULL para `dueno`).
+- **`sesiones`**: `token` (UUID) → `usuario_id`, con expiración a 7 días.
+
+### Endpoints de auth
+
+```bash
+# Login → { token, rol, nombre, network_id, practice_id }
+POST /auth/login    {email, password}
+# → 401 credenciales inválidas · 429 si se superan los intentos por IP (mismo rate-limit del proxy)
+
+# Cerrar sesión (borra el token)
+POST /auth/logout   -H "Authorization: Bearer <token>"
+
+# Datos de la sesión actual
+GET  /auth/me       -H "Authorization: Bearer <token>"
+# → { rol, nombre, network_id, practice_id } | 401
+```
+
+### Autorización de los endpoints existentes
+
+`ADMIN_KEY` **sigue funcionando en paralelo** (no se retira en esta fase — eso es
+4C). Cada endpoint acepta ADMIN_KEY (superusuario, como hoy) **o** una sesión:
+
+| Endpoint | Con sesión |
+|---|---|
+| `POST /tareas`, `POST /tareas/generar` | `dueno` o `admin_sede` (crea en su alcance). `recepcionista` → 403 |
+| `POST /networks` / `/practices` / `/doctors` | solo `dueno` (dentro de su red) |
+| `GET /tareas`, `PATCH /tareas/:id`, `GET /practices`, `GET /red/metricas`, `GET /red/datos` | sesión válida requerida |
+
+Clave de seguridad: para `admin_sede` y `recepcionista`, el backend **ignora**
+cualquier `practice_id`/`network_id` de la query y usa el de la sesión — un token
+de recepcionista no puede leer otra sede aunque le cambien el parámetro a mano.
+
+> ⚠️ **Coordinación de despliegue (Fase 4C):** los GET (`/tareas`, `/red/datos`,
+> etc.) que hoy son **públicos** pasan a exigir sesión. El frontend todavía usa el
+> mock de la 4A y aún no manda `Authorization`, así que **desplegar este Worker
+> ANTES de conectar el frontend (4C) rompería** las lecturas públicas del demo en
+> vivo. No hacer `wrangler deploy` hasta coordinar la 4C. `ADMIN_KEY` no se ve
+> afectada.
+
+### Migración y seed de usuarios
+
+> Nota: el tracker `d1_migrations` de esta base quedó desfasado (las 0005–0008 se
+> aplicaron con `execute --file`, no con `migrations apply`). Por eso **NO** se usa
+> `migrations apply` aquí — intentaría recrear tablas/columnas que ya existen y
+> fallaría. La 0009 se aplica con `execute --file`, igual que las anteriores.
+> Es idempotente (`IF NOT EXISTS`).
+
+```bash
+cd Piloto/worker
+# 0. (opcional pero recomendado) backup no destructivo → backups/
+npx wrangler d1 export smile-dental-tareas --remote --output backups/backup_pre_4b.sql
+# 1. Crea las tablas usuarios/sesiones
+npx wrangler d1 execute smile-dental-tareas --remote --file migrations/0009_usuarios_sesiones.sql
+# 2. Siembra los 3 usuarios demo (misma contraseña 'demo2026', ya hasheada)
+node scripts/seed-usuarios.mjs
+npx wrangler d1 execute smile-dental-tareas --remote --file seed_usuarios.sql
+```
+
+**Estado (2026-08-07):** migración 0009 + seed de usuarios YA aplicados en producción.
+Falta `npx wrangler deploy` del Worker — se pospone a la 4C para no romper los GET
+públicos del demo en vivo (ver aviso de despliegue arriba).
 
 ## Zona horaria
 

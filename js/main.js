@@ -6,8 +6,12 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 loadArticles();loadProfile();
-// Modo demo de red (?demo=red): bootstrap propio, sin cargar el CSV de sede única.
-// Aditivo: sin el parámetro, el comportamiento es idéntico al de siempre.
-if(typeof NET!=='undefined'&&NET.active){ initNetworkDemo(); }
-else{ loadCSV(); }
-applyWhiteLabel();
+// El arranque de datos/tareas lo orquesta auth.js (Fase 4A): decide si pide login
+// y, según el rol de la sesión, encamina a la vista correcta. En un link de venta
+// (?practice=…, ?demo=red) auth arranca de inmediato, idéntico a antes.
+// Fallback defensivo por si auth.js no cargó: comportamiento pre-Fase-4.
+if(typeof authBoot!=='function'){
+  if(typeof NET!=='undefined'&&NET.active){ initNetworkDemo(); }
+  else{ loadCSV(); }
+  applyWhiteLabel();
+}

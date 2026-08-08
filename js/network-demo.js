@@ -274,7 +274,7 @@ async function netLoadTareas(i) {
   }
   TAREAS_CARGANDO = true; TAREAS_ERROR = false; renderTareasUI();
   try {
-    const resp = await fetch(`${WORKER_URL}/tareas?practice_id=${encodeURIComponent(s.id)}`);
+    const resp = await authFetch(`${WORKER_URL}/tareas?practice_id=${encodeURIComponent(s.id)}`);
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const j = await resp.json();
     TAREAS = Array.isArray(j.tareas) ? j.tareas : [];
@@ -351,7 +351,7 @@ const NET_SEDE_ANALYSIS = {
    sintético para que nunca se rompa). */
 async function initNetworkDemo() {
   try {
-    const resp = await fetch(`${WORKER_URL}/red/datos?network_id=${encodeURIComponent(NET.networkId)}`);
+    const resp = await authFetch(`${WORKER_URL}/red/datos?network_id=${encodeURIComponent(NET.networkId)}`);
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const payload = await resp.json();
     if (!payload.sedes || !payload.sedes.length) throw new Error('sin sedes');
@@ -691,7 +691,7 @@ function netTareaSedeNombre(pid) { const s = NET.sedes.find(x => x.id === pid); 
 async function netCargarTareasRed() {
   if (NET.fuente !== 'd1') { NET.tareasRed = { tareas: [], resumen: null }; if (NET.mode === 'red') renderNetworkView(); return; }
   try {
-    const resp = await fetch(`${WORKER_URL}/tareas?network_id=${encodeURIComponent(NET.networkId)}`);
+    const resp = await authFetch(`${WORKER_URL}/tareas?network_id=${encodeURIComponent(NET.networkId)}`);
     const j = await resp.json();
     NET.tareasRed = { tareas: Array.isArray(j.tareas) ? j.tareas : [], resumen: j.resumen || null };
   } catch (e) { NET.tareasRed = { tareas: [], resumen: null, error: true }; }
