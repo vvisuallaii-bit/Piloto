@@ -94,11 +94,15 @@ Estos **no** son bugs — son límites de diseño que solo importan al escalar:
    **20+ sedes** convendría una sola consulta agregada con índice. No afecta a nadie
    hoy; revisarlo cuando una red pase de ~10-15 sedes.
 
-3. **Costo de la IA en redes reales.** 🟢 *Baja urgencia, ya mitigado.* El demo ya no
-   gasta tokens. En una red real con `?live`, la IA sí consume, pero el proxy está
-   blindado (origen permitido + modelo permitido + tope de tokens + límite de 20
-   req/min por IP). Recomendación: **monitorear el gasto** cuando entren redes reales
-   pagando, sin acción inmediata.
+3. **Costo de la IA (demo y redes reales).** 🟡 *Baja-media urgencia, monitorear.*
+   **Actualización 2026-08-07 (Fase 4C):** el Asesor IA (chat, análisis, Q&A y
+   proyección) ahora usa **IA real también en el demo de red** (antes era enlatado
+   token-free). Se hizo porque el modo enlatado se repetía y no contestaba preguntas
+   abiertas del cliente (p. ej. "¿en qué sector de Bogotá abro una sede?"). El
+   respondedor determinista quedó como **red de seguridad** (si la API falla, no rompe
+   en vivo). El proxy sigue blindado (origen permitido + modelo permitido + tope de
+   tokens + 20 req/min por IP), lo que acota el gasto por IP. Recomendación:
+   **monitorear el gasto de tokens** ahora que los demos de venta también consumen.
 
 **Veredicto para escalar ventas:** puedes vender **ya** a clínicas individuales y a
 redes multi-sede con demo. El riesgo #1 (control de acceso server-side) quedó

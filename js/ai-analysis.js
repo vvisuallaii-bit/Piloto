@@ -69,13 +69,8 @@ async function runAnalysis(){
   document.getElementById('ai-empty').style.display='none';
   document.getElementById('ai-result').style.display='none';
 
-  // Demo de venta o fallback sintético: análisis pre-generado (sin API). La IA
-  // real solo se activa para una red real con ?live (netDemoCache()=false).
-  if(typeof NET!=='undefined'&&NET.active&&!(NET.live&&NET.fuente==='d1')){
-    const r=(NET.mode==='sede'&&NET.sedes[NET.sedeIdx])?NET.sedes[NET.sedeIdx].analysis:NET.analysis;
-    showResult(r);LAST_RESULT=r;return;
-  }
-
+  // IA real siempre (Fase 4C); si la API falla, el catch cae al análisis cacheado
+  // (por sede en modo red, o demoFallback) — nunca error crudo en vivo.
   const data=CURRENT_DATA;
   const m=computeMetrics(data);
   const overheadRate=Math.round(m.overheadRate);
@@ -145,6 +140,11 @@ Sé directo. Cita números reales. Compara contra las referencias del sector. Pi
     clearInterval(ticker);showResult(r);LAST_RESULT=r;
   }catch(e){
     clearInterval(ticker);
+    // Red de seguridad: en modo red usa el análisis cacheado de la sede/red.
+    if(typeof NET!=='undefined'&&NET.active){
+      const r=(NET.mode==='sede'&&NET.sedes[NET.sedeIdx])?NET.sedes[NET.sedeIdx].analysis:NET.analysis;
+      if(r){showResult(r);LAST_RESULT=r;return;}
+    }
     // Demo safety net: on the demo dataset, never show a red error live
     const fb=demoFallback(m,data);
     if(fb){showResult(fb);LAST_RESULT=fb;return;}

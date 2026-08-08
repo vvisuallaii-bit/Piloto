@@ -499,8 +499,8 @@ async function netRunAnalysis() {
   const el = document.getElementById('net-ai-result');
   el.style.display = 'block';
   if (btn) btn.disabled = true;
-  // Demo de venta (o fallback sintético): análisis cacheado, sin llamar a la API.
-  if (netDemoCache()) { el.innerHTML = netAnalysisHTML(NET.analysis); if (btn) btn.disabled = false; return; }
+  // IA real siempre (Fase 4C); si la API falla, el catch cae al análisis cacheado
+  // de la red (netAnalysisHTML(NET.analysis)) — nunca error ni loading infinito.
   el.innerHTML = `<div class="ai-loading" style="display:flex"><div class="ld"><span></span><span></span><span></span></div><span style="font-size:13px;color:var(--muted)">Comparando las ${NET.sedes.length} sedes…</span></div>`;
   const prompt = `Eres analista de operaciones de una RED de clínicas dentales colombianas. Compara las sedes, identifica cuál necesita atención y por qué, y da acciones priorizadas para el DUEÑO de la red.
 
@@ -515,6 +515,8 @@ En español, tono colombiano directo. Cita sedes y cifras reales.`;
     el.innerHTML = netAnalysisHTML(r);
   } catch (e) {
     el.innerHTML = netAnalysisHTML(NET.analysis);   // fallback: nunca error ni loading infinito
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
 
@@ -526,21 +528,24 @@ async function netAskRed(ev) {
   const q = (inp.value || '').trim();
   if (!q) return;
   out.style.display = 'block';
-  // Demo de venta (o fallback): respuesta comparativa cacheada, sin API.
-  if (netDemoCache()) { out.innerHTML = `<div class="ai-block-txt">${renderMarkdown(netDemoRedReply(q))}</div>`; if (inp) inp.value = ''; return; }
+  if (inp) inp.value = '';
+  // IA real siempre (Fase 4C). El asesor de red responde preguntas abiertas del
+  // dueño (comparativas, expansión, estrategia), no solo las 6 enlatadas.
   out.innerHTML = `<div class="ai-loading" style="display:flex"><div class="ld"><span></span><span></span><span></span></div><span style="font-size:13px;color:var(--muted)">Analizando…</span></div>`;
-  const prompt = `Eres el asesor de operaciones del DUEÑO de una red de clínicas dentales. Responde su pregunta comparando las sedes con datos reales.
+  const prompt = `Eres el asesor estratégico y de operaciones del DUEÑO de una red de clínicas dentales colombianas. Responde su pregunta usando los datos reales de las sedes. La pregunta puede ser comparativa entre sedes, o estratégica (expansión, abrir una sede nueva, dónde/en qué zona invertir, contratación, tarifas): respóndela igual, con criterio de negocio y citando las cifras que tengas. Si te piden algo que los datos no cubren del todo (p. ej. un sector específico de una ciudad), sé honesto sobre el límite y aun así da un marco de decisión accionable — nunca esquives la pregunta ni repitas una respuesta genérica.
 
 ${netContextoRed()}
 
 Pregunta del dueño: "${q}"
 
-Responde directo y específico, citando sedes y números. Máximo 130 palabras, español, **negrita** en cifras o sedes clave.`;
+Responde directo y específico, citando sedes y números cuando apliquen. Máximo 150 palabras, español colombiano, **negrita** en cifras o sedes clave.`;
   try {
-    const raw = await netFetchIA(prompt, 400);
+    const raw = await netFetchIA(prompt, 500);
+    if (!raw || !raw.trim()) throw new Error('respuesta vacía');
     out.innerHTML = `<div class="ai-block-txt">${renderMarkdown(raw)}</div>`;
   } catch (e) {
-    out.innerHTML = `<div class="ai-block-txt">No se pudo consultar ahora. Intenta de nuevo en un momento.</div>`;
+    // Red de seguridad: respuesta determinista con datos reales (nunca error en vivo).
+    out.innerHTML = `<div class="ai-block-txt">${renderMarkdown(netDemoRedReply(q))}</div>`;
   }
 }
 
@@ -765,8 +770,9 @@ async function netForecast() {
   const nd = new Date(); nd.setMonth(nd.getMonth() + 1);
   const nextMonth = nd.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
   let r = null;
-  // Demo de venta usa la proyección determinista (fallback); la IA real solo con ?live.
-  if (NET.live && NET.fuente === 'd1') {
+  // IA real siempre (Fase 4C): proyecta con la API; si falla, cae a la proyección
+  // determinista (netForecastFallback) más abajo — nunca rompe en vivo.
+  {
     const prompt = `Eres analista financiero de una RED de ${NET.sedes.length} clínicas dentales colombianas. Proyecta la RECAUDACIÓN CONSOLIDADA de la red para ${nextMonth} en 3 escenarios.
 
 ${netContextoRed()}

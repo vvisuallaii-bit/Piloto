@@ -75,14 +75,9 @@ async function sendChat(){
   chatHistory.push({role:'user',content:text});
   const thinking=appendMsg('ai','',true);
 
-  // Demo de red (o fallback): respuesta offline con los datos reales de la sede
-  // (sin API). La IA real solo con ?live en una red real.
-  if(typeof NET!=='undefined'&&NET.active&&!(NET.live&&NET.fuente==='d1')){
-    const reply=netDemoChatReply(text);
-    setTimeout(()=>{thinking.remove();appendMsg('ai',reply);chatHistory.push({role:'ai',content:reply});sendBtn.disabled=false;input.focus();},450);
-    return;
-  }
-
+  // IA real siempre (Fase 4C): el dueño conversa con la IA de verdad, tanto en la
+  // red como en el demo de venta. Si la API falla, cae a una respuesta determinista
+  // con los datos reales de la sede (nunca un error crudo en vivo).
   try{
     const messages=[
       {role:'user',content:buildSystemPrompt(chatDataContext)+'\n\n[Sistema listo. Ahora estás en línea con el dueño de la clínica.]'},
@@ -92,11 +87,19 @@ async function sendChat(){
     ];
     const resp=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:MODEL_ID,max_tokens:1024,messages})});
     const json=await resp.json();
-    const reply=json.content.map(b=>b.text||'').join('');
+    if(json.error)throw new Error(json.error.message||'API');
+    const reply=(json.content||[]).map(b=>b.text||'').join('').trim();
+    if(!reply)throw new Error('respuesta vacía');
     thinking.remove();appendMsg('ai',reply);
     chatHistory.push({role:'ai',content:reply});
   }catch(e){
-    thinking.remove();appendMsg('ai',`⚠️ Error de conexión: ${e.message}`);
+    thinking.remove();
+    // Red de seguridad: en modo red, respuesta determinista con datos reales.
+    if(typeof NET!=='undefined'&&NET.active&&typeof netDemoChatReply==='function'){
+      const reply=netDemoChatReply(text);appendMsg('ai',reply);chatHistory.push({role:'ai',content:reply});
+    }else{
+      appendMsg('ai',`⚠️ Error de conexión: ${e.message}`);
+    }
   }
   sendBtn.disabled=false;input.focus();
 }
