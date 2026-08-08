@@ -13,6 +13,9 @@
      - admin_sede    → Administrador de sede (una sola sede)
      - recepcionista → Recepcionista (solo Pendientes)  */
 
+// La sesión vive en sessionStorage (no localStorage): sobrevive recargas dentro de
+// la misma pestaña, pero al cerrar el navegador / abrir una pestaña nueva se pide
+// login de nuevo. Así el login aparece cada vez que se abre la página.
 const SESSION_KEY = 'smile_dental_session';
 
 const ROL_LABEL = { dueno: 'Gerente', admin_sede: 'Administrador de sede', recepcionista: 'Recepcionista' };
@@ -37,7 +40,7 @@ async function authFetch(url, opts = {}) {
 function authSessionExpired() {
   if (authExpirando) return;
   authExpirando = true;
-  try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+  try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
   SESSION = null;
   const w = document.querySelector('.session-wrap'); if (w) w.remove();
   authShowLogin();
@@ -46,7 +49,7 @@ function authSessionExpired() {
 }
 
 function authLoadSession() {
-  try { const raw = localStorage.getItem(SESSION_KEY); if (raw) SESSION = JSON.parse(raw); }
+  try { const raw = sessionStorage.getItem(SESSION_KEY); if (raw) SESSION = JSON.parse(raw); }
   catch (e) { SESSION = null; }
 }
 
@@ -201,7 +204,7 @@ async function authLogin(e) {
     if (!resp.ok || !data.token) { if (err) err.textContent = 'Correo o contraseña incorrectos.'; return false; }
 
     SESSION = { token: data.token, rol: data.rol, nombre: data.nombre, network_id: data.network_id, practice_id: data.practice_id, email };
-    try { localStorage.setItem(SESSION_KEY, JSON.stringify(SESSION)); } catch (e2) {}
+    try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(SESSION)); } catch (e2) {}
     authExpirando = false;
 
     document.getElementById('login-pass').value = '';
@@ -221,7 +224,7 @@ function authLogout() {
   const token = SESSION && SESSION.token;
   // Best-effort: invalida el token en el servidor (no bloquea la salida).
   if (token) fetch(`${WORKER_URL}/auth/logout`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }).catch(() => {});
-  try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+  try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
   // Recarga a una URL limpia: reinicia todo el estado y vuelve al login.
   location.reload();
 }
