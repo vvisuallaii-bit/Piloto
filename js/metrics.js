@@ -97,7 +97,7 @@ function computeHealthScore(data){
 
   const label=total>=85?'Excelente':total>=70?'Bueno':total>=50?'Regular':'Requiere atención';
   const labelClass=total>=85?'excellent':total>=70?'good':total>=50?'fair':'poor';
-  const ringColor=total>=85?'#3FB950':total>=70?'#00D4AA':total>=50?'#E3B341':'#F85149';
+  const ringColor=total>=85?'#2E9E6A':total>=70?'#10B3A6':total>=50?'#C8871F':'#D05858';
 
   return{
     total,label,labelClass,ringColor,

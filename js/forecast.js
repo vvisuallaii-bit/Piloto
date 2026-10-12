@@ -172,8 +172,8 @@ function renderForecast(r){
       interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: $${Math.round(ctx.raw||0).toLocaleString('es-CO')}`}}},
       scales:{
-        x:{ticks:{font:{size:10}},grid:{color:'#21262D'}},
-        y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1e6)+'M'},grid:{color:'#21262D'}}
+        x:{ticks:{font:{size:10}},grid:{color:'#E6EBF0'}},
+        y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1e6)+'M'},grid:{color:'#E6EBF0'}}
       }
     }
   });

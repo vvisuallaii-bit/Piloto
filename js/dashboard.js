@@ -24,7 +24,7 @@ async function loadCSV(){
     document.getElementById('app').style.display='block';
     popFilters();render(ALL);initChat();
   }catch(e){
-    document.getElementById('loading').innerHTML='<p style="color:#F85149">Error al cargar smile_dental_demo.csv — '+e.message+'</p>';
+    document.getElementById('loading').innerHTML='<p style="color:#D05858">Error al cargar smile_dental_demo.csv — '+e.message+'</p>';
   }
 }
 
@@ -230,10 +230,10 @@ function render(data){
       },{
         label:'Producción',
         data:allMonths.map(mo=>allByMonth.get(mo)?.gross_production||0),
-        borderColor:'#388BFD',backgroundColor:'rgba(56,139,253,0.04)',tension:0.35,fill:true,pointRadius:trendPt,pointHoverRadius:6,pointBackgroundColor:'#388BFD',borderWidth:2,borderDash:[4,3]
+        borderColor:'#3B7DD8',backgroundColor:'rgba(59,125,216,0.06)',tension:0.35,fill:true,pointRadius:trendPt,pointHoverRadius:6,pointBackgroundColor:'#3B7DD8',borderWidth:2,borderDash:[4,3]
       }]
     },
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:10}}},scales:{x:{ticks:{font:{size:10}},grid:{color:'#21262D'}},y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1e6)+'M'},grid:{color:'#21262D'}}}}
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:10}}},scales:{x:{ticks:{font:{size:10}},grid:{color:'#E6EBF0'}},y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1e6)+'M'},grid:{color:'#E6EBF0'}}}}
   });
 
   // Service mix donut
@@ -281,6 +281,6 @@ function render(data){
         {label:'Recaudación',data:months.map(mo=>byMonth.get(mo)?.collections||0),backgroundColor:'rgba(0,168,139,0.85)',borderRadius:4,borderSkipped:false}
       ]
     },
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:10}}},scales:{x:{ticks:{font:{size:10}},grid:{color:'#21262D'}},y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1e6)+'M'},grid:{color:'#21262D'}}}}
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:10}}},scales:{x:{ticks:{font:{size:10}},grid:{color:'#E6EBF0'}},y:{ticks:{font:{size:10},callback:v=>'$'+Math.round(v/1e6)+'M'},grid:{color:'#E6EBF0'}}}}
   });
 }

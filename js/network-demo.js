@@ -819,7 +819,7 @@ function netRenderForecast(r, months, series) {
         { label: 'Optimista', data: [...Array(series.length - 1).fill(null), last, r.optimistic.collections], borderColor: CHART_GREEN, borderDash: [14, 4], tension: .2, pointRadius: [...Array(series.length - 1).fill(0), 3, 5], borderWidth: 2 },
       ]
     },
-    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: true, labels: { font: { size: 10 }, boxWidth: 10 } } }, scales: { x: { ticks: { font: { size: 10 } }, grid: { color: '#21262D' } }, y: { ticks: { font: { size: 10 }, callback: v => '$' + Math.round(v / 1e6) + 'M' }, grid: { color: '#21262D' } } } },
+    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: true, labels: { font: { size: 10 }, boxWidth: 10 } } }, scales: { x: { ticks: { font: { size: 10 } }, grid: { color: '#E6EBF0' } }, y: { ticks: { font: { size: 10 }, callback: v => '$' + Math.round(v / 1e6) + 'M' }, grid: { color: '#E6EBF0' } } } },
   });
 }
 
@@ -1069,7 +1069,7 @@ function renderNetworkView() {
         <div class="hs-left">
           <div class="hs-ring-wrap">
             <svg width="110" height="110" viewBox="0 0 110 110">
-              <circle cx="55" cy="55" r="46" fill="none" stroke="#21262D" stroke-width="8"/>
+              <circle cx="55" cy="55" r="46" fill="none" stroke="#E6EBF0" stroke-width="8"/>
               <circle cx="55" cy="55" r="46" fill="none" stroke="${hs.ringColor}" stroke-width="8" stroke-dasharray="289" stroke-dashoffset="${ringOffset}" stroke-linecap="round"/>
             </svg>
             <div class="hs-score-center"><div class="hs-score-num">${hs.total}</div><div class="hs-score-max">/100</div></div>

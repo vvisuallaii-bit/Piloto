@@ -2,15 +2,15 @@
    Loaded first. Every other js/*.js file relies on the globals defined here.
    Chart.js must already be loaded (see index.html) before this file runs. */
 
-/* Categorical chart palette — dark-surface validated (lightness band, chroma,
-   CVD adjacent ΔE ≥12, contrast ≥3:1 on #161B22). Slot ORDER is the
-   colorblind-safety mechanism: re-validate before reordering or adding hues.
-   Brighter UI tokens (--accent etc.) are for interactive chrome, not data marks. */
-const PALETTE=['#00A88B','#388BFD','#C98500','#E66767','#A371F7','#2EA043'];
-const CHART_TEAL='#00A88B',CHART_GREEN='#2EA043',CHART_AMBER='#C98500',CHART_RED='#E66767';
+/* Categorical chart palette — tonos sobrios validados para superficie CLARA
+   (tarjetas blancas, tema CRM Fase 5): contraste legible sobre #FFFFFF y ΔE
+   suficiente entre hues adyacentes para daltonismo. El ORDEN de los slots es el
+   mecanismo de seguridad daltónica: re-validar antes de reordenar o añadir hues. */
+const PALETTE=['#10B3A6','#3B7DD8','#C8871F','#D05858','#7E6CC4','#2E9E6A'];
+const CHART_TEAL='#10B3A6',CHART_GREEN='#2E9E6A',CHART_AMBER='#C8871F',CHART_RED='#D05858';
 const WORKER_URL='https://claude-proxy.vvisuall-aii.workers.dev';
 const MODEL_ID='claude-sonnet-4-5';
-Chart.defaults.color='#7D8590';Chart.defaults.borderColor='#21262D';Chart.defaults.font.family="'Inter',system-ui,sans-serif";
+Chart.defaults.color='#5E7084';Chart.defaults.borderColor='#E6EBF0';Chart.defaults.font.family="'Inter',system-ui,sans-serif";
 
 let ALL=[],charts={},CURRENT_DATA=[];
 let ARTICLES=[];
